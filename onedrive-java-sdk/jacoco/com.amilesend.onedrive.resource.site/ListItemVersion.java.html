@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListItemVersion.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.site</a> &gt; <span class="el_source">ListItemVersion.java</span></div><h1>ListItemVersion.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.site;
+
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.type.PublicationFacet;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
+
+import static com.amilesend.onedrive.connection.OneDriveConnection.JSON_MEDIA_TYPE;
+import static com.amilesend.onedrive.resource.site.List.LIST_BASE_URL_PATH;
+import static com.amilesend.onedrive.resource.site.ListItem.LIST_ITEM_BASE_URL_PATH;
+import static com.amilesend.onedrive.resource.site.Site.SITE_BASE_URL_PATH;
+
+/**
+ * Describes a previous version of a list item.
+ * &lt;p&gt;
+ * Required permissions (one of):
+ * &lt;ul&gt;
+ *     &lt;li&gt;{@literal Sites.ReadWrite.All}&lt;/li&gt;
+ *     &lt;li&gt;{@literal Sites.Manage.All}&lt;/li&gt;
+ *     &lt;li&gt;{@literal Sites.FullControl.All}&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/listitemversion&quot;&gt;
+ * API Documentation&lt;/a&gt;.
+ * @see ListItem
+ */
+@Builder
+@Data
+public class ListItemVersion {
+    public static final String LIST_ITEM_VERSION_BASE_URL_PATH = &quot;/versions/&quot;;
+    public static final String LIST_ITEM_VERSIONS_URL_SUFFIX = &quot;/versions&quot;;
+
+    @VisibleForTesting
+    static final int NO_CONTENT_RESPONSE_HTTP_CODE = 204;
+
+    /** The key is the name of the column, the value is the associated value of the columns set on this list item. */
+    private final Map&lt;String, Object&gt; fields;
+    /** The version identifier. */
+    private final String id;
+    /** The user who last modified the version. */
+    private final IdentitySet lastModifiedBy;
+    /** The timestamp of when the version was last modifed. */
+    private final String lastModifiedDateTime;
+    /** Describes the publication status of a version. */
+    private final PublicationFacet published;
+    /** The associated site identifier. */
+    @GsonExclude
+    private final String siteId;
+    /** The associated list identifier. */
+    @GsonExclude
+    private final String listId;
+    /** The associated list item identifier. */
+    @GsonExclude
+    private final String listItemId;
+    /** The OneDrive API connection. */
+    @EqualsAndHashCode.Exclude
+    @GsonExclude
+    private final OneDriveConnection connection;
+
+    /**
+     * Restores this version.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitemversion_restore&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return {@code true} if successful; else, {@code false}
+     */
+    public boolean restore() {
+<span class="fc" id="L94">        final int responseCode = connection.execute(connection.newRequestBuilder()</span>
+<span class="fc" id="L95">                .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L96">                        .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L97">                        .append(getSiteId())</span>
+<span class="fc" id="L98">                        .append(LIST_BASE_URL_PATH)</span>
+<span class="fc" id="L99">                        .append(getListId())</span>
+<span class="fc" id="L100">                        .append(LIST_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L101">                        .append(getListItemId())</span>
+<span class="fc" id="L102">                        .append(LIST_ITEM_VERSION_BASE_URL_PATH)</span>
+<span class="fc" id="L103">                        .append(getId())</span>
+<span class="fc" id="L104">                        .append(&quot;/restoreVersion&quot;)</span>
+<span class="fc" id="L105">                        .toString())</span>
+<span class="fc" id="L106">                .post(RequestBody.create(StringUtils.EMPTY, JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L107">                .build())</span>
+<span class="fc" id="L108">                .code();</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        return responseCode == NO_CONTENT_RESPONSE_HTTP_CODE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

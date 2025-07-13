@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SessionManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.connection.auth</a> &gt; <span class="el_source">SessionManager.java</span></div><h1>SessionManager.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.connection.auth;
+
+import com.amilesend.client.connection.ResponseException;
+import com.amilesend.tmdb.client.api.AuthenticationApi;
+import com.amilesend.tmdb.client.model.auth.CreateSessionRequest;
+import com.amilesend.tmdb.client.model.auth.DeleteSessionRequest;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.amilesend.tmdb.client.connection.auth.RequestTokenGrantReceiver.browse;
+
+/** Creates and stores a user session in-memory. */
+<span class="fc" id="L40">@Slf4j</span>
+public class SessionManager {
+    private final AuthenticationApi authApi;
+    private final RequestTokenGrantReceiver.Config config;
+<span class="fc" id="L44">    @VisibleForTesting</span>
+    @Getter(AccessLevel.PACKAGE)
+    private final AtomicReference&lt;String&gt; sessionId = new AtomicReference&lt;&gt;();
+
+    @Builder
+    private SessionManager(
+<span class="fc" id="L50">            @NonNull final AuthenticationApi authApi,</span>
+<span class="fc" id="L51">            @NonNull final RequestTokenGrantReceiver.Config config,</span>
+<span class="fc" id="L52">            final String sessionId) {</span>
+<span class="fc" id="L53">        this.authApi = authApi;</span>
+<span class="fc" id="L54">        this.config = config;</span>
+<span class="fc" id="L55">        this.sessionId.set(sessionId);</span>
+<span class="fc" id="L56">    }</span>
+
+    /**
+     * Authenticates with TMDB to allow for user grant approvals to access account information.
+     *
+     * @return the session identifier
+     * @throws SessionException if an error occurred while creating the session
+     */
+    public String registerNewSession() throws SessionException {
+<span class="fc" id="L65">        final String requestToken = newRequestToken();</span>
+
+        try (final RequestTokenGrantReceiver receiver =
+<span class="fc" id="L68">                     RequestTokenGrantReceiver.builder()</span>
+<span class="fc" id="L69">                             .config(config)</span>
+<span class="fc" id="L70">                             .build()</span>
+<span class="fc" id="L71">                             .start()) {</span>
+<span class="fc" id="L72">            browse(toBrowseUrl(requestToken));</span>
+<span class="fc" id="L73">            final boolean status = receiver.waitForApprovalStatus();</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if (!status) {</span>
+<span class="fc" id="L75">                throw new SessionException(&quot;User denied the authentication request&quot;);</span>
+            }
+
+<span class="fc" id="L78">            sessionId.set(newSessionId(requestToken));</span>
+<span class="fc" id="L79">            return sessionId.get();</span>
+        }
+    }
+
+    /**
+     * Deletes the created session.
+     *
+     * @throws SessionException if an error occurred while deleting the session
+     */
+    public void deleteSession() throws SessionException {
+<span class="fc" id="L89">        final String sessionIdValue = sessionId.get();</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (StringUtils.isBlank(sessionIdValue)) {</span>
+<span class="fc" id="L91">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L95">            authApi.deleteSession(DeleteSessionRequest.builder().sessionId(sessionIdValue).build());</span>
+<span class="fc" id="L96">            sessionId.set(null);</span>
+<span class="fc" id="L97">        } catch (final ResponseException ex) {</span>
+<span class="fc" id="L98">            throw new SessionException(&quot;Error deleting session: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L99">        }</span>
+<span class="fc" id="L100">    }</span>
+
+    @VisibleForTesting
+    String newRequestToken() throws SessionException {
+<span class="fc" id="L104">        log.debug(&quot;Requesting new token...&quot;);</span>
+        try {
+<span class="fc" id="L106">            return authApi.createRequestToken().getRequestToken();</span>
+<span class="fc" id="L107">        } catch (final ResponseException ex) {</span>
+<span class="fc" id="L108">            throw new SessionException(&quot;Error creating new request token: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    @VisibleForTesting
+    String newSessionId(final String requestToken) throws SessionException {
+<span class="fc" id="L114">        log.debug(&quot;Request sessionId with RequestToken {}&quot;, requestToken);</span>
+        try {
+<span class="fc" id="L116">            return authApi.createSession(CreateSessionRequest</span>
+<span class="fc" id="L117">                    .builder()</span>
+<span class="fc" id="L118">                    .requestToken(requestToken).build())</span>
+<span class="fc" id="L119">                    .getSessionId();</span>
+<span class="fc" id="L120">        } catch (final ResponseException ex) {</span>
+<span class="fc" id="L121">            throw new SessionException(&quot;Error creating new session: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    private String toBrowseUrl(final String requestToken) {
+<span class="fc" id="L126">        Validate.notBlank(requestToken, &quot;requestToken must not be blank&quot;);</span>
+
+<span class="fc" id="L128">        return new StringBuilder(&quot;https://www.themoviedb.org/authenticate/&quot;)</span>
+<span class="fc" id="L129">                .append(URLEncoder.encode(requestToken, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L130">                .append(&quot;?redirect_to=&quot;)</span>
+<span class="fc" id="L131">                .append(config.getRedirectUrl())</span>
+<span class="fc" id="L132">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TvEpisodesApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">TvEpisodesApi.java</span></div><h1>TvEpisodesApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.tmdb.client.model.tv.episodes.AddRatingRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.AddRatingResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.DeleteRatingRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.DeleteRatingResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetAccountStatesRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetAccountStatesResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetChangesRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetChangesResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetCreditsRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetCreditsResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetEpisodeDetailsRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetEpisodeDetailsResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetExternalIdsRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetExternalIdsResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetImagesRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetImagesResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetTranslationsRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetTranslationsResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.GetVideosRequest;
+import com.amilesend.tmdb.client.model.tv.episodes.GetVideosResponse;
+import com.amilesend.tmdb.client.model.tv.episodes.type.EpisodeRequestBase;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
+/** TMDB TV Episodes API. */
+public class TvEpisodesApi extends ApiBase {
+    private static final String API_PATH = &quot;/tv/&quot;;
+    private static final String SEASON_API_PATH = &quot;/season/&quot;;
+    private static final String EPISODE_API_PATH = &quot;/episode/&quot;;
+
+
+    /**
+     * Creates a new {@code TvEpisodesApi} object.
+     *
+     * @param connection the connection
+     */
+    public TvEpisodesApi(final Connection connection) {
+<span class="fc" id="L58">        super(connection);</span>
+<span class="fc" id="L59">    }</span>
+
+    /**
+     * Gets the details for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetEpisodeDetailsRequest
+     * @see GetEpisodeDetailsResponse
+     */
+<span class="fc" id="L69">    public GetEpisodeDetailsResponse getEpisodeDetails(@NonNull final GetEpisodeDetailsRequest request) {</span>
+<span class="fc" id="L70">        return executeGet(getApiPath(request, StringUtils.EMPTY), request, GetEpisodeDetailsResponse.class);</span>
+    }
+
+    /**
+     * Gets the associated account states for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetAccountStatesRequest
+     * @see GetAccountStatesResponse
+     */
+<span class="fc" id="L81">    public GetAccountStatesResponse getAccountStates(@NonNull final GetAccountStatesRequest request) {</span>
+<span class="fc" id="L82">        return executeGet(getApiPath(request, &quot;/account_states&quot;), request, GetAccountStatesResponse.class);</span>
+    }
+
+    /**
+     * Gets the changes for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetChangesRequest
+     * @see GetChangesResponse
+     */
+<span class="fc" id="L93">    public GetChangesResponse getChanges(@NonNull final GetChangesRequest request) {</span>
+<span class="fc" id="L94">        final String apiPath = new StringBuilder(&quot;/tv/episode/&quot;)</span>
+<span class="fc" id="L95">                .append(request.getEpisodeId())</span>
+<span class="fc" id="L96">                .append(&quot;/changes&quot;)</span>
+<span class="fc" id="L97">                .toString();</span>
+<span class="fc" id="L98">        return executeGet(apiPath, request, GetChangesResponse.class);</span>
+    }
+
+    /**
+     * Gets the credits for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCreditsRequest
+     * @see GetCreditsResponse
+     */
+<span class="fc" id="L109">    public GetCreditsResponse getCredits(@NonNull final GetCreditsRequest request) {</span>
+<span class="fc" id="L110">        return executeGet(getApiPath(request, &quot;/credits&quot;), request, GetCreditsResponse.class);</span>
+    }
+
+    /**
+     * Gets the external identifiers for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetExternalIdsRequest
+     * @see GetExternalIdsResponse
+     */
+<span class="fc" id="L121">    public GetExternalIdsResponse getExternalIds(@NonNull final GetExternalIdsRequest request) {</span>
+<span class="fc" id="L122">        return executeGet(getApiPath(request, &quot;/external_ids&quot;), request, GetExternalIdsResponse.class);</span>
+    }
+
+    /**
+     * Gets the image stills associated with a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetImagesRequest
+     * @see GetImagesResponse
+     */
+<span class="fc" id="L133">    public GetImagesResponse getImages(@NonNull final GetImagesRequest request) {</span>
+<span class="fc" id="L134">        return executeGet(getApiPath(request, &quot;/images&quot;), request, GetImagesResponse.class);</span>
+    }
+
+    /**
+     * Gets the translation information for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetTranslationsRequest
+     * @see GetTranslationsResponse
+     */
+<span class="fc" id="L145">    public GetTranslationsResponse getTranslations(@NonNull final GetTranslationsRequest request) {</span>
+<span class="fc" id="L146">        return executeGet(getApiPath(request, &quot;/translations&quot;), request, GetTranslationsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of videos for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetVideosRequest
+     * @see GetVideosResponse
+     */
+<span class="fc" id="L157">    public GetVideosResponse getVideos(@NonNull final GetVideosRequest request) {</span>
+<span class="fc" id="L158">        return executeGet(getApiPath(request, &quot;/videos&quot;), request, GetVideosResponse.class);</span>
+    }
+
+    /**
+     * Adds a rating for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see AddRatingRequest
+     * @see AddRatingResponse
+     */
+<span class="fc" id="L169">    public AddRatingResponse addRating(@NonNull final AddRatingRequest request) {</span>
+<span class="fc" id="L170">        return executePost(getApiPath(request, &quot;/rating&quot;), request, AddRatingResponse.class);</span>
+    }
+
+    /**
+     * Deletes a rating for a specific TV episode.
+     *
+     * @param request the request
+     * @return the response
+     * @see DeleteRatingRequest
+     * @see DeleteRatingResponse
+     */
+<span class="fc" id="L181">    public DeleteRatingResponse deleteRating(@NonNull final DeleteRatingRequest request) {</span>
+<span class="fc" id="L182">        return executeDelete(getApiPath(request, &quot;/rating&quot;), request, DeleteRatingResponse.class);</span>
+    }
+
+    private static String getApiPath(final EpisodeRequestBase request, final String suffix) {
+<span class="fc" id="L186">        return new StringBuilder(API_PATH)</span>
+<span class="fc" id="L187">                .append(request.getSeriesId())</span>
+<span class="fc" id="L188">                .append(SEASON_API_PATH)</span>
+<span class="fc" id="L189">                .append(request.getSeasonNumber())</span>
+<span class="fc" id="L190">                .append(EPISODE_API_PATH)</span>
+<span class="fc" id="L191">                .append(request.getEpisodeNumber())</span>
+<span class="fc" id="L192">                .append(suffix)</span>
+<span class="fc" id="L193">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

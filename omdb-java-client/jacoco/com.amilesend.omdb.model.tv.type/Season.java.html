@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Season.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb.model.tv.type</a> &gt; <span class="el_source">Season.java</span></div><h1>Season.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb.model.tv.type;
+
+import com.google.gson.annotations.SerializedName;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+/** Describes a list of TV episodes for a TV series season. */
+@Builder
+@EqualsAndHashCode
+@ToString
+public class Season {
+    /** The TV series name. */
+    @Getter
+    private final String title;
+    /** The season number. */
+    private final String season;
+    /** The total number of seasons. */
+    @SerializedName(&quot;totalSeasons&quot;)
+    private final String totalSeasons;
+    /** The list of episodes for the season. */
+    private final List&lt;SeasonEpisode&gt; episodes;
+
+    /**
+     * Gets the season number.
+     *
+     * @return the season number
+     */
+    public Integer getSeason() {
+<span class="fc" id="L53">        return Optional.ofNullable(season)</span>
+<span class="fc" id="L54">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L55">                .map(Integer::parseInt)</span>
+<span class="fc" id="L56">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the total number of seasons.
+     *
+     * @return the total number of seasons
+     */
+    public Integer getTotalSeasons() {
+<span class="fc" id="L65">        return Optional.ofNullable(totalSeasons)</span>
+<span class="fc" id="L66">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L67">                .map(Integer::parseInt)</span>
+<span class="fc" id="L68">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the list of episodes for the season.
+     *
+     * @return the list of episodes
+     */
+    public List&lt;SeasonEpisode&gt; getEpisodes() {
+<span class="fc" id="L77">        return Collections.unmodifiableList(episodes);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

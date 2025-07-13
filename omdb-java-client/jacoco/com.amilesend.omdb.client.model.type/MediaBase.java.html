@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MediaBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb.client.model.type</a> &gt; <span class="el_source">MediaBase.java</span></div><h1>MediaBase.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb.client.model.type;
+
+import com.google.gson.annotations.SerializedName;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.StringUtils;
+
+import java.time.LocalDate;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static com.amilesend.omdb.client.model.type.TypeHelper.STRING_LIST_DELIMITER;
+import static com.amilesend.omdb.client.model.type.TypeHelper.parseCommonDelimitedList;
+
+/** Defines common attributes for media (i.e., movie, TV series). */
+@SuperBuilder
+@EqualsAndHashCode
+@ToString
+public abstract class MediaBase {
+    /** The movie title. */
+    @Getter
+    private final String title;
+    /** The year of release. */
+    @Getter
+    private final String year;
+    /** The associated rating. */
+    @Getter
+    private final String rated;
+    /** The date of release. */
+    @Getter
+    private final LocalDate released;
+    /** The runtime. */
+    @Getter
+    private final String runtime;
+    /** The comma-delimited list of genres. */
+    private final String genre;
+    /** The comma-delimited list of directors. */
+    private final String director;
+    /** The comma-delimited list of writers. */
+    private final String writer;
+    /** The comma-delimited list of actors. */
+    private final String actors;
+    /** The plot description. */
+    @Getter
+    private final String plot;
+    /** The comma-delimited list of languages. */
+    private final String language;
+    /** The country of origin. */
+    private final String country;
+    /** The description of received awards. */
+    @Getter
+    private final String awards;
+    /** The URL of the movie poster image. */
+    @Getter
+    private final String poster;
+    /**
+     * The list of ratings.
+     *
+     * @see Rating
+     */
+    private final List&lt;Rating&gt; ratings;
+    /** The metacritic score. */
+    @Getter
+    private final String metascore;
+    /** The IMDB rating. */
+    @SerializedName(&quot;imdbRating&quot;)
+    private final String imdbRating;
+    /** The number of votes associated with the IMDB rating. */
+    @SerializedName(&quot;imdbVotes&quot;)
+    private final String imdbVotes;
+    /** The IMDB identifier. */
+    @Getter
+    @SerializedName(&quot;imdbID&quot;)
+    private final String imdbId;
+
+    /**
+     * Gets the list of ratings.
+     *
+     * @return the list of ratings
+     * @see Rating
+     */
+    public List&lt;Rating&gt; getRatings() {
+<span class="fc" id="L103">        return Optional.ofNullable(ratings)</span>
+<span class="fc" id="L104">                .map(Collections::unmodifiableList)</span>
+<span class="fc" id="L105">                .orElseGet(() -&gt; Collections.emptyList());</span>
+    }
+
+    /**
+     * Gets the IMDB rating.
+     *
+     * @return the rating
+     */
+    public Double getImdbRating() {
+<span class="fc" id="L114">        return Optional.ofNullable(imdbRating)</span>
+<span class="fc" id="L115">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L116">                .map(Double::parseDouble)</span>
+<span class="fc" id="L117">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the IMDB votes associated with the rating.
+     *
+     * @return the number of votes
+     */
+    public Integer getImdbVotes() {
+<span class="fc" id="L126">        return Optional.ofNullable(imdbVotes)</span>
+<span class="fc" id="L127">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L128">                .map(v -&gt; v.replaceAll(STRING_LIST_DELIMITER, StringUtils.EMPTY))</span>
+<span class="fc" id="L129">                .map(Integer::parseInt)</span>
+<span class="fc" id="L130">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the list of genres.
+     *
+     * @return the list of genres
+     */
+    public List&lt;String&gt; getGenres() {
+<span class="fc" id="L139">        return parseCommonDelimitedList(genre);</span>
+    }
+
+    /**
+     * Gets the list of directors.
+     *
+     * @return the list of directors
+     */
+    public List&lt;String&gt; getDirectors() {
+<span class="fc" id="L148">        return parseCommonDelimitedList(director);</span>
+    }
+
+    /**
+     * Gets the list of credited writers.
+     *
+     * @return the list of writers
+     */
+    public List&lt;String&gt; getWriters() {
+<span class="fc" id="L157">        return parseCommonDelimitedList(writer);</span>
+    }
+
+    /**
+     * Gets the list credited actors.
+     *
+     * @return the list of actors
+     */
+    public List&lt;String&gt; getActors() {
+<span class="fc" id="L166">        return parseCommonDelimitedList(actors);</span>
+    }
+
+    /**
+     * Gets the list of languages.
+     *
+     * @return the list of languages
+     */
+    public List&lt;String&gt; getLanguages() {
+<span class="fc" id="L175">        return parseCommonDelimitedList(language);</span>
+    }
+
+    /**
+     * Gets the list of countries.
+     *
+     * @return the list of countries
+     */
+    public List&lt;String&gt; getCountries() {
+<span class="fc" id="L184">        return parseCommonDelimitedList(country);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

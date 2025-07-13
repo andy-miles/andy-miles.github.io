@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Site.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource</a> &gt; <span class="el_source">Site.java</span></div><h1>Site.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource;
+
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.BaseItem;
+import com.amilesend.onedrive.resource.item.type.ItemReference;
+import com.amilesend.onedrive.resource.item.type.SharePointIds;
+import com.amilesend.onedrive.resource.site.List;
+import com.amilesend.onedrive.resource.site.SiteCollection;
+import com.amilesend.onedrive.resource.site.type.ColumnDefinition;
+import com.amilesend.onedrive.resource.site.type.ContentType;
+import lombok.EqualsAndHashCode;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+import java.util.stream.Collectors;
+
+/**
+ * A wrapper around a {@link com.amilesend.onedrive.resource.site.Site} that represents a sharepoint site.
+ */
+@RequiredArgsConstructor
+@EqualsAndHashCode
+public class Site {
+    @NonNull
+    private final com.amilesend.onedrive.resource.site.Site delegate;
+
+    //////////////////////
+    // Accessors
+    //////////////////////
+
+    // BaseItem
+
+    /**
+     * Gets the drive identifier.
+     *
+     * @return the drive identifier
+     */
+    public String getId() {
+<span class="fc" id="L55">        return delegate.getId();</span>
+    }
+
+    /**
+     * Gets the identity set that indicates who created this drive.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getCreatedBy() {
+<span class="fc" id="L65">        return delegate.getCreatedBy();</span>
+    }
+
+    /**
+     * Gets the timestamp (formatted as a string) that indicates when this drive was created.
+     *
+     * @return the timestamp
+     */
+    public String getCreatedDateTime() {
+<span class="fc" id="L74">        return delegate.getCreatedDateTime();</span>
+    }
+
+    /**
+     * Gets the description associated with this drive.
+     *
+     * @return the description
+     */
+    public String getDescription() {
+<span class="fc" id="L83">        return delegate.getDescription();</span>
+    }
+
+    /**
+     * Gets the eTag associated with this drive.
+     *
+     * @return the etag
+     */
+    public String getETag() {
+<span class="fc" id="L92">        return delegate.getETag();</span>
+    }
+
+    /**
+     * Gets the identity set that indicates who made the last modification to this drive.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getLastModifiedBy() {
+<span class="fc" id="L102">        return delegate.getLastModifiedBy();</span>
+    }
+
+    /**
+     * Gets the timestamp (formatted as a string) that indicate when this drive was last modified.
+     *
+     * @return the timestamp
+     */
+    public String getLastModifiedDateTime() {
+<span class="fc" id="L111">        return delegate.getLastModifiedDateTime();</span>
+    }
+
+    /**
+     * Gets the name of this drive.
+     *
+     * @return the name
+     */
+    public String getName() {
+<span class="fc" id="L120">        return delegate.getName();</span>
+    }
+
+    /**
+     * Gets the parent reference of this drive.
+     *
+     * @return the parent reference
+     * @see ItemReference
+     */
+    public ItemReference getParentReference() {
+<span class="fc" id="L130">        return delegate.getParentReference();</span>
+    }
+
+    /**
+     * Gets the web URL formatted as a string for this drive.
+     *
+     * @return the web URL
+     */
+    public String getWebUrl() {
+<span class="fc" id="L139">        return delegate.getWebUrl();</span>
+    }
+
+    // Site
+
+    /**
+     * Gets the full title for the site.
+     *
+     * @return the display name
+     */
+    public String getDisplayName() {
+<span class="fc" id="L150">        return delegate.getDisplayName();</span>
+    }
+
+    /**
+     * Indicates if this site is the root site.
+     *
+     * @return {@code true} if this site is the root; else, {@code false}
+     */
+    public boolean isRoot() {
+<span class="fc bfc" id="L159" title="All 2 branches covered.">        return delegate.getRoot() != null;</span>
+    }
+
+    /**
+     * Gets the SharePoint resource identifiers for SharePoint and Business account items
+     *
+     * @return the SharePoint resource identifiers
+     * @see SharePointIds
+     */
+    public SharePointIds getSharepointIds() {
+<span class="fc" id="L169">        return delegate.getSharepointIds();</span>
+    }
+
+    /**
+     * Gets the details about the site's collection (only applicable to root sites).
+     *
+     * @return the site collection
+     * @see SiteCollection
+     */
+    public SiteCollection getSiteCollection() {
+<span class="fc" id="L179">        return delegate.getSiteCollection();</span>
+    }
+
+    /**
+     * Gets the content types for the site.
+     *
+     * @return the list of content types
+     */
+    public java.util.List&lt;ContentType&gt; getContentTypes() {
+<span class="fc" id="L188">        return delegate.getContentTypes();</span>
+    }
+
+    /**
+     * Gets the column definitions that are reusable across lists under this site.
+     *
+     * @return the list of column definitions
+     * @see ColumnDefinition
+     */
+    public java.util.List&lt;ColumnDefinition&gt; getColumns() {
+<span class="fc" id="L198">        return delegate.getColumns();</span>
+    }
+
+    /**
+     * Gets the items contained within this site. Note: Cannot be enumerated.
+     *
+     * @return the list of items
+     */
+    public java.util.List&lt;BaseItem&gt; getItems() {
+<span class="fc" id="L207">        return delegate.getItems();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L212">        return new StringBuilder(&quot;Site(name=&quot;)</span>
+<span class="fc" id="L213">                .append(getName())</span>
+<span class="fc" id="L214">                .append(&quot;, id=&quot;)</span>
+<span class="fc" id="L215">                .append(getId())</span>
+<span class="fc" id="L216">                .append(&quot;)&quot;)</span>
+<span class="fc" id="L217">                .toString();</span>
+    }
+
+    //////////////////////
+    // Operations
+    //////////////////////
+
+    /**
+     * Gets the default document library for this site.
+     *
+     * @return the drive that represents the document library
+     * @see Drive
+     */
+    public Drive getDefaultDocumentLibrary() {
+<span class="fc" id="L231">        return new Drive(delegate.getDefaultDocumentLibrary());</span>
+    }
+
+    /**
+     * Gets all available document libraries for this site.
+     *
+     * @return the list of drive sthat represent the document libraries
+     * @see Drive
+     */
+    public java.util.List&lt;Drive&gt; getDocumentLibraries() {
+<span class="fc" id="L241">        return delegate.getDocumentLibraries()</span>
+<span class="fc" id="L242">                .stream()</span>
+<span class="fc" id="L243">                .map(d -&gt; new Drive(d))</span>
+<span class="fc" id="L244">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets all lists under the site.
+     *
+     * @return the list of lists
+     * @see List
+     */
+    public java.util.List&lt;List&gt; getLists() {
+<span class="fc" id="L254">        return delegate.getLists();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

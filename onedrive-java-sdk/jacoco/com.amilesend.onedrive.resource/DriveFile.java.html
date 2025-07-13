@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DriveFile.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource</a> &gt; <span class="el_source">DriveFile.java</span></div><h1>DriveFile.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource;
+
+import com.amilesend.client.connection.file.LogProgressCallback;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.type.Audio;
+import com.amilesend.onedrive.resource.item.type.GeoCoordinates;
+import com.amilesend.onedrive.resource.item.type.Image;
+import com.amilesend.onedrive.resource.item.type.Photo;
+import com.amilesend.onedrive.resource.item.type.Preview;
+import com.amilesend.onedrive.resource.item.type.Video;
+import com.amilesend.onedrive.resource.request.CreateSharingLinkRequest;
+import com.amilesend.onedrive.resource.request.PreviewRequest;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+
+import static com.amilesend.client.connection.file.LogProgressCallback.formatPrefix;
+
+/** A wrapper around a {@link DriveItem} that represents a file. */
+public class DriveFile extends DriveItemType {
+
+    /**
+     * Creates a new {@code DriveFile} that wraps the given {@code getDelegate()} {@link DriveItem}.
+     *
+     * @param delegate the drive item to wrap
+     */
+    public DriveFile(final DriveItem delegate) {
+<span class="fc" id="L49">        super(delegate);</span>
+<span class="fc" id="L50">    }</span>
+
+    //////////////////////
+    // Accessors
+    //////////////////////
+
+    /**
+     * Describes if this is an audio file.
+     *
+     * @return {@code true} if this file is an audio file; else, {@code false}
+     */
+    public boolean isAudio() {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        return getAudioAttributes() != null;</span>
+    }
+
+    /**
+     * Gets the audio file attributes. Can be {@code null}.
+     *
+     * @return the audio file attributes
+     * @see Audio
+     */
+    public Audio getAudioAttributes() {
+<span class="fc" id="L72">        return getDelegate().getAudio();</span>
+    }
+
+    /**
+     * Describes if this is an image file.
+     *
+     * @return {@code true} if this file is an image file; else, {@code false}
+     */
+    public boolean isImage() {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        return getImageAttributes() != null;</span>
+    }
+
+    /**
+     * Gets the image file attributes. Can be {@code null}.
+     *
+     * @return the image file attributes
+     * @see Image
+     */
+    public Image getImageAttributes() {
+<span class="fc" id="L91">        return getDelegate().getImage();</span>
+    }
+
+    /**
+     * Determines if there is geolocation attributes for this file.
+     *
+     * @return {@code true} if this file has location attributes; else, {@code false}
+     */
+    public boolean isLocationAvailable() {
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        return getLocationAttributes() != null;</span>
+    }
+
+    /**
+     * Gets the location attributes (e.g., photo taken from a cell phone). Can be {@code null}.
+     *
+     * @return the location file attributes
+     * @see GeoCoordinates
+     */
+    public GeoCoordinates getLocationAttributes() {
+<span class="fc" id="L110">        return getDelegate().getLocation();</span>
+    }
+
+    /**
+     * Describes if this has photo attributes. Can be {@code null}.
+     *
+     * @return {@code true} if this file contains photo attributes; else, {@code false}
+     */
+    public boolean isPhoto() {
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        return getPhotoAttributes() != null;</span>
+    }
+
+    /**
+     * Gets the photo attributes (e.g., photo taken from a cell phone). Can be {@code null}.
+     *
+     * @return the photo attributes
+     * @see Photo
+     */
+    public Photo getPhotoAttributes() {
+<span class="fc" id="L129">        return getDelegate().getPhoto();</span>
+    }
+
+    /**
+     * Describes if this is a video file.
+     *
+     * @return {@code true} if this file is a video file; else, {@code false}
+     */
+    public boolean isVideo() {
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        return getVideoAttributes() != null;</span>
+    }
+
+    /**
+     * Gets the vidoe file attributes. Can be {@code null}.
+     *
+     * @return the video file attributes
+     * @see Video
+     */
+    public Video getVideoAttributes() {
+<span class="fc" id="L148">        return getDelegate().getVideo();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L153">        return new StringBuilder(&quot;DriveFile(name=&quot;)</span>
+<span class="fc" id="L154">                .append(getName())</span>
+<span class="fc" id="L155">                .append(&quot;, id=&quot;)</span>
+<span class="fc" id="L156">                .append(getId())</span>
+<span class="fc" id="L157">                .append(&quot;, isDeleted=&quot;)</span>
+<span class="fc" id="L158">                .append(isDeleted())</span>
+<span class="fc" id="L159">                .append(&quot;, isRemote=&quot;)</span>
+<span class="fc" id="L160">                .append(isRemote())</span>
+<span class="fc" id="L161">                .append(&quot;, isAudio=&quot;)</span>
+<span class="fc" id="L162">                .append(isAudio())</span>
+<span class="fc" id="L163">                .append(&quot;, isImage=&quot;)</span>
+<span class="fc" id="L164">                .append(isImage())</span>
+<span class="fc" id="L165">                .append(&quot;, isVideo=&quot;)</span>
+<span class="fc" id="L166">                .append(isVideo())</span>
+<span class="fc" id="L167">                .append(&quot;)&quot;)</span>
+<span class="fc" id="L168">                .toString();</span>
+    }
+
+    //////////////////////
+    // Download
+    //////////////////////
+
+    /**
+     * Downloads this file to the given {@code folderPath}.
+     *
+     * @param folderPath the folder to download the file to
+     */
+    public void download(final Path folderPath) {
+<span class="fc" id="L181">        getDelegate().download(</span>
+                folderPath,
+<span class="fc" id="L183">                LogProgressCallback.builder()</span>
+<span class="fc" id="L184">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
+<span class="fc" id="L185">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="fc" id="L186">                        .build());</span>
+<span class="fc" id="L187">    }</span>
+
+    /**
+     * Downloads this file to the given {@code folderPath} and reports transfer progress to the
+     * specified {@link TransferProgressCallback}.
+     *
+     * @param folderPath the folder to download the file to
+     * @param callback the callback be notified of transfer progress
+     * @see TransferProgressCallback
+     */
+    public void download(final Path folderPath, final TransferProgressCallback callback) {
+<span class="fc" id="L198">        getDelegate().download(folderPath, callback);</span>
+<span class="fc" id="L199">    }</span>
+
+    /**
+     * Downloads this file asynchronously to the given {@code folderPath}. Consumers can block on transfer completion
+     * by invoking {@link DriveFileDownloadExecution#get()} ()}.
+     *
+     * @param folderPath the folder to download the file to
+     * @return the asynchronous execution that contains the number of bytes downloaded
+     * @see DriveFileDownloadExecution
+     */
+    public DriveFileDownloadExecution downloadAsync(final Path folderPath) {
+<span class="fc" id="L210">        return downloadAsync(</span>
+                folderPath,
+<span class="fc" id="L212">                LogProgressCallback.builder()</span>
+<span class="fc" id="L213">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
+<span class="fc" id="L214">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="fc" id="L215">                        .build());</span>
+    }
+
+    /**
+     * Downloads this file asynchronously to the given {@code folderPath} and reports transfer progress to the specified
+     * {@link TransferProgressCallback}. Consumers can block on transfer completion by invoking
+     * {@link DriveFileDownloadExecution#get()}.
+     *
+     * @param folderPath the folder to download the file to
+     * @param callback the callback be notified of transfer progress
+     * @return the asynchronous execution that contains the number of bytes downloaded
+     * @see TransferProgressCallback
+     * @see DriveFileDownloadExecution
+     */
+    public DriveFileDownloadExecution downloadAsync(
+            final Path folderPath,
+            final TransferProgressCallback callback) {
+<span class="fc" id="L232">        return new DriveFileDownloadExecution(getDelegate().downloadAsync(folderPath, callback));</span>
+    }
+
+    //////////////////////
+    // Upload
+    //////////////////////
+
+    /**
+     * Uploads and replaces this drive file's contents with the given {@code file}.
+     *
+     * @param file the updated file contents
+     * @return a new drive file that represents this updated file
+     * @throws IOException if unable to read the file.
+     * @see DriveFile
+     * @deprecated use {@link #upload(Path)} instead
+     */
+    @Deprecated
+    public DriveFile upload(final File file) throws IOException {
+<span class="nc" id="L250">        return upload(file.toPath());</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents with the given {@code file}.
+     *
+     * @param filePath the updated file contents
+     * @return a new drive file that represents this updated file
+     * @throws IOException if unable to read the file.
+     * @see DriveFile
+     */
+    public DriveFile upload(final Path filePath) throws IOException {
+<span class="fc" id="L262">        return upload(</span>
+                filePath,
+<span class="fc" id="L264">                LogProgressCallback.builder()</span>
+<span class="fc" id="L265">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
+<span class="fc" id="L266">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L267">                        .build());</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents with the given {@code file} and reports transfer
+     * progress to the specified {@link TransferProgressCallback}.
+     *
+     * @param file the updated file contents
+     * @param callback the callback be notified of transfer progress
+     * @return a new drive file that represents this updated file
+     * @throws IOException if unable to read the file.
+     * @see DriveFile
+     * @deprecated use {@link #upload(Path, TransferProgressCallback)} instead
+     */
+    @Deprecated
+    public DriveFile upload(final File file, final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L283">        return upload(file.toPath(), callback);</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents with the given {@code file} and reports transfer
+     * progress to the specified {@link TransferProgressCallback}.
+     *
+     * @param filePath the updated file contents
+     * @param callback the callback be notified of transfer progress
+     * @return a new drive file that represents this updated file
+     * @throws IOException if unable to read the file.
+     * @see DriveFile
+     */
+    public DriveFile upload(final Path filePath, final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L297">        return new DriveFile(getDelegate().upload(filePath, callback));</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents asynchronously with the given {@code file}.
+     * Consumers can block on transfer completion by invoking {@link DriveFileUploadExecution#get()}.
+     *
+     * @param file the updated file contents
+     * @return a new drive file that represents this updated file
+     * @throws IOException if unable to read the file.
+     * @see DriveFileUploadExecution
+     * @deprecated use {@link #uploadAsync(Path)} instead
+     */
+    @Deprecated
+    public DriveFileUploadExecution uploadAsync(final File file) throws IOException {
+<span class="nc" id="L312">        return uploadAsync(</span>
+                file,
+<span class="nc" id="L314">                LogProgressCallback.builder()</span>
+<span class="nc" id="L315">                        .prefix(formatPrefix(file.getName(), &quot;OneDrive&quot;))</span>
+<span class="nc" id="L316">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="nc" id="L317">                        .build());</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents asynchronously with the given {@code file}.
+     * Consumers can block on transfer completion by invoking {@link DriveFileUploadExecution#get()}.
+     *
+     * @param filePath the updated file contents
+     * @return a new drive file that represents this updated file
+     * @throws IOException if unable to read the file.
+     * @see DriveFileUploadExecution
+     */
+    public DriveFileUploadExecution uploadAsync(final Path filePath) throws IOException {
+<span class="fc" id="L330">        return uploadAsync(</span>
+                filePath,
+<span class="fc" id="L332">                LogProgressCallback.builder()</span>
+<span class="fc" id="L333">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
+<span class="fc" id="L334">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L335">                        .build());</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents asynchronously with the given {@code file} and reports transfer
+     * progress to the specified {@link TransferProgressCallback}.
+     *
+     * @param file the updated file contents
+     * @param callback the callback be notified of transfer progress
+     * @return the async execution used to obtain the drive file once it has completed
+     * @throws IOException if unable to read the file.
+     * @see TransferProgressCallback
+     * @deprecated use {@link #uploadAsync(Path, TransferProgressCallback)} instead
+     */
+    @Deprecated
+    public DriveFileUploadExecution uploadAsync(
+            final File file,
+            final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L353">        return uploadAsync(file.toPath(), callback);</span>
+    }
+
+    /**
+     * Uploads and replaces this drive file's contents asynchronously with the given {@code file} and reports transfer
+     * progress to the specified {@link TransferProgressCallback}.
+     *
+     * @param filePath the updated file contents
+     * @param callback the callback be notified of transfer progress
+     * @return the async execution used to obtain the drive file once it has completed
+     * @throws IOException if unable to read the file.
+     * @see TransferProgressCallback
+     */
+    public DriveFileUploadExecution uploadAsync(
+            final Path filePath,
+            final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L369">        return new DriveFileUploadExecution(getDelegate().uploadAsync(filePath, callback));</span>
+    }
+
+    //////////////////////
+    // Operations
+    //////////////////////
+
+    /**
+     * Updates the attributes for this file.
+     *
+     * @return the updated drive file
+     */
+    public DriveFile update() {
+<span class="fc" id="L382">        return new DriveFile(getDelegate().update());</span>
+    }
+
+    /**
+     * Gets the embeddable file preview URLs for inclusion in a web-based UI. Note: For long-lived embeddable links,
+     * use {@link #createSharingLink(CreateSharingLinkRequest)} instead.
+     *
+     * @param request the preview item request
+     * @return the preview URLs
+     */
+    public Preview preview(final PreviewRequest request) {
+<span class="fc" id="L393">        return getDelegate().previewItem(request);</span>
+    }
+
+    /**
+     * Moves this file to the specified {@link DriveFolder}.
+     *
+     * @param destinationFolder the destination drive folder
+     * @return the updated drive file that represents this moved file
+     */
+    public DriveFile move(final DriveFolder destinationFolder) {
+<span class="fc" id="L403">        return move(destinationFolder, StringUtils.EMPTY);</span>
+    }
+
+    /**
+     * Moves this file to the specified {@link DriveFolder} along with the new file name.
+     *
+     * @param destinationFolder the destination drive folder
+     * @param newName the new name of the file
+     * @return the updated drive file that represents this moved file
+     */
+<span class="fc bfc" id="L413" title="All 2 branches covered.">    public DriveFile move(@NonNull final DriveFolder destinationFolder, final String newName) {</span>
+<span class="fc" id="L414">        return move(destinationFolder.getId(), newName);</span>
+    }
+
+    /**
+     * Moves this file to the specified {@code newParentId} (i.e., represents a new DriveFolder's ID)
+     * along with the new file name.
+     *
+     * @param destinationParentId the new parent destination ID
+     * @param newName the new name of the file
+     * @return the updated drive file that represents this moved file.
+     */
+    public DriveFile move(final String destinationParentId, final String newName) {
+<span class="fc" id="L426">        return new DriveFile(getDelegate().move(destinationParentId, newName));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

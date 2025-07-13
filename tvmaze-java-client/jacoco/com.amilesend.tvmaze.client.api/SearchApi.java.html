@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.api</a> &gt; <span class="el_source">SearchApi.java</span></div><h1>SearchApi.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.parse.parser.BasicParser;
+import com.amilesend.client.parse.parser.ListParser;
+import com.amilesend.tvmaze.client.model.Person;
+import com.amilesend.tvmaze.client.model.Show;
+import com.amilesend.tvmaze.client.model.type.PersonResult;
+import com.amilesend.tvmaze.client.model.type.ShowResult;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.HttpUrl;
+import org.apache.commons.lang3.Validate;
+
+import java.util.List;
+
+
+/**
+ * TVMaze API to search for show information.
+ * &lt;br/&gt;
+ * For more information, please refer to: &lt;a href=&quot;https://www.tvmaze.com/api#search&quot;&gt;https://www.tvmaze.com/api#search
+ * &lt;/a&gt;
+ */
+<span class="fc" id="L43">@Slf4j</span>
+public class SearchApi extends ApiBase {
+    private static final String SEARCH_SHOWS_API_PATH = &quot;/search/shows&quot;;
+    private static final String SINGLE_SEARCH_SHOWS_API_PATH = &quot;/singlesearch/shows&quot;;
+    private static final String LOOKUP_SHOWS_API_PATH = &quot;/lookup/shows&quot;;
+    private static final String SEARCH_PEOPLE_API_PATH = &quot;/search/people&quot;;
+    private static final int MAX_QUERY_LENGTH = 256;
+
+    /**
+     * Creates a new {@code SearchApi} object.
+     *
+     * @param connection the connection
+     */
+    public SearchApi(final Connection connection) {
+<span class="fc" id="L57">        super(connection);</span>
+<span class="fc" id="L58">    }</span>
+
+    ////////////////
+    // searchShows
+    ////////////////
+
+    /**
+     * Search for TV shows for the given query.
+     *
+     * @param query the search query
+     * @return the list of shows for the associated query
+     * @see ShowResult
+     */
+    public List&lt;ShowResult&gt; searchShows(final String query) {
+<span class="fc" id="L72">        final HttpUrl url = validateAndFormatSearchUrl(SEARCH_SHOWS_API_PATH, query);</span>
+<span class="fc" id="L73">        return connection.execute(</span>
+<span class="fc" id="L74">                connection.newRequestBuilder()</span>
+<span class="fc" id="L75">                        .url(url)</span>
+<span class="fc" id="L76">                        .build(),</span>
+                new ListParser&lt;&gt;(ShowResult.class));
+    }
+
+    /////////////////////
+    // singleSearchShow
+    /////////////////////
+
+    /**
+     * Search for and return a single show for the given query.
+     *
+     * @param query the search query
+     * @param includeEmbeddedTypes the optional embedded types to include in the show
+     * @return the tv show
+     * @see Show
+     */
+    public Show singleSearchShow(final String query, final Show.EmbeddedType... includeEmbeddedTypes) {
+<span class="fc" id="L93">        final HttpUrl url = validateAndFormatSearchUrl(SINGLE_SEARCH_SHOWS_API_PATH, query, includeEmbeddedTypes);</span>
+<span class="fc" id="L94">        return connection.execute(</span>
+<span class="fc" id="L95">                connection.newRequestBuilder()</span>
+<span class="fc" id="L96">                        .url(url)</span>
+<span class="fc" id="L97">                        .build(),</span>
+                new BasicParser&lt;&gt;(Show.class));
+    }
+
+    ///////////////
+    // lookupShow
+    ///////////////
+
+    /**
+     * Lookup a show based on an alternative external identifier.
+     *
+     * @param type the id type identifier
+     * @param externalId the external identifier
+     * @return the tv show
+     * @see ShowLookupIdType
+     * @see Show
+     */
+    public Show lookupShow(final ShowLookupIdType type, final String externalId) {
+<span class="fc" id="L115">        final HttpUrl url = validateAndFormatLookupShowUrl(type, externalId);</span>
+<span class="fc" id="L116">        return connection.execute(</span>
+<span class="fc" id="L117">                connection.newRequestBuilder()</span>
+<span class="fc" id="L118">                        .url(url)</span>
+<span class="fc" id="L119">                        .build(),</span>
+                new BasicParser&lt;&gt;(Show.class));
+    }
+
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">    private HttpUrl validateAndFormatLookupShowUrl(@NonNull final ShowLookupIdType type, final String externalId) {</span>
+<span class="fc" id="L124">        final String formattedId = validateId(externalId);</span>
+<span class="fc" id="L125">        return HttpUrl.parse(</span>
+<span class="fc" id="L126">                        new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L127">                                .append(LOOKUP_SHOWS_API_PATH)</span>
+<span class="fc" id="L128">                                .toString())</span>
+<span class="fc" id="L129">                .newBuilder()</span>
+<span class="fc" id="L130">                .addQueryParameter(type.getQueryParameter(), formattedId)</span>
+<span class="fc" id="L131">                .build();</span>
+    }
+
+    /////////////////
+    // searchPeople
+    /////////////////
+
+    /**
+     * Search for people (e.g., actors, directors, etc.).
+     *
+     * @param query the search query
+     * @return the list of persons associated with the query
+     * @see Person
+     * @see PersonResult
+     */
+    public List&lt;PersonResult&gt; searchPeople(final String query) {
+<span class="fc" id="L147">        final HttpUrl url = validateAndFormatSearchUrl(SEARCH_PEOPLE_API_PATH, query);</span>
+<span class="fc" id="L148">        return connection.execute(</span>
+<span class="fc" id="L149">                connection.newRequestBuilder()</span>
+<span class="fc" id="L150">                        .url(url)</span>
+<span class="fc" id="L151">                        .build(),</span>
+                new ListParser&lt;&gt;(PersonResult.class));
+    }
+
+    private HttpUrl validateAndFormatSearchUrl(
+            final String apiPath,
+            final String query,
+            final Show.EmbeddedType... includeEmbeddedTypes) {
+<span class="fc" id="L159">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
+
+<span class="fc" id="L161">        final String formattedQuery = validateQuery(query);</span>
+<span class="fc" id="L162">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(</span>
+<span class="fc" id="L163">                        new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L164">                                .append(apiPath)</span>
+<span class="fc" id="L165">                                .toString())</span>
+<span class="fc" id="L166">                .newBuilder()</span>
+<span class="fc" id="L167">                .addQueryParameter(&quot;q&quot;, formattedQuery);</span>
+<span class="fc" id="L168">        final HttpUrl url = formatEmbeddedTypes(urlBuilder, includeEmbeddedTypes).build();</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L170">            log.debug(&quot;Search URL: {}&quot;, url);</span>
+        }
+<span class="fc" id="L172">        return url;</span>
+    }
+
+    protected static String validateQuery(final String query) {
+<span class="fc" id="L176">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        Validate.isTrue(query.length() &lt;= MAX_QUERY_LENGTH,</span>
+                &quot;query length must be &lt;= &quot; + MAX_QUERY_LENGTH);
+
+<span class="fc" id="L180">        return query;</span>
+    }
+
+    /** The type of alternative identifier type. */
+<span class="fc" id="L184">    @RequiredArgsConstructor</span>
+    public enum ShowLookupIdType {
+<span class="fc" id="L186">        IMDB(&quot;imdb&quot;),</span>
+<span class="fc" id="L187">        TV_RAGE(&quot;tvrage&quot;),</span>
+<span class="fc" id="L188">        TVDB(&quot;thetvdb&quot;);</span>
+
+        @Getter
+        private final String queryParameter;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

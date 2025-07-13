@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SingleUserFileBasedAuthInfoStore.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth.store</a> &gt; <span class="el_source">SingleUserFileBasedAuthInfoStore.java</span></div><h1>SingleUserFileBasedAuthInfoStore.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth.store;
+
+import com.amilesend.onedrive.connection.auth.OneDriveAuthInfo;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * A simple {@link AuthInfoStore} implementation that stores and retrieves user authentication information
+ * to the filesystem. This assumes a single user associated with the specified file path, which means
+ * that any provided keyed identifiers are ignored.
+ * @see OneDriveAuthInfo
+ * @see AuthInfoStore
+ */
+@RequiredArgsConstructor
+public class SingleUserFileBasedAuthInfoStore implements AuthInfoStore {
+    /** The path to save and read from. */
+    @NonNull
+    private final Path stateFilePath;
+
+    /**
+     * Saves the given {@code authInfo} to the file system.
+     *
+     * @param id is ignored for this implementation
+     * @param authInfo the authentication information
+     * @throws AuthInfoStoreException if an error occurred while saving the authentication info to the file system
+     */
+    @Override
+<span class="fc bfc" id="L51" title="All 2 branches covered.">    public void store(final String id, @NonNull final OneDriveAuthInfo authInfo) throws AuthInfoStoreException {</span>
+        try {
+<span class="fc" id="L53">            Files.write(stateFilePath, authInfo.toJson().getBytes(StandardCharsets.UTF_8));</span>
+<span class="fc" id="L54">        } catch (final IOException ex) {</span>
+<span class="fc" id="L55">            throw new AuthInfoStoreException(&quot;Unable to store AuthInfo: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L56">        }</span>
+<span class="fc" id="L57">    }</span>
+
+    /**
+     * Retrieves the {@link OneDriveAuthInfo} from the file system.
+     *
+     * @param id is ignored for this implementation
+     * @return the authentication information, or {@code null}
+     * @throws AuthInfoStoreException if an error occurred while retrieving the authentication info from the file system
+     */
+    @Override
+    public OneDriveAuthInfo retrieve(final String id) throws AuthInfoStoreException {
+<span class="fc bfc" id="L68" title="All 4 branches covered.">        if (!Files.exists(stateFilePath) || !Files.isReadable(stateFilePath)) {</span>
+<span class="fc" id="L69">            return null;</span>
+        }
+
+        final String jsonState;
+        try {
+<span class="fc" id="L74">            jsonState = Files.readString(stateFilePath);</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (StringUtils.isBlank(jsonState)) {</span>
+<span class="fc" id="L76">                return null;</span>
+            }
+
+<span class="fc" id="L79">            return OneDriveAuthInfo.fromJson(jsonState);</span>
+<span class="fc" id="L80">        } catch (final IOException ex) {</span>
+<span class="fc" id="L81">            throw new AuthInfoStoreException(&quot;Unable to retrieve AuthInfo: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

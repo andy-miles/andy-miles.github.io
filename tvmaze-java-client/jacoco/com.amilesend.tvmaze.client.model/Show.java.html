@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Show.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.model</a> &gt; <span class="el_source">Show.java</span></div><h1>Show.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.model;
+
+import com.amilesend.tvmaze.client.model.type.CastMember;
+import com.amilesend.tvmaze.client.model.type.Country;
+import com.amilesend.tvmaze.client.model.type.ImageUrl;
+import com.amilesend.tvmaze.client.model.type.Network;
+import com.amilesend.tvmaze.client.model.type.Rating;
+import com.amilesend.tvmaze.client.model.type.ResourceLink;
+import com.amilesend.tvmaze.client.model.type.Schedule;
+import com.amilesend.tvmaze.client.model.type.WebChannel;
+import com.google.gson.annotations.SerializedName;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/** Describes a television show. */
+@SuperBuilder
+@Getter
+@ToString(callSuper = true)
+<span class="fc" id="L51">@Slf4j</span>
+public class Show extends Resource&lt;Show, ResourceLink&gt; {
+    /** The URL for the show. */
+    private final String url;
+    /** The name of the show. */
+    private final String name;
+    /** The type of show. */
+    private final String type;
+    /** The primary language of the show. */
+    private final String language;
+    /** The list of associated genres for the show. */
+    private final List&lt;String&gt; genres;
+    /** The airing state. */
+    private final String status;
+    /** The runtime in minutes. */
+    private final int runtime;
+    /** The average runtime in minutes. */
+    private final int averageRuntime;
+    /** The date the series was initially aired. */
+    private final LocalDate premiered;
+    /** The date when the series was ended, if applicable. */
+    private final LocalDate ended;
+    /** The URL for the show's official site. */
+    private final String officialSite;
+    /** The airing schedule. */
+    private final Schedule schedule;
+    /** The show rating. */
+    private final Rating rating;
+    /** The weight associated with the shows search relevance and/or popularity. */
+    private final int weight;
+    /** The associated network that air/distributes the show. */
+    private final Network network;
+    /** The streaming channel that the show is aired on. */
+    private final WebChannel webChannel;
+    /** The associated country. */
+    private final Country dvdCountry;
+    /**
+     * A map of source providers and associated identifiers. The key is the external source id (e.g., tvrage,
+     * thetvdb, imdb, etc.), and the value is the identifier.
+     */
+    private final Map&lt;String, Object&gt; externals;
+    /** The images associated with the show. */
+    private final ImageUrl image;
+    /** A brief show summary. */
+    private final String summary;
+    /** Indicates when this show was last updated. */
+    private final long updated;
+    /** Any embedded resources associated with the show. Note: can be {@code null}. */
+    @SerializedName(&quot;_embedded&quot;)
+    private final EmbeddedResource embeddedResource;
+
+    /**
+     * Gets the embedded episodes associated with the show. Note: Can be {@code null}.
+     *
+     * @return the list of episodes
+     * @see Episode
+     */
+    public List&lt;Episode&gt; getEpisodes() {
+<span class="fc" id="L109">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L110">                .map(EmbeddedResource::getEpisodes)</span>
+<span class="fc" id="L111">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the embedded lit of cast members. Note: Can be {@code null}.
+     *
+     * @return the list of cast members
+     * @see CastMember
+     */
+    public List&lt;CastMember&gt; getCast() {
+<span class="fc" id="L121">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L122">                .map(EmbeddedResource::getCast)</span>
+<span class="fc" id="L123">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the next airing episode. Note: Can be {@code null}.
+     *
+     * @return the next episode
+     * @see Episode
+     */
+    public Episode getNextEpisode() {
+<span class="fc" id="L133">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L134">                .map(EmbeddedResource::getNextEpisode)</span>
+<span class="fc" id="L135">                .orElse(null);</span>
+    }
+
+    /**
+     * The previous aired episode. Note: Can be {@code null}.
+     *
+     * @return the previous episode
+     * @see Episode
+     */
+    public Episode getPreviousEpisode() {
+<span class="fc" id="L145">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L146">                .map(EmbeddedResource::getPreviousEpisode)</span>
+<span class="fc" id="L147">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the map of external show identifiers. he key is the external source id (e.g., tvrage,
+     * thetvdb, imdb, etc.), and the value is the identifier.
+     *
+     * @return the map of external identifiers
+     */
+    public Map&lt;String, String&gt; getExternals() {
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (MapUtils.isEmpty(externals)) {</span>
+<span class="nc" id="L158">            return null;</span>
+        }
+
+<span class="fc" id="L161">        return externals.entrySet().stream()</span>
+<span class="fc" id="L162">                .filter(e -&gt; Objects.nonNull(e.getValue()))</span>
+<span class="fc" id="L163">                .collect(Collectors.toMap(e -&gt; e.getKey(), e -&gt; convertExternalIdToString(e.getValue())));</span>
+    }
+
+    private static String convertExternalIdToString(final Object val) {
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (String.class.isInstance(val)) {</span>
+<span class="fc" id="L168">            return (String) val;</span>
+        }
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (Double.class.isInstance(val)) {</span>
+<span class="fc" id="L172">            final Double doubleVal = (Double) val;</span>
+<span class="fc" id="L173">            final int castedVal = doubleVal.intValue();</span>
+<span class="fc" id="L174">            return String.valueOf(castedVal);</span>
+        }
+
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (Integer.class.isInstance(val)) {</span>
+<span class="fc" id="L178">            final Integer integerVal = (Integer) val;</span>
+<span class="fc" id="L179">            return String.valueOf(integerVal);</span>
+        }
+
+<span class="nc" id="L182">        log.warn(&quot;Unsupported external Id [{}] of type [{}]&quot;, val, val.getClass());</span>
+<span class="nc" id="L183">        return null;</span>
+    }
+
+    /** Describes the supported resource links for a {@link Show}. */
+    @UtilityClass
+    public static class ResourceLinkType {
+        /** The link to the last aired episode for the show. */
+        public static final String PREVIOUS_EPISODE = &quot;previousepisode&quot;;
+    }
+
+    /** Encapsulates the possible embedded resources for the {@link Show}. */
+    @Builder
+    @Data
+    public static class EmbeddedResource {
+        private final List&lt;CastMember&gt; cast;
+        private final List&lt;Episode&gt; episodes;
+        @SerializedName(&quot;previousepisode&quot;)
+        private final Episode previousEpisode;
+        @SerializedName(&quot;nextepisode&quot;)
+        private final Episode nextEpisode;
+    }
+
+    /** Describes the type of additional embedded information to include in the {@link Show}. */
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    @Data
+    public static class EmbeddedType implements EmbeddedQueryParameter {
+        /** Include a list of cast members. */
+<span class="fc" id="L210">        public static final EmbeddedType CAST = new EmbeddedType(&quot;cast&quot;);</span>
+        /** Include a list of episodes. */
+<span class="fc" id="L212">        public static final EmbeddedType EPISODES = new EmbeddedType(&quot;episodes&quot;);</span>
+        /** Include the next airing episode, if available. */
+<span class="fc" id="L214">        public static final EmbeddedType NEXT_EPISODE = new EmbeddedType(&quot;nextepisode&quot;);</span>
+        /** Include the previous airing episode. */
+<span class="fc" id="L216">        public static final EmbeddedType PREVIOUS_EPISODE = new EmbeddedType(&quot;previousepisode&quot;);</span>
+
+        private final String queryParameterValue;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

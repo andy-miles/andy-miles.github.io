@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SearchApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">SearchApi.java</span></div><h1>SearchApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.tmdb.client.model.search.SearchCollectionsRequest;
+import com.amilesend.tmdb.client.model.search.SearchCollectionsResponse;
+import com.amilesend.tmdb.client.model.search.SearchCompaniesRequest;
+import com.amilesend.tmdb.client.model.search.SearchCompaniesResponse;
+import com.amilesend.tmdb.client.model.search.SearchKeywordsRequest;
+import com.amilesend.tmdb.client.model.search.SearchKeywordsResponse;
+import com.amilesend.tmdb.client.model.search.SearchMoviesRequest;
+import com.amilesend.tmdb.client.model.search.SearchMoviesResponse;
+import com.amilesend.tmdb.client.model.search.SearchMultiRequest;
+import com.amilesend.tmdb.client.model.search.SearchMultiResponse;
+import com.amilesend.tmdb.client.model.search.SearchPeopleRequest;
+import com.amilesend.tmdb.client.model.search.SearchPeopleResponse;
+import com.amilesend.tmdb.client.model.search.SearchTvRequest;
+import com.amilesend.tmdb.client.model.search.SearchTvResponse;
+import lombok.NonNull;
+
+/** TMDB Search API. */
+public class SearchApi extends ApiBase {
+
+<span class="fc" id="L40">    private static String API_PATH = &quot;/search/&quot;;</span>
+
+    /**
+     * Creates a new {@code SearchApi} object.
+     *
+     * @param connection the connection
+     */
+    public SearchApi(final Connection connection) {
+<span class="fc" id="L48">        super(connection);</span>
+<span class="fc" id="L49">    }</span>
+
+    /**
+     * Search for collections by their alternative, original, and translated names.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchCollectionsRequest
+     * @see SearchCollectionsResponse
+     */
+<span class="fc" id="L59">    public SearchCollectionsResponse searchCollections(@NonNull final SearchCollectionsRequest request) {</span>
+<span class="fc" id="L60">        return executeGet(API_PATH + &quot;collection&quot;, request, SearchCollectionsResponse.class);</span>
+    }
+
+    /**
+     * Search for companies by their original and alternative names.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchCompaniesRequest
+     * @see SearchCompaniesResponse
+     */
+<span class="fc" id="L71">    public SearchCompaniesResponse searchCompanies(@NonNull final SearchCompaniesRequest request) {</span>
+<span class="fc" id="L72">        return executeGet(API_PATH + &quot;company&quot;, request, SearchCompaniesResponse.class);</span>
+    }
+
+    /**
+     * Search for keywords by name.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchKeywordsRequest
+     * @see SearchKeywordsResponse
+     */
+<span class="fc" id="L83">    public SearchKeywordsResponse searchKeywords(@NonNull final SearchKeywordsRequest request) {</span>
+<span class="fc" id="L84">        return executeGet(API_PATH + &quot;keyword&quot;, request, SearchKeywordsResponse.class);</span>
+    }
+
+    /**
+     * Search for movies by their alternative, original, and translated titles.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchMoviesRequest
+     * @see SearchMoviesResponse
+     */
+<span class="fc" id="L95">    public SearchMoviesResponse searchMovies(@NonNull final SearchMoviesRequest request) {</span>
+<span class="fc" id="L96">        return executeGet(API_PATH + &quot;movie&quot;, request, SearchMoviesResponse.class);</span>
+    }
+
+    /**
+     * Search for people, movies, and TV shows.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchMultiRequest
+     * @see SearchMultiResponse
+     */
+<span class="fc" id="L107">    public SearchMultiResponse searchMulti(@NonNull final SearchMultiRequest request) {</span>
+<span class="fc" id="L108">        return executeGet(API_PATH + &quot;multi&quot;, request, SearchMultiResponse.class);</span>
+    }
+
+    /**
+     * Search for people by the name and aliases.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchPeopleRequest
+     * @see SearchPeopleResponse
+     */
+<span class="fc" id="L119">    public SearchPeopleResponse searchPeople(@NonNull final SearchPeopleRequest request) {</span>
+<span class="fc" id="L120">        return executeGet(API_PATH + &quot;person&quot;, request, SearchPeopleResponse.class);</span>
+    }
+
+    /**
+     * Search for TV shows by their original, translated, and aka names.
+     *
+     * @param request the request
+     * @return the response
+     * @see SearchTvRequest
+     * @see SearchTvResponse
+     */
+<span class="fc" id="L131">    public SearchTvResponse searchTv(@NonNull final SearchTvRequest request) {</span>
+<span class="fc" id="L132">        return executeGet(API_PATH + &quot;tv&quot;, request, SearchTvResponse.class);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

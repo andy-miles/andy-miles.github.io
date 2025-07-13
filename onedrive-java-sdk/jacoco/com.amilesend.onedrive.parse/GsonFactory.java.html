@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GsonFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.parse</a> &gt; <span class="el_source">GsonFactory.java</span></div><h1>GsonFactory.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.parse;
+
+import com.amilesend.client.parse.GsonFactoryBase;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.connection.auth.OneDriveAuthManager;
+import com.amilesend.onedrive.parse.resource.creator.DriveInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.DriveItemInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.DriveItemVersionInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.ListItemInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.ListItemVersionInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.PermissionInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.SiteInstanceCreator;
+import com.amilesend.onedrive.parse.resource.creator.SpecialDriveItemInstanceCreator;
+import com.amilesend.onedrive.resource.drive.Drive;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.DriveItemVersion;
+import com.amilesend.onedrive.resource.item.SpecialDriveItem;
+import com.amilesend.onedrive.resource.item.type.Permission;
+import com.amilesend.onedrive.resource.site.ListItem;
+import com.amilesend.onedrive.resource.site.ListItemVersion;
+import com.amilesend.onedrive.resource.site.Site;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import lombok.NoArgsConstructor;
+
+import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
+
+/** Factory that vends new pre-configured {@link Gson} instances. */
+@NoArgsConstructor
+public class GsonFactory extends GsonFactoryBase&lt;OneDriveConnection&gt; {
+<span class="fc" id="L48">    private static final Gson AUTH_MANAGER_GSON_INSTANCE = new GsonBuilder()</span>
+<span class="fc" id="L49">            .setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES)</span>
+<span class="fc" id="L50">            .create();</span>
+<span class="fc" id="L51">    private static final Gson DISCOVERY_GSON_INSTANCE = new GsonBuilder().create();</span>
+<span class="fc" id="L52">    private static final Gson STATE_MANAGER_GSON_INSTANCE = new GsonBuilder().setPrettyPrinting().create();</span>
+
+    /**
+     * Gets the {@link Gson} instance that is configured for use by
+     * {@link OneDriveAuthManager}.
+     *
+     * @return the pre-configured Gson instance
+     */
+    public static Gson getInstanceForAuthManager() {
+<span class="fc" id="L61">        return AUTH_MANAGER_GSON_INSTANCE;</span>
+    }
+
+    /**
+     * Gets the {@link Gson} instance that is configured for use by
+     * {@link com.amilesend.onedrive.OneDriveFactoryStateManager}.
+     *
+     * @return the pre-configured Gson instance
+     */
+    public static Gson getInstanceForStateManager() {
+<span class="fc" id="L71">        return STATE_MANAGER_GSON_INSTANCE;</span>
+    }
+
+    /**
+     * Gets the {@link Gson} instance that is configured for use by
+     * {@link com.amilesend.onedrive.connection.auth.BusinessAccountAuthManager}.
+     *
+     * @return the pre-configured Gson instance
+     */
+    public static Gson getInstanceForServiceDiscovery() {
+<span class="fc" id="L81">        return DISCOVERY_GSON_INSTANCE;</span>
+    }
+
+    @Override
+    protected GsonBuilder configure(GsonBuilder gsonBuilder, OneDriveConnection connection) {
+        // Resource types with methods that interact with the API
+<span class="fc" id="L87">        return gsonBuilder.registerTypeAdapter(Drive.class, new DriveInstanceCreator(connection))</span>
+<span class="fc" id="L88">                .registerTypeAdapter(DriveItem.class, new DriveItemInstanceCreator(connection))</span>
+<span class="fc" id="L89">                .registerTypeAdapter(SpecialDriveItem.class, new SpecialDriveItemInstanceCreator(connection))</span>
+<span class="fc" id="L90">                .registerTypeAdapter(DriveItemVersion.class, new DriveItemVersionInstanceCreator(connection))</span>
+<span class="fc" id="L91">                .registerTypeAdapter(Permission.class, new PermissionInstanceCreator(connection))</span>
+<span class="fc" id="L92">                .registerTypeAdapter(Site.class, new SiteInstanceCreator(connection))</span>
+<span class="fc" id="L93">                .registerTypeAdapter(ListItem.class, new ListItemInstanceCreator(connection))</span>
+<span class="fc" id="L94">                .registerTypeAdapter(ListItemVersion.class, new ListItemVersionInstanceCreator((connection)));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

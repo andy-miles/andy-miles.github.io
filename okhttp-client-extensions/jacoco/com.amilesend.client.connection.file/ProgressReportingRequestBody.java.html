@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgressReportingRequestBody.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.connection.file</a> &gt; <span class="el_source">ProgressReportingRequestBody.java</span></div><h1>ProgressReportingRequestBody.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.connection.file;
+
+import com.google.common.annotations.VisibleForTesting;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okio.BufferedSink;
+import okio.Okio;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
+import java.util.Optional;
+
+import static com.amilesend.client.connection.file.TransferFileUtil.fetchMimeTypeFromFile;
+
+/**
+ * A customized implementation of {@link RequestBody} that wraps an existing request body and uses
+ * a custom sink track transfer progress.
+ *
+ * @see RequestBody
+ * @see TransferProgressCallback
+ */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public class ProgressReportingRequestBody extends RequestBody {
+    /** The request body that is wrapped. */
+    @NonNull
+    private final RequestBody delegate;
+    /** The callback for transfer progress notifications. */
+    @NonNull
+    @VisibleForTesting
+    @Getter(AccessLevel.PACKAGE)
+    private final TransferProgressCallback callback;
+    /** The total number of bytes to transfer. */
+    private final long totalBytes;
+
+    /**
+     * Returns a new {@link Builder} instance.
+     *
+     * @return the builder
+     * @see Builder
+     */
+    public static Builder builder() {
+<span class="fc" id="L69">        return new Builder();</span>
+    }
+
+    /**
+     * Returns a new {@link MultiPartBuilder} instance.
+     *
+     * @return the builder
+     * @see MultiPartBuilder
+     */
+    public static MultiPartBuilder multiPartBuilder() {
+<span class="fc" id="L79">        return new MultiPartBuilder();</span>
+    }
+
+    @Override
+    public MediaType contentType() {
+<span class="fc" id="L84">        return delegate.contentType();</span>
+    }
+
+    @Override
+<span class="fc bfc" id="L88" title="All 2 branches covered.">    public void writeTo(@NonNull final BufferedSink sink) throws IOException {</span>
+<span class="fc" id="L89">        final BufferedSink bufferedSink = Okio.buffer(new TrackingSink(sink, callback, totalBytes));</span>
+<span class="fc" id="L90">        delegate.writeTo(bufferedSink);</span>
+<span class="fc" id="L91">        bufferedSink.flush();</span>
+<span class="fc" id="L92">    }</span>
+
+    /**
+     * Helper method to format the logging prefix to use.
+     *
+     * @param source the source
+     * @param destination the destination
+     * @return the logging prefix
+     */
+    private static String formatPrefix(final String source, final String destination) {
+<span class="fc" id="L102">        Validate.notBlank(source, &quot;source must not be blank&quot;);</span>
+<span class="fc" id="L103">        Validate.notBlank(destination, &quot;destination must not be blank&quot;);</span>
+
+<span class="fc" id="L105">        return new StringBuilder(&quot;[&quot;)</span>
+<span class="fc" id="L106">                .append(source)</span>
+<span class="fc" id="L107">                .append(&quot; -&gt; &quot;)</span>
+<span class="fc" id="L108">                .append(destination)</span>
+<span class="fc" id="L109">                .append(&quot;] &quot;)</span>
+<span class="fc" id="L110">                .toString();</span>
+    }
+
+    private static void validateFile(final Path file) throws IOException {
+<span class="fc" id="L114">        Validate.notNull(file, &quot;file must not be null&quot;);</span>
+<span class="fc" id="L115">        Validate.isTrue(Files.exists(file), &quot;file must exist&quot;);</span>
+<span class="fc" id="L116">        Validate.isTrue(Files.isRegularFile(file), &quot;file must be a regular file&quot;);</span>
+<span class="fc" id="L117">        Validate.isTrue(Files.isReadable(file), &quot;file must be readable&quot;);</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        Validate.isTrue(Files.size(file) &gt; 0L, &quot;file size must not be empty&quot;);</span>
+<span class="fc" id="L119">    }</span>
+
+    private static MediaType parseContentType(final String contentType) {
+<span class="fc" id="L122">        return MediaType.parse(contentType);</span>
+    }
+
+    /** The builder used to construct new {@link ProgressReportingRequestBody} instances for multipart uploads. */
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    public static class MultiPartBuilder {
+        /** The request form field name for the upload. */
+        private String fieldName = &quot;upload&quot;;
+        /** The source files to read and upload. */
+        private Path file;
+        /** The mime type of the file. */
+        private String contentType;
+        /** The destination descriptor for reporting (i.e., the name of the service). */
+        private String destination;
+        /** The {@link TransferProgressCallback}. */
+        private TransferProgressCallback callback;
+
+        /**
+         * The file to upload.
+         *
+         * @param file the path of the file to upload
+         * @return the builder
+         */
+        public MultiPartBuilder file(final Path file) {
+<span class="fc" id="L146">            this.file = file;</span>
+<span class="fc" id="L147">            return this;</span>
+        }
+
+        /**
+         * The attribute field name for the form data in the request. Default is {@code upload}.
+         *
+         * @param fieldName the field name
+         * @return the builder
+         */
+        public MultiPartBuilder fieldName(final String fieldName) {
+<span class="fc" id="L157">            this.fieldName = fieldName;</span>
+<span class="fc" id="L158">            return this;</span>
+        }
+
+        /**
+         * The content type. The default is {@code text/csv}.
+         *
+         * @param contentType the content type
+         * @return the builder
+         */
+        public MultiPartBuilder contentType(final String contentType) {
+<span class="fc" id="L168">            this.contentType = contentType;</span>
+<span class="fc" id="L169">            return this;</span>
+        }
+
+        /**
+         * The destination descriptor (i.e., the name of the service).
+         *
+         * @param destination the destination
+         * @return the builder
+         */
+        public MultiPartBuilder destination(final String destination) {
+<span class="fc" id="L179">            this.destination = destination;</span>
+<span class="fc" id="L180">            return this;</span>
+        }
+
+        /**
+         * The callback listener. Default is a {@link LogProgressCallback}.
+         *
+         * @param callback the listener
+         * @return the builder
+         */
+        public MultiPartBuilder callback(final TransferProgressCallback callback) {
+<span class="fc" id="L190">            this.callback = callback;</span>
+<span class="fc" id="L191">            return this;</span>
+        }
+
+        /**
+         * Builds a new {@link RequestBody} that tracks the transfer progress for multipart form-data transfer.
+         *
+         * @return the request body
+         * @throws IOException if an error occurred while accessing the file to read
+         */
+        public ProgressReportingRequestBody build() throws IOException {
+<span class="fc" id="L201">            Validate.notBlank(fieldName, &quot;fieldName must not be blank&quot;);</span>
+<span class="fc" id="L202">            validateFile(file);</span>
+
+<span class="fc" id="L204">            MediaType mediaType = Optional.ofNullable(contentType)</span>
+<span class="fc" id="L205">                    .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L206">                    .map(ProgressReportingRequestBody::parseContentType)</span>
+<span class="fc" id="L207">                    .orElse(null);</span>
+            // Not included in the optional chain above in order to propagate any IOExceptions thrown
+<span class="fc bfc" id="L209" title="All 2 branches covered.">            if (Objects.isNull(mediaType)) {</span>
+<span class="fc" id="L210">                mediaType = parseContentType(fetchMimeTypeFromFile(file));</span>
+            }
+
+<span class="fc" id="L213">            callback = Optional.ofNullable(callback)</span>
+<span class="fc" id="L214">                    .orElseGet(() -&gt; LogProgressCallback.builder()</span>
+<span class="fc" id="L215">                            .prefix(formatPrefix(file.getFileName().toString(), destination))</span>
+<span class="fc" id="L216">                            .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L217">                            .build());</span>
+
+<span class="fc" id="L219">            final RequestBody multipartBody = new MultipartBody.Builder()</span>
+<span class="fc" id="L220">                    .setType(MultipartBody.FORM)</span>
+<span class="fc" id="L221">                    .addFormDataPart(fieldName,</span>
+<span class="fc" id="L222">                            file.getFileName().toString(),</span>
+<span class="fc" id="L223">                            RequestBody.create(file.toFile(), mediaType))</span>
+<span class="fc" id="L224">                    .build();</span>
+
+<span class="fc" id="L226">            return new ProgressReportingRequestBody(multipartBody, callback, Files.size(file));</span>
+        }
+    }
+
+    /** The builder used to construct new {@link ProgressReportingRequestBody} instances for uploads. */
+<span class="fc" id="L231">    public static class Builder {</span>
+        /** The source files to read and upload. */
+        private Path file;
+        /** The mime type of the file. */
+        private String contentType;
+        /** The destination descriptor for reporting (i.e., the name of the service). */
+        private String destination;
+        /** The {@link TransferProgressCallback}. */
+        private TransferProgressCallback callback;
+
+        /**
+         * The file to upload.
+         *
+         * @param file the path of the file to upload
+         * @return the builder
+         */
+        public Builder file(final Path file) {
+<span class="fc" id="L248">            this.file = file;</span>
+<span class="fc" id="L249">            return this;</span>
+        }
+
+        /**
+         * The content type. The default is {@code text/csv}.
+         *
+         * @param contentType the content type
+         * @return the builder
+         */
+        public Builder contentType(final String contentType) {
+<span class="fc" id="L259">            this.contentType = contentType;</span>
+<span class="fc" id="L260">            return this;</span>
+        }
+
+        /**
+         * The destination descriptor (i.e., the name of the service).
+         *
+         * @param destination the destination
+         * @return the builder
+         */
+        public Builder destination(final String destination) {
+<span class="fc" id="L270">            this.destination = destination;</span>
+<span class="fc" id="L271">            return this;</span>
+        }
+
+        /**
+         * The callback listener. Default is a {@link LogProgressCallback}.
+         *
+         * @param callback the listener
+         * @return the builder
+         */
+        public Builder callback(final TransferProgressCallback callback) {
+<span class="fc" id="L281">            this.callback = callback;</span>
+<span class="fc" id="L282">            return this;</span>
+        }
+
+        /**
+         * Builds a new {@link RequestBody} that tracks the transfer progress for multipart form-data transfer.
+         *
+         * @return the request body
+         * @throws IOException if an error occurred while accessing the file to read
+         */
+        public ProgressReportingRequestBody build() throws IOException {
+<span class="fc" id="L292">            validateFile(file);</span>
+
+<span class="fc" id="L294">            MediaType mediaType = Optional.ofNullable(contentType)</span>
+<span class="fc" id="L295">                    .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L296">                    .map(ProgressReportingRequestBody::parseContentType)</span>
+<span class="fc" id="L297">                    .orElse(null);</span>
+            // Not included in the optional chain above in order to propagate any IOExceptions thrown
+<span class="fc bfc" id="L299" title="All 2 branches covered.">            if (Objects.isNull(mediaType)) {</span>
+<span class="fc" id="L300">                mediaType = parseContentType(fetchMimeTypeFromFile(file));</span>
+            }
+
+<span class="fc" id="L303">            callback = Optional.ofNullable(callback)</span>
+<span class="fc" id="L304">                    .orElseGet(() -&gt; LogProgressCallback.builder()</span>
+<span class="fc" id="L305">                            .prefix(formatPrefix(file.getFileName().toString(), destination))</span>
+<span class="fc" id="L306">                            .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L307">                            .build());</span>
+
+<span class="fc" id="L309">            final RequestBody requestBody = RequestBody.create(file.toFile(), mediaType);</span>
+
+<span class="fc" id="L311">            return new ProgressReportingRequestBody(requestBody, callback, Files.size(file));</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

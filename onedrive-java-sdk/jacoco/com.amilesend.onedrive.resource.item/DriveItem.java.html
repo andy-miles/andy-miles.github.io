@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DriveItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.item</a> &gt; <span class="el_source">DriveItem.java</span></div><h1>DriveItem.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.item;
+
+import com.amilesend.client.connection.file.ProgressReportingRequestBody;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.client.parse.strategy.GsonSerializeExclude;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.activities.ItemActivity;
+import com.amilesend.onedrive.resource.item.type.Audio;
+import com.amilesend.onedrive.resource.item.type.Deleted;
+import com.amilesend.onedrive.resource.item.type.File;
+import com.amilesend.onedrive.resource.item.type.FileSystemInfo;
+import com.amilesend.onedrive.resource.item.type.Folder;
+import com.amilesend.onedrive.resource.item.type.GeoCoordinates;
+import com.amilesend.onedrive.resource.item.type.Image;
+import com.amilesend.onedrive.resource.item.type.ItemReference;
+import com.amilesend.onedrive.resource.item.type.Package;
+import com.amilesend.onedrive.resource.item.type.Permission;
+import com.amilesend.onedrive.resource.item.type.Photo;
+import com.amilesend.onedrive.resource.item.type.Preview;
+import com.amilesend.onedrive.resource.item.type.PublicationFacet;
+import com.amilesend.onedrive.resource.item.type.RemoteItem;
+import com.amilesend.onedrive.resource.item.type.SearchResult;
+import com.amilesend.onedrive.resource.item.type.SharePointIds;
+import com.amilesend.onedrive.resource.item.type.Shared;
+import com.amilesend.onedrive.resource.item.type.SpecialFolder;
+import com.amilesend.onedrive.resource.item.type.ThumbnailSet;
+import com.amilesend.onedrive.resource.item.type.Video;
+import com.amilesend.onedrive.resource.request.AddPermissionRequest;
+import com.amilesend.onedrive.resource.request.CreateSharingLinkRequest;
+import com.amilesend.onedrive.resource.request.PreviewRequest;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.annotations.SerializedName;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+
+import static com.amilesend.onedrive.connection.OneDriveConnection.JSON_MEDIA_TYPE;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PAGE_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.ITEM_ACTIVITY_LIST_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.THUMBNAIL_SET_LIST_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newDriveItemVersionListParser;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newPermissionListParser;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newPermissionParser;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newPreviewParser;
+import static com.amilesend.onedrive.resource.ResourceHelper.objectDefinedEquals;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+
+/**
+ * Describes a resource stored in a drive.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/driveitem&quot;&gt;
+ * API Documentation&lt;/a&gt;.
+ */
+/*
+ * TODO:
+ *  1. Implement support for upload sessions if there's a use-case for it
+ *     (https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createuploadsession)
+ *  2. Implement support for URL based uploads if there's a use-case for it
+ *     (https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_upload_url)
+ */
+@Getter
+@SuperBuilder
+@ToString(callSuper = true)
+public class DriveItem extends BaseItem {
+    public static final String DRIVE_ITEM_BASE_URL_PATH = &quot;/drive/items/&quot;;
+
+    private static final String CONTENT_URL_SUFFIX = &quot;/content&quot;;
+    private static final int MAX_QUERY_LENGTH = 1000;
+
+    /** The audio file attributes (read-only). */
+    private final Audio audio;
+    /** An eTag for the content of the item (read-only). */
+    private final String cTag;
+    /** Indicates if an item is a file (read-only). */
+    private final File file;
+    /** Describes if a given drive item is a folder resource type (read-only). */
+    private final Folder folder;
+    /** The image attributes for a file (read-only). */
+    private final Image image;
+    /** The geographic coordinates and elevation of a file (read-only). */
+    private final GeoCoordinates location;
+    /** If defined, malware was detected in the file (read-only). */
+    private final Object malware;
+    /** Indicates that a drive item is the top level item in a collection of items (read-only). */
+    @SerializedName(&quot;package&quot;)
+    private final Package _package;
+    /** The photo attributes for a drive item file (read-only). */
+    private final Photo photo;
+    /** The published status of a drive item or version (read-only). */
+    private final PublicationFacet publication;
+    /** Indicates that a drive item references one that exists in another drive (read-only). */
+    private final RemoteItem remoteItem;
+    /* An empty object if defined; else is null */
+    /** If defined, indicates that the item is the top-most folder in the drive (read-only). */
+    private final Object root;
+    /** Indicates that the item is in response to a search query (read-only). */
+    private final SearchResult searchResult;
+    /** Indicates that a drive item has been shared with others (read-only). */
+    private final Shared shared;
+    /** SharePoint resource identifiers for SharePoint and Business account items (read-only). */
+    private final SharePointIds sharepointIds;
+    /** The size of the item in bytes (read-only). */
+    private final long size;
+    /** Describes if the item is a special managed folder (read-only). */
+    private final SpecialFolder specialFolder;
+    /** The video file attributes (read-only). */
+    private final Video video;
+    /** The URL that can be used to download the file's content (read-only). */
+    @SerializedName(&quot;@microsoft.graph.downloadUrl&quot;)
+    @GsonSerializeExclude
+    private final String downloadUrl;
+    /** Gets the underlying connection instance. */
+    @GsonExclude
+    private final OneDriveConnection connection;
+
+    /** Indicates if an item was deleted (read-only). */
+    private Deleted deleted;
+    @Setter
+    /** Describes drive (client-side) properties of the local version of a drive item. */
+    private FileSystemInfo fileSystemInfo;
+    /**
+     * Describes how to handle conflicts upon copy/move operations. Valid values include:
+     * &lt;ul&gt;
+     *     &lt;li&gt;{@literal fail}&lt;/li&gt;
+     *     &lt;li&gt;{@literal replace}&lt;/li&gt;
+     *     &lt;li&gt;{@literal rename}&lt;/li&gt;
+     * &lt;/ul&gt;
+     * This member is write-only.
+     */
+    @SerializedName(&quot;@microsoft.graph.conflictBehavior&quot;)
+    @Setter
+    private String conflictBehavior;
+    /** The source URL for remote uploading of file contents (write-only). Currently not tested nor supported. */
+    @EqualsAndHashCode.Exclude
+    @GsonSerializeExclude
+    @SerializedName(&quot;@microsoft.graph.sourceUrl&quot;)
+    @Setter
+    private String sourceUrl;
+
+    ////////////////////////
+    // Download
+    ////////////////////////
+
+    /**
+     * Downloads the drive item and reports transfer progress to the given {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_get_content&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param folderPath the path of the folder to download the drive item content to
+     * @param callback the callback to inform of transfer progress
+     */
+<span class="fc bfc" id="L188" title="All 4 branches covered.">    public void download(@NonNull final Path folderPath, @NonNull final TransferProgressCallback callback) {</span>
+<span class="fc" id="L189">        connection.download(</span>
+<span class="fc" id="L190">                connection.newRequestBuilder()</span>
+<span class="fc" id="L191">                        .url(getContentUrl(validateAndGetUrlEncodedId()))</span>
+<span class="fc" id="L192">                        .build(),</span>
+                folderPath,
+<span class="fc" id="L194">                getName(),</span>
+<span class="fc" id="L195">                getSize(),</span>
+                callback);
+<span class="fc" id="L197">    }</span>
+
+    /**
+     * Downloads the drive item asynchronously that reports transfer progress and completion to the specified
+     * {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_get_content&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param folderPath the path of the folder to download the drive item content to
+     * @param callback the callback to inform of transfer progress
+     * @return the CompletableFuture used to fetch the number of bytes downloaded
+     */
+    public CompletableFuture&lt;Long&gt; downloadAsync(
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            @NonNull final Path folderPath,</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) {</span>
+<span class="fc" id="L213">        return connection.downloadAsync(</span>
+<span class="fc" id="L214">                connection.newRequestBuilder()</span>
+<span class="fc" id="L215">                        .url(getContentUrl(validateAndGetUrlEncodedId()))</span>
+<span class="fc" id="L216">                        .build(),</span>
+                folderPath,
+<span class="fc" id="L218">                getName(),</span>
+<span class="fc" id="L219">                getSize(),</span>
+                callback);
+    }
+
+    ////////////////////////
+    // Upload
+    ////////////////////////
+
+    /**
+     * Uploads a file to replace the contents of this {@code DriveItem} and reports the
+     * transfer status to the given {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_put_content&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param filePath the file to upload
+     * @param callback the callback to inform of transfer progress
+     * @return the updated drive item information
+     * @throws IOException if unable to read or determine the file's content type
+     */
+<span class="fc bfc" id="L239" title="All 4 branches covered.">    public DriveItem upload(@NonNull final Path filePath, @NonNull final TransferProgressCallback callback)</span>
+            throws IOException {
+<span class="fc" id="L241">        return uploadInternal(</span>
+<span class="fc" id="L242">                getContentUrl(validateAndGetUrlEncodedId()),</span>
+<span class="fc" id="L243">                ProgressReportingRequestBody.builder()</span>
+<span class="fc" id="L244">                        .file(filePath)</span>
+<span class="fc" id="L245">                        .callback(callback)</span>
+<span class="fc" id="L246">                        .build());</span>
+    }
+
+    /**
+     * Uploads a file asynchronously to replace the contents of this {@code DriveItem} and reports the
+     * transfer status to the given {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_put_content&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param filePath the file to upload
+     * @param callback the callback to inform of transfer progress
+     * @return the CompletableFuture to fetch the updated drive item information
+     * @throws IOException if unable to read or determine the file's content type
+     */
+    public CompletableFuture&lt;DriveItem&gt; uploadAsync(
+<span class="fc bfc" id="L262" title="All 2 branches covered.">            @NonNull final Path filePath,</span>
+<span class="fc bfc" id="L263" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) throws IOException {</span>
+<span class="fc" id="L264">        return uploadInternalAsync(</span>
+<span class="fc" id="L265">                getContentUrl(validateAndGetUrlEncodedId()),</span>
+<span class="fc" id="L266">                ProgressReportingRequestBody.builder()</span>
+<span class="fc" id="L267">                        .file(filePath)</span>
+<span class="fc" id="L268">                        .callback(callback)</span>
+<span class="fc" id="L269">                        .build());</span>
+    }
+
+    ////////////////////////
+    // uploadNew
+    ////////////////////////
+
+    /**
+     * Uploads a new file as a child of this {@code DriveItem} and reports the transfer status to the given
+     * {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_put_content&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param filePath the file to upload
+     * @param callback the callback to inform of transfer progress
+     * @return the new child drive item associated with the uploaded file
+     * @throws IOException if unable to read or determine the file's content type
+     */
+<span class="fc bfc" id="L288" title="All 4 branches covered.">    public DriveItem uploadNew(@NonNull final Path filePath, @NonNull final TransferProgressCallback callback)</span>
+            throws IOException {
+<span class="fc" id="L290">        return uploadInternal(</span>
+<span class="fc" id="L291">                getContentUrl(validateAndGetUrlEncodedId(), filePath.getFileName().toString()),</span>
+<span class="fc" id="L292">                ProgressReportingRequestBody.builder()</span>
+<span class="fc" id="L293">                        .file(filePath)</span>
+<span class="fc" id="L294">                        .callback(callback)</span>
+<span class="fc" id="L295">                        .build());</span>
+    }
+
+    /**
+     * Uploads a new file asynchronously as a child of this {@code DriveItem} and reports the transfer status to the
+     * given {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_put_content&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param filePath the file to upload
+     * @param callback the callback to inform of transfer progress
+     * @return the completable future to fetch the updated drive item information
+     * @throws IOException if unable to read or determine the file's content type
+     */
+    public CompletableFuture&lt;DriveItem&gt; uploadNewAsync(
+<span class="fc bfc" id="L311" title="All 2 branches covered.">            @NonNull final Path filePath,</span>
+<span class="fc bfc" id="L312" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) throws IOException {</span>
+<span class="fc" id="L313">        return uploadInternalAsync(</span>
+<span class="fc" id="L314">                getContentUrl(validateAndGetUrlEncodedId(), filePath.getFileName().toString()),</span>
+<span class="fc" id="L315">                ProgressReportingRequestBody.builder()</span>
+<span class="fc" id="L316">                        .file(filePath)</span>
+<span class="fc" id="L317">                        .callback(callback)</span>
+<span class="fc" id="L318">                        .build());</span>
+    }
+
+    private DriveItem uploadInternal(final String url, final ProgressReportingRequestBody body) {
+<span class="fc" id="L322">        return connection.execute(</span>
+<span class="fc" id="L323">                connection.newRequestBuilder()</span>
+<span class="fc" id="L324">                        .url(url)</span>
+<span class="fc" id="L325">                        .addHeader(CONTENT_TYPE, body.contentType().toString())</span>
+<span class="fc" id="L326">                        .put(body)</span>
+<span class="fc" id="L327">                        .build(),</span>
+                DRIVE_ITEM_PARSER);
+    }
+
+    private CompletableFuture&lt;DriveItem&gt; uploadInternalAsync(
+            final String url,
+            final ProgressReportingRequestBody body) {
+<span class="fc" id="L334">        return connection.executeAsync(</span>
+<span class="fc" id="L335">                connection.newRequestBuilder()</span>
+<span class="fc" id="L336">                        .url(url)</span>
+<span class="fc" id="L337">                        .addHeader(CONTENT_TYPE, body.contentType().toString())</span>
+<span class="fc" id="L338">                        .put(body)</span>
+<span class="fc" id="L339">                        .build(),</span>
+                DRIVE_ITEM_PARSER);
+    }
+
+    ////////////////////////
+    // CRUD
+    ////////////////////////
+
+    /**
+     * Creates a new {@code DriveItem} as a child of {@code this}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_post_children&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param newChildDriveItem the new drive item to create
+     * @return the new drive item
+     */
+<span class="pc bpc" id="L356" title="1 of 2 branches missed.">    public DriveItem create(@NonNull final DriveItem newChildDriveItem) {</span>
+<span class="fc" id="L357">        return connection.execute(</span>
+<span class="fc" id="L358">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L359">                        .url(getChildrenUrl(validateAndGetUrlEncodedId()))</span>
+<span class="fc" id="L360">                        .post(RequestBody.create(newChildDriveItem.toJson(), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L361">                        .build(),</span>
+                DRIVE_ITEM_PARSER);
+    }
+
+    /**
+     * Updates this drive item.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_update&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the updated drive item
+     */
+    public DriveItem update() {
+<span class="fc" id="L374">        return connection.execute(</span>
+<span class="fc" id="L375">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L376">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L377">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L378">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L379">                                .toString())</span>
+<span class="fc" id="L380">                        .patch(RequestBody.create(toJson(), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L381">                        .build(),</span>
+                DRIVE_ITEM_PARSER);
+    }
+
+    /**
+     * Moves this {@code DriveItem} as a child to the given {@code newParentId}, updates the name, or both.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_move&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param destinationParentId the new parent identifier
+     * @param newName the new name
+     * @return the updated drive item
+     */
+    public DriveItem move(final String destinationParentId, final String newName) {
+<span class="fc" id="L396">        validateDestinationParentIdAndNewName(destinationParentId, newName);</span>
+<span class="fc" id="L397">        return update();</span>
+    }
+
+    /**
+     * Copies this {@code DriveItem} to a child of the given {@code destinationParentId} and updates the name of the
+     * copied {@link DriveItem}.
+     *
+     * @param destinationParentId the new destination parent identifier
+     * @param newName the new name
+     * @return the {@code AsyncJob} that can be used to poll for the remote asynchronous operation progress.
+     * @see AsyncJob
+     */
+    public AsyncJob copy(final String destinationParentId, final String newName) {
+<span class="fc" id="L410">        validateDestinationParentIdAndNewName(destinationParentId, newName);</span>
+<span class="fc" id="L411">        final String monitoringUrl = connection.executeRemoteAsync(</span>
+<span class="fc" id="L412">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L413">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L414">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L415">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L416">                                .append(&quot;/copy&quot;)</span>
+<span class="fc" id="L417">                                .toString())</span>
+<span class="fc" id="L418">                        .post(RequestBody.create(toJson(), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L419">                        .build());</span>
+<span class="fc" id="L420">        return new AsyncJob(monitoringUrl, connection);</span>
+    }
+
+    /**
+     * Deletes this drive item.
+     */
+    public void delete() {
+<span class="fc" id="L427">        connection.execute(</span>
+<span class="fc" id="L428">                connection.newRequestBuilder()</span>
+<span class="fc" id="L429">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L430">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L431">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L432">                                .toString())</span>
+<span class="fc" id="L433">                        .delete()</span>
+<span class="fc" id="L434">                        .build());</span>
+        // Set the deleted state for this drive item for consumers that still have reference to the object.
+<span class="fc" id="L436">        this.deleted = Deleted.builder().build();</span>
+<span class="fc" id="L437">    }</span>
+
+    ////////////////////////
+    // References (has-a)
+    ////////////////////////
+
+    /**
+     * Queries and fetches the activities associated with this {@code DriveItem}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/activities_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of activities
+     */
+    public List&lt;ItemActivity&gt; getActivities() {
+<span class="fc" id="L452">        return connection.execute(</span>
+<span class="fc" id="L453">                connection.newRequestBuilder()</span>
+<span class="fc" id="L454">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L455">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L456">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L457">                                .append(&quot;/activities&quot;)</span>
+<span class="fc" id="L458">                                .toString())</span>
+<span class="fc" id="L459">                        .build(),</span>
+                ITEM_ACTIVITY_LIST_PARSER);
+    }
+
+    /**
+     * Fetches the list of child {@link DriveItem}s associated with this {@code DriveItem}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_list_children&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return list of child drive items
+     */
+    public List&lt;DriveItem&gt; getChildren() {
+<span class="fc" id="L472">        final List&lt;DriveItem&gt; changes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L473">        final String urlEncodedId = validateAndGetUrlEncodedId();</span>
+
+<span class="fc" id="L475">        DriveItemPage currentPage = null;</span>
+        do {
+<span class="fc" id="L477">            currentPage = connection.execute(</span>
+<span class="fc" id="L478">                    connection.newRequestBuilder()</span>
+<span class="fc" id="L479">                            .url(getChildrenUrl(currentPage, urlEncodedId))</span>
+<span class="fc" id="L480">                            .build(),</span>
+                    DRIVE_ITEM_PAGE_PARSER);
+<span class="fc" id="L482">            changes.addAll(currentPage.getValue());</span>
+<span class="fc bfc" id="L483" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
+
+<span class="fc" id="L485">        return changes;</span>
+    }
+
+    /**
+     * Fetches the list of versions of this {@code DriveItem}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_list_versions&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of versions
+     * @see DriveItemVersion
+     */
+    public List&lt;DriveItemVersion&gt; getVersions() {
+<span class="fc" id="L498">        return connection.execute(</span>
+<span class="fc" id="L499">                connection.newRequestBuilder()</span>
+<span class="fc" id="L500">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L501">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L502">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L503">                                .append(&quot;/versions&quot;)</span>
+<span class="fc" id="L504">                                .toString())</span>
+<span class="fc" id="L505">                        .build(),</span>
+<span class="fc" id="L506">                newDriveItemVersionListParser(getId(), getName()));</span>
+    }
+
+    /**
+     * Fetches the list of permissions associated with this {@code DriveItem}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_list_versions&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of permissions
+     * @see Permission
+     */
+    public List&lt;Permission&gt; getPermissions() {
+<span class="fc" id="L519">        return connection.execute(</span>
+<span class="fc" id="L520">                connection.newRequestBuilder()</span>
+<span class="fc" id="L521">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L522">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L523">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L524">                                .append(&quot;/permissions&quot;)</span>
+<span class="fc" id="L525">                                .toString())</span>
+<span class="fc" id="L526">                        .build(),</span>
+<span class="fc" id="L527">                newPermissionListParser(getId()));</span>
+    }
+
+    /**
+     * Adds a permission to this {@code DriveItem} for the given request.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_invite&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param requestBody the descriptor of the permission to add
+     * @return the list of permissions for the associate item.
+     */
+<span class="fc bfc" id="L539" title="All 2 branches covered.">    public List&lt;Permission&gt; addPermission(@NonNull final AddPermissionRequest requestBody) {</span>
+<span class="fc" id="L540">        return connection.execute(</span>
+<span class="fc" id="L541">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L542">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L543">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L544">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L545">                                .append(&quot;/invite&quot;)</span>
+<span class="fc" id="L546">                                .toString())</span>
+<span class="fc" id="L547">                        .post(RequestBody.create(</span>
+<span class="fc" id="L548">                                connection.getGsonFactory().getInstance(connection).toJson(requestBody),</span>
+                                JSON_MEDIA_TYPE))
+<span class="fc" id="L550">                        .build(),</span>
+<span class="fc" id="L551">                newPermissionListParser(getId()));</span>
+    }
+
+    /**
+     * Creates a sharing link for the given request.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_createlink&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param requestBody the descriptor of the type of link to share
+     * @return the sharing permissions that includes the link
+     */
+<span class="fc bfc" id="L563" title="All 2 branches covered.">    public Permission createSharingLink(@NonNull final CreateSharingLinkRequest requestBody) {</span>
+<span class="fc" id="L564">        return connection.execute(</span>
+<span class="fc" id="L565">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L566">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L567">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L568">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L569">                                .append(&quot;/createLink&quot;)</span>
+<span class="fc" id="L570">                                .toString())</span>
+<span class="fc" id="L571">                        .post(RequestBody.create(</span>
+<span class="fc" id="L572">                                connection.getGsonFactory().getInstance(connection).toJson(requestBody),</span>
+                                JSON_MEDIA_TYPE))
+<span class="fc" id="L574">                        .build(),</span>
+<span class="fc" id="L575">                newPermissionParser(getId()));</span>
+    }
+
+    /**
+     * Gets the embeddable file preview URLs for inclusion in a web-based UI. Note: For long-lived embeddable links,
+     * use {@link #createSharingLink(CreateSharingLinkRequest)} instead.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_preview&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param requestBody the preview item request body
+     * @return the preview URLs
+     */
+<span class="fc bfc" id="L588" title="All 2 branches covered.">    public Preview previewItem(@NonNull final PreviewRequest requestBody) {</span>
+<span class="fc" id="L589">        return connection.execute(</span>
+<span class="fc" id="L590">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L591">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L592">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L593">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L594">                                .append(&quot;/preview&quot;)</span>
+<span class="fc" id="L595">                                .toString())</span>
+<span class="fc" id="L596">                        .post(RequestBody.create(</span>
+<span class="fc" id="L597">                                connection.getGsonFactory().getInstance(connection).toJson(requestBody),</span>
+                                JSON_MEDIA_TYPE))
+<span class="fc" id="L599">                        .build(),</span>
+<span class="fc" id="L600">                newPreviewParser(getId()));</span>
+    }
+
+    /**
+     * Fetches the list of thumbnail sets associated with this {@code DriveItem}.
+     *
+     * @return the list of thumbnail sets
+     * @see ThumbnailSet
+     */
+    public List&lt;ThumbnailSet&gt; getThumbnails() {
+<span class="fc" id="L610">        return connection.execute(</span>
+<span class="fc" id="L611">                connection.newRequestBuilder()</span>
+<span class="fc" id="L612">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L613">                                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L614">                                .append(validateAndGetUrlEncodedId())</span>
+<span class="fc" id="L615">                                .append(&quot;/thumbnails&quot;)</span>
+<span class="fc" id="L616">                                .toString())</span>
+<span class="fc" id="L617">                        .build(),</span>
+                THUMBNAIL_SET_LIST_PARSER);
+    }
+
+    /**
+     * Search for items associated with this {@code DriveItem}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_search&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param query the search query
+     * @return the list of drive items associated with the query
+     */
+    public List&lt;DriveItem&gt; search(final String query) {
+<span class="fc" id="L631">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="fc bfc" id="L632" title="All 2 branches covered.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
+                &quot;query length must be less than &quot; + MAX_QUERY_LENGTH);
+
+<span class="fc" id="L635">        final List&lt;DriveItem&gt; results = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L637">        DriveItemPage currentPage = null;</span>
+        do {
+<span class="fc" id="L639">            currentPage = connection.execute(</span>
+<span class="fc" id="L640">                    connection.newRequestBuilder()</span>
+<span class="fc" id="L641">                            .url(getSearchUrl(currentPage, validateAndGetUrlEncodedId(), query))</span>
+<span class="fc" id="L642">                            .build(),</span>
+                    DRIVE_ITEM_PAGE_PARSER);
+<span class="fc" id="L644">            results.addAll(currentPage.getValue());</span>
+<span class="fc bfc" id="L645" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
+
+<span class="fc" id="L647">        return results;</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L652" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L653">            return true;</span>
+        }
+
+<span class="fc bfc" id="L656" title="All 4 branches covered.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="fc" id="L657">            return false;</span>
+        }
+
+<span class="fc bfc" id="L660" title="All 2 branches covered.">        if (!super.equals(obj)) {</span>
+<span class="fc" id="L661">            return false;</span>
+        }
+
+<span class="fc" id="L664">        final DriveItem driveItem = (DriveItem) obj;</span>
+<span class="pc bpc" id="L665" title="1 of 2 branches missed.">        return getSize() == driveItem.getSize()</span>
+<span class="pc bpc" id="L666" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getAudio(), driveItem.getAudio())</span>
+<span class="pc bpc" id="L667" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getCTag(), driveItem.getCTag())</span>
+<span class="pc bpc" id="L668" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getDeleted(), driveItem.getDeleted())</span>
+<span class="pc bpc" id="L669" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getFile(), driveItem.getFile())</span>
+<span class="pc bpc" id="L670" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getFileSystemInfo(), driveItem.getFileSystemInfo())</span>
+<span class="pc bpc" id="L671" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getFolder(), driveItem.getFolder())</span>
+<span class="pc bpc" id="L672" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getImage(), driveItem.getImage())</span>
+<span class="pc bpc" id="L673" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getLocation(), driveItem.getLocation())</span>
+<span class="fc bfc" id="L674" title="All 2 branches covered.">                &amp;&amp; objectDefinedEquals(getMalware(), driveItem.getMalware())</span>
+<span class="pc bpc" id="L675" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(get_package(), driveItem.get_package())</span>
+<span class="pc bpc" id="L676" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getPhoto(), driveItem.getPhoto())</span>
+<span class="pc bpc" id="L677" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getPublication(), driveItem.getPublication())</span>
+<span class="pc bpc" id="L678" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getRemoteItem(), driveItem.getRemoteItem())</span>
+<span class="fc bfc" id="L679" title="All 2 branches covered.">                &amp;&amp; objectDefinedEquals(getRoot(), driveItem.getRoot())</span>
+<span class="pc bpc" id="L680" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSearchResult(), driveItem.getSearchResult())</span>
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getShared(), driveItem.getShared())</span>
+<span class="pc bpc" id="L682" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSharepointIds(), driveItem.getSharepointIds())</span>
+<span class="pc bpc" id="L683" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSpecialFolder(), driveItem.getSpecialFolder())</span>
+<span class="pc bpc" id="L684" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getVideo(), driveItem.getVideo())</span>
+<span class="pc bpc" id="L685" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getConflictBehavior(), driveItem.getConflictBehavior());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L690">        return Objects.hash(</span>
+<span class="fc" id="L691">                super.hashCode(),</span>
+<span class="fc" id="L692">                getAudio(),</span>
+<span class="fc" id="L693">                getCTag(),</span>
+<span class="fc" id="L694">                getDeleted(),</span>
+<span class="fc" id="L695">                getFile(),</span>
+<span class="fc" id="L696">                getFileSystemInfo(),</span>
+<span class="fc" id="L697">                getFolder(),</span>
+<span class="fc" id="L698">                getImage(),</span>
+<span class="fc" id="L699">                getLocation(),</span>
+<span class="fc" id="L700">                Objects.nonNull(getMalware()),</span>
+<span class="fc" id="L701">                get_package(),</span>
+<span class="fc" id="L702">                getPhoto(),</span>
+<span class="fc" id="L703">                getPublication(),</span>
+<span class="fc" id="L704">                getRemoteItem(),</span>
+<span class="fc" id="L705">                Objects.nonNull(getRoot()),</span>
+<span class="fc" id="L706">                getSearchResult(),</span>
+<span class="fc" id="L707">                getShared(),</span>
+<span class="fc" id="L708">                getSharepointIds(),</span>
+<span class="fc" id="L709">                getSize(),</span>
+<span class="fc" id="L710">                getSpecialFolder(),</span>
+<span class="fc" id="L711">                getVideo(),</span>
+<span class="fc" id="L712">                getConflictBehavior());</span>
+    }
+
+    @VisibleForTesting
+    String toJson() {
+<span class="fc" id="L717">        return connection.getGsonFactory().getInstance(connection).toJson(this);</span>
+    }
+
+    private String validateAndGetUrlEncodedId() {
+<span class="fc" id="L721">        final String driveItemId = getId();</span>
+<span class="fc" id="L722">        Validate.notBlank(driveItemId, &quot;id must not be blank&quot;);</span>
+<span class="fc" id="L723">        return URLEncoder.encode(driveItemId, StandardCharsets.UTF_8);</span>
+    }
+
+    private void validateDestinationParentIdAndNewName(final String destinationParentId, final String newName) {
+<span class="fc bfc" id="L727" title="All 2 branches covered.">        Validate.isTrue(StringUtils.isNotBlank(destinationParentId)</span>
+<span class="fc bfc" id="L728" title="All 2 branches covered.">                        || StringUtils.isNotBlank(newName),</span>
+                &quot;Both destinationParentId and newName must not be blank&quot;);
+
+<span class="fc" id="L731">        final boolean isSameDestinationId = Optional.ofNullable(getParentReference())</span>
+<span class="fc" id="L732">                .map(r -&gt; r.getId().equals(destinationParentId))</span>
+<span class="fc" id="L733">                .orElse(false);</span>
+<span class="fc" id="L734">        final boolean isSameName = StringUtils.equals(getName(), newName);</span>
+<span class="fc bfc" id="L735" title="All 4 branches covered.">        Validate.isTrue(!(isSameDestinationId &amp;&amp; isSameName),</span>
+                &quot;Both destinationParentId and newName must not be the same as the original drive item&quot;);
+
+<span class="fc bfc" id="L738" title="All 2 branches covered.">        if (StringUtils.isNotBlank(destinationParentId)) {</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">            final ItemReference parentReference = getParentReference() != null</span>
+<span class="fc" id="L740">                    ? getParentReference()</span>
+<span class="fc" id="L741">                    : ItemReference.builder().id(destinationParentId).build();</span>
+<span class="fc" id="L742">            setParentReference(parentReference);</span>
+        }
+
+<span class="fc bfc" id="L745" title="All 2 branches covered.">        if (StringUtils.isNotBlank(newName)) {</span>
+<span class="fc" id="L746">            setName(newName);</span>
+        }
+<span class="fc" id="L748">    }</span>
+
+    private String getContentUrl(final String urlEncodedDriveItemId) {
+<span class="fc" id="L751">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L752">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L753">                .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L754">                .append(CONTENT_URL_SUFFIX)</span>
+<span class="fc" id="L755">                .toString();</span>
+    }
+
+    private String getContentUrl(final String urlEncodedDriveItemId, final String filename) {
+<span class="fc" id="L759">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L760">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L761">                .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L762">                .append(&quot;:/&quot;)</span>
+<span class="fc" id="L763">                .append(URLEncoder.encode(filename, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L764">                .append(&quot;:&quot;)</span>
+<span class="fc" id="L765">                .append(CONTENT_URL_SUFFIX)</span>
+<span class="fc" id="L766">                .toString();</span>
+    }
+
+    private String getChildrenUrl(final DriveItemPage page, final String urlEncodedDriveItemId) {
+<span class="fc bfc" id="L770" title="All 2 branches covered.">        return page == null ? getChildrenUrl(urlEncodedDriveItemId) : page.getNextLink();</span>
+    }
+
+    private String getChildrenUrl(final String urlEncodedDriveItemId) {
+<span class="fc" id="L774">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L775">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L776">                .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L777">                .append(&quot;/children&quot;)</span>
+<span class="fc" id="L778">                .toString();</span>
+    }
+
+    private String getSearchUrl(
+            final DriveItemPage page,
+            final String urlEncodedDriveItemId,
+            final String searchQuery) {
+<span class="fc bfc" id="L785" title="All 2 branches covered.">        return page == null</span>
+<span class="fc" id="L786">                ? new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L787">                        .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L788">                        .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L789">                        .append(&quot;/search(q='&quot;)</span>
+<span class="fc" id="L790">                        .append(URLEncoder.encode(searchQuery, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L791">                        .append(&quot;')&quot;)</span>
+<span class="fc" id="L792">                        .toString()</span>
+<span class="fc" id="L793">                : page.getNextLink();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

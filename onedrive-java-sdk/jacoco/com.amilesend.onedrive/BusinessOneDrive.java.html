@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BusinessOneDrive.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive</a> &gt; <span class="el_source">BusinessOneDrive.java</span></div><h1>BusinessOneDrive.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive;
+
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.Drive;
+import com.amilesend.onedrive.resource.Site;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_LIST_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.SITE_LIST_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.SITE_PARSER;
+import static com.amilesend.onedrive.resource.drive.Drive.DRIVES_URL_PATH_SUFFIX;
+import static com.amilesend.onedrive.resource.drive.Drive.DRIVE_URL_PATH_SUFFIX;
+import static com.amilesend.onedrive.resource.site.Site.SITE_BASE_URL_PATH;
+import static com.amilesend.onedrive.resource.site.Site.SITE_URL_PATH_SUFFIX;
+
+/**
+ * The primary exposed object to consumers to access drives available to the authenticated user for business accounts.
+ * &lt;p&gt;
+ * While this object can be instantiated directly by consumers, it is recommended to leverage the
+ * {@link OneDriveFactoryStateManager} instead. Doing so simplifies OAUTH authentication and persists the
+ * authentication tokens for reuse. Without it, consumers are responsible for initiating the OAUTH handshake
+ * to obtain the authorization code and managing persisted refresh tokens for future instantiation without
+ * requiring the user to re-authorize the consumer application with their OneDrive account.
+ *
+ * @see OneDriveFactoryStateManager
+ */
+public class BusinessOneDrive extends OneDrive {
+    private static final String GROUPS_BASE_URL_PATH = &quot;/groups/&quot;;
+    private static final int MAX_QUERY_LENGTH = 1000;
+
+    /**
+     * Creates a new {@code BusinessOneDrive}.
+     *
+     * @param connection the authenticated connection
+     */
+    public BusinessOneDrive(final OneDriveConnection connection) {
+<span class="fc" id="L60">        super(connection);</span>
+<span class="fc" id="L61">    }</span>
+
+    //////////
+    // Site
+    //////////
+
+    /**
+     * Gets the root site.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/site&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the root site
+     * @see Site
+     */
+    public Site getRootSite() {
+<span class="fc" id="L77">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L78">        return new Site(connection.execute(</span>
+<span class="fc" id="L79">                connection.newRequestBuilder()</span>
+<span class="fc" id="L80">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L81">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L82">                                .append(&quot;root&quot;)</span>
+<span class="fc" id="L83">                                .toString())</span>
+<span class="fc" id="L84">                        .build(),</span>
+                SITE_PARSER));
+    }
+
+    /**
+     * Gets the {@link Site} for the given {@code siteId}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/site&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param siteId the site identifier
+     * @return the site
+     * @see Site
+     */
+    public Site getSite(final String siteId) {
+<span class="fc" id="L99">        final String encodedSiteId = validateIdAndUrlEncode(siteId, &quot;siteId&quot;);</span>
+<span class="fc" id="L100">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L101">        return new Site(connection.execute(</span>
+<span class="fc" id="L102">                connection.newRequestBuilder()</span>
+<span class="fc" id="L103">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L104">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L105">                                .append(encodedSiteId)</span>
+<span class="fc" id="L106">                                .toString())</span>
+<span class="fc" id="L107">                        .build(),</span>
+                SITE_PARSER));
+    }
+
+    /**
+     * Gets the root {@link Site} for the given {@code groupId}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/site_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param groupId the group identifier
+     * @return the site
+     */
+    public Site getSiteForGroup(final String groupId) {
+<span class="fc" id="L121">        final String encodedGroupId = validateIdAndUrlEncode(groupId, &quot;groupId&quot;);</span>
+<span class="fc" id="L122">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L123">        return new Site(connection.execute(</span>
+<span class="fc" id="L124">                connection.newRequestBuilder()</span>
+<span class="fc" id="L125">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L126">                                .append(GROUPS_BASE_URL_PATH)</span>
+<span class="fc" id="L127">                                .append(encodedGroupId)</span>
+<span class="fc" id="L128">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L129">                                .append(&quot;root&quot;)</span>
+<span class="fc" id="L130">                                .toString())</span>
+<span class="fc" id="L131">                        .build(),</span>
+                SITE_PARSER));
+    }
+
+    /**
+     * Gets the list of {@link Site}s in an organization.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/site_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of sites
+     * @see Site
+     */
+    public List&lt;Site&gt; getRootSites() {
+<span class="fc" id="L145">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L146">        return connection.execute(</span>
+<span class="fc" id="L147">                connection.newRequestBuilder()</span>
+<span class="fc" id="L148">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L149">                                .append(SITE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L150">                                .append(&quot;?select=siteCollection,webUrl&amp;filter=siteCollection/root%20ne%20null&quot;)</span>
+<span class="fc" id="L151">                                .toString())</span>
+<span class="fc" id="L152">                        .build(),</span>
+                SITE_LIST_PARSER)
+<span class="fc" id="L154">                .stream()</span>
+<span class="fc" id="L155">                .map(s -&gt; new Site(s))</span>
+<span class="fc" id="L156">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Searches for sites for the given {@code query}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/site_search&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param query the search query
+     * @return the list of sites
+     * @see Site
+     */
+    public List&lt;Site&gt; searchForSite(final String query) {
+<span class="fc" id="L170">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
+                &quot;query length must be less than &quot; + MAX_QUERY_LENGTH);
+
+<span class="fc" id="L174">        final String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L175">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L176">        return connection.execute(</span>
+<span class="fc" id="L177">                connection.newRequestBuilder()</span>
+<span class="fc" id="L178">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L179">                                .append(SITE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L180">                                .append(&quot;?search=&quot;)</span>
+<span class="fc" id="L181">                                .append(encodedQuery)</span>
+<span class="fc" id="L182">                                .toString())</span>
+<span class="fc" id="L183">                        .build(),</span>
+                SITE_LIST_PARSER)
+<span class="fc" id="L185">                .stream()</span>
+<span class="fc" id="L186">                .map(s -&gt; new Site(s))</span>
+<span class="fc" id="L187">                .collect(Collectors.toList());</span>
+    }
+
+
+    //////////
+    // Drive
+    //////////
+
+    /**
+     * Gets the default {@link Drive} for the given {@code groupId}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/drive_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param groupId the group identifier
+     * @return the drive
+     */
+    public Drive getDefaultDriveForGroup(final String groupId) {
+<span class="fc" id="L205">        final String encodedGroupId = validateIdAndUrlEncode(groupId, &quot;groupId&quot;);</span>
+<span class="fc" id="L206">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L207">        return new Drive(connection.execute(</span>
+<span class="fc" id="L208">                connection.newRequestBuilder()</span>
+<span class="fc" id="L209">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L210">                                .append(GROUPS_BASE_URL_PATH)</span>
+<span class="fc" id="L211">                                .append(encodedGroupId)</span>
+<span class="fc" id="L212">                                .append(DRIVE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L213">                                .toString())</span>
+<span class="fc" id="L214">                        .build(),</span>
+                DRIVE_PARSER));
+    }
+
+    /**
+     * Gets the default {@link Drive} for the given {@code siteId}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/drive_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param siteId the site identifier
+     * @return the drive
+     */
+    public Drive getDefaultDriveForSite(final String siteId) {
+<span class="fc" id="L228">        final String encodedSiteId = validateIdAndUrlEncode(siteId, &quot;siteId&quot;);</span>
+<span class="fc" id="L229">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L230">        return new Drive(connection.execute(</span>
+<span class="fc" id="L231">                connection.newRequestBuilder()</span>
+<span class="fc" id="L232">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L233">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L234">                                .append(encodedSiteId)</span>
+<span class="fc" id="L235">                                .append(DRIVE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L236">                                .toString())</span>
+<span class="fc" id="L237">                        .build(),</span>
+                DRIVE_PARSER));
+    }
+
+    /**
+     * Gets the list of drives available to the given {@code siteId}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/drive_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param siteId the site identifier
+     * @return the list of drives
+     */
+    public List&lt;Drive&gt; getDrivesForSite(final String siteId) {
+<span class="fc" id="L251">        return getDrivesForId(siteId, &quot;siteId&quot;, &quot;/sites/&quot;);</span>
+    }
+
+    /**
+     * Gets the list of drives available to the given {@code groupId}. Note: Business accounts only
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/drive_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param groupId the group identifier
+     * @return the list of drives
+     */
+    public List&lt;Drive&gt; getDrivesForGroup(final String groupId) {
+<span class="fc" id="L264">        return getDrivesForId(groupId, &quot;groupId&quot;, &quot;/groups/&quot;);</span>
+    }
+
+    /**
+     * Gets the list of drives available to the given {@code userId}. Note: Business accounts only
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/drive_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param userId the user identifier
+     * @return the list of drives
+     */
+    public List&lt;Drive&gt; getDrivesForUser(final String userId) {
+<span class="fc" id="L277">        return getDrivesForId(userId, &quot;userId&quot;, &quot;/users/&quot;);</span>
+    }
+
+    private List&lt;Drive&gt; getDrivesForId(final String id, final String idName, final String urlSubPath) {
+<span class="fc" id="L281">        final String encodedGroupId = validateIdAndUrlEncode(id, idName);</span>
+<span class="fc" id="L282">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L283">        return connection.execute(</span>
+<span class="fc" id="L284">                        connection.newRequestBuilder()</span>
+<span class="fc" id="L285">                                .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L286">                                        .append(urlSubPath)</span>
+<span class="fc" id="L287">                                        .append(encodedGroupId)</span>
+<span class="fc" id="L288">                                        .append(DRIVES_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L289">                                        .toString())</span>
+<span class="fc" id="L290">                                .build(),</span>
+                        DRIVE_LIST_PARSER)
+<span class="fc" id="L292">                .stream()</span>
+<span class="fc" id="L293">                .map(d -&gt; new Drive(d))</span>
+<span class="fc" id="L294">                .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

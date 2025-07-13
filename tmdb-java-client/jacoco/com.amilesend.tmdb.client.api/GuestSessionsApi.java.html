@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GuestSessionsApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">GuestSessionsApi.java</span></div><h1>GuestSessionsApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.tmdb.client.model.acount.GetRatedMoviesResponse;
+import com.amilesend.tmdb.client.model.acount.GetRatedTvEpisodesResponse;
+import com.amilesend.tmdb.client.model.acount.GetRatedTvShowsResponse;
+import com.amilesend.tmdb.client.model.guest.GetRatedMoviesRequest;
+import com.amilesend.tmdb.client.model.guest.GetRatedTvEpisodesRequest;
+import com.amilesend.tmdb.client.model.guest.GetRatedTvShowsRequest;
+import com.amilesend.tmdb.client.model.guest.type.GuestSessionRequestBase;
+import lombok.NonNull;
+
+public class GuestSessionsApi extends ApiBase {
+    private static final String API_PATH = &quot;/guest_session/&quot;;
+
+    /**
+     * Creates a new {@code GuestSessionsApi} object.
+     *
+     * @param connection the connection
+     */
+    public GuestSessionsApi(final Connection connection) {
+<span class="fc" id="L39">        super(connection);</span>
+<span class="fc" id="L40">    }</span>
+
+    /**
+     * Gets the list of movies that a guest user rated.
+     *
+     * @param request the request
+     * @return the list of rated movies
+     * @see GetRatedMoviesRequest
+     * @see GetRatedMoviesResponse
+     */
+<span class="fc" id="L50">    public GetRatedMoviesResponse getRatedMovies(@NonNull final GetRatedMoviesRequest request) {</span>
+<span class="fc" id="L51">        return executeGet(getApiPath(request, &quot;/rated/movies&quot;), request, GetRatedMoviesResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV shows that a guest user rated.
+     *
+     * @param request the request
+     * @return the list of rated TV shows
+     * @see GetRatedTvShowsRequest
+     * @see GetRatedTvShowsResponse
+     */
+<span class="fc" id="L62">    public GetRatedTvShowsResponse getRatedTvShows(@NonNull final GetRatedTvShowsRequest request) {</span>
+<span class="fc" id="L63">        return executeGet(getApiPath(request, &quot;/rated/tv&quot;), request, GetRatedTvShowsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV episodes that a guest user rated.
+     *
+     * @param request the request
+     * @return the list of TV episodes
+     * @see GetRatedTvEpisodesRequest
+     * @see GetRatedTvEpisodesResponse
+     */
+<span class="fc" id="L74">    public GetRatedTvEpisodesResponse getRatedTvEpisodes(@NonNull final GetRatedTvEpisodesRequest request) {</span>
+<span class="fc" id="L75">        return executeGet(</span>
+<span class="fc" id="L76">                getApiPath(request, &quot;/rated/tv/episodes&quot;),</span>
+                request,
+                GetRatedTvEpisodesResponse.class);
+    }
+
+    private static String getApiPath(final GuestSessionRequestBase request, final String subApiPath) {
+<span class="fc" id="L82">        return new StringBuilder(API_PATH)</span>
+<span class="fc" id="L83">                .append(request.getGuestSessionId())</span>
+<span class="fc" id="L84">                .append(subApiPath)</span>
+<span class="fc" id="L85">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

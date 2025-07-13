@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiscoverRequestBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.model.discover.type</a> &gt; <span class="el_source">DiscoverRequestBase.java</span></div><h1>DiscoverRequestBase.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.model.discover.type;
+
+import com.amilesend.tmdb.client.model.QueryParameter;
+import com.amilesend.tmdb.client.model.QueryParameterBasedRequest;
+import com.amilesend.tmdb.client.model.discover.filter.WatchRegionFilter;
+import lombok.Data;
+import lombok.NonNull;
+import lombok.experimental.SuperBuilder;
+import okhttp3.HttpUrl;
+
+import java.util.Objects;
+
+import static com.amilesend.tmdb.client.model.QueryParameterBasedRequest.appendIfNotBlank;
+import static com.amilesend.tmdb.client.model.QueryParameterBasedRequest.appendIfNotNull;
+
+/**
+ * Defines the base class for discover-based requests.
+ *
+ * @see QueryParameterBasedRequest
+ */
+@SuperBuilder
+@Data
+public abstract class DiscoverRequestBase implements QueryParameterBasedRequest {
+    /** Filter on adult content. */
+    @QueryParameter
+    private final Boolean includeAdult;
+    /** Filter by language */
+    @QueryParameter
+    private final String language;
+    /** The page number. */
+    @QueryParameter
+    private final Integer page;
+    /** Sort by specifier. Default is {@link SortBy#POPULARITY_ASC}. */
+    @QueryParameter
+    private final SortBy sortBy;
+    /** Filter by vote average comparison {@code (&gt;=)}. */
+    @QueryParameter
+    private final Double voteAverageGte;
+    /** Filter by vote average comparison {@code (&lt;=)}. */
+    @QueryParameter
+    private final Double voteAverageLte;
+    /** Filter by vote count comparison {@code (&gt;=)}. */
+    @QueryParameter
+    private final Double voteCountGte;
+    /** Filter by vote count comparison {@code (&lt;=)}. */
+    @QueryParameter
+    private final Double voteCountLte;
+    /** Filter based on watch region and associated attributes. */
+    @QueryParameter
+    private final WatchRegionFilter watchRegionFilter;
+    /** Filter on a delimited list of companies. */
+    @QueryParameter
+    private final String withCompanies;
+    /** Filter on a delimited list of genres. */
+    @QueryParameter
+    private final String withGenres;
+    /** Filter on a delimited list of keywords. */
+    @QueryParameter
+    private final String withKeywords;
+    /** Filter on the origin country. */
+    @QueryParameter
+    private final String withOriginCountry;
+    /** Filter on the original language. */
+    @QueryParameter
+    private final String withOriginalLanguage;
+    /** Filter on runtime comparison {@code (&gt;=)}. */
+    @QueryParameter
+    private final Integer withRuntimeGte;
+    /** Filter on runtime comparison {@code (&lt;=)}. */
+    @QueryParameter
+    private final Integer withRuntimeLte;
+    /** Filter on excluding a delimited list of companies. */
+    @QueryParameter
+    private final String withoutCompanies;
+    /** Filter on excluding a delimited list of genres. */
+    @QueryParameter
+    private final String withoutGenres;
+    /** Filter on excluding a delimited list of keywords. */
+    @QueryParameter
+    private final String withoutKeywords;
+
+    @Override
+<span class="fc" id="L100">    public HttpUrl.Builder populateQueryParameters(@NonNull HttpUrl.Builder urlBuilder) {</span>
+<span class="fc" id="L101">        appendIfNotNull(urlBuilder, &quot;page&quot;, page);</span>
+<span class="fc" id="L102">        appendIfNotNull(urlBuilder, &quot;include_adult&quot;, includeAdult);</span>
+<span class="fc" id="L103">        appendIfNotBlank(urlBuilder, &quot;language&quot;, language);</span>
+<span class="fc" id="L104">        appendIfNotNull(urlBuilder, &quot;sort_by&quot;, sortBy);</span>
+<span class="fc" id="L105">        appendIfNotNull(urlBuilder, &quot;vote_average.gte&quot;, voteAverageGte);</span>
+<span class="fc" id="L106">        appendIfNotNull(urlBuilder, &quot;vote_average.lte&quot;, voteAverageLte);</span>
+<span class="fc" id="L107">        appendIfNotNull(urlBuilder, &quot;vote_count.gte&quot;, voteCountGte);</span>
+<span class="fc" id="L108">        appendIfNotNull(urlBuilder, &quot;vote_count.lte&quot;, voteCountLte);</span>
+
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (Objects.nonNull(watchRegionFilter)) {</span>
+<span class="fc" id="L111">            urlBuilder = watchRegionFilter.populateQueryParameters(urlBuilder);</span>
+        }
+
+<span class="fc" id="L114">        appendIfNotBlank(urlBuilder, &quot;with_companies&quot;, withCompanies);</span>
+<span class="fc" id="L115">        appendIfNotBlank(urlBuilder, &quot;with_genres&quot;, withGenres);</span>
+<span class="fc" id="L116">        appendIfNotBlank(urlBuilder, &quot;with_keywords&quot;, withKeywords);</span>
+<span class="fc" id="L117">        appendIfNotBlank(urlBuilder, &quot;with_origin_country&quot;, withOriginCountry);</span>
+<span class="fc" id="L118">        appendIfNotBlank(urlBuilder, &quot;with_original_language&quot;, withOriginalLanguage);</span>
+<span class="fc" id="L119">        appendIfNotNull(urlBuilder, &quot;with_runtime.gte&quot;, withRuntimeGte);</span>
+<span class="fc" id="L120">        appendIfNotNull(urlBuilder, &quot;with_runtime.lte&quot;, withRuntimeLte);</span>
+<span class="fc" id="L121">        appendIfNotBlank(urlBuilder, &quot;without_companies&quot;, withoutCompanies);</span>
+<span class="fc" id="L122">        appendIfNotBlank(urlBuilder, &quot;without_genres&quot;, withoutGenres);</span>
+<span class="fc" id="L123">        appendIfNotBlank(urlBuilder, &quot;without_keywords&quot;, withoutKeywords);</span>
+
+<span class="fc" id="L125">        return urlBuilder;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

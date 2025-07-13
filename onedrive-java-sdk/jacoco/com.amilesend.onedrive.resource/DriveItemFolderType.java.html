@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DriveItemFolderType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource</a> &gt; <span class="el_source">DriveItemFolderType.java</span></div><h1>DriveItemFolderType.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource;
+
+import com.amilesend.client.connection.file.LogProgressCallback;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.type.Folder;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.amilesend.client.connection.file.LogProgressCallback.formatPrefix;
+
+/**
+ * Defines shared operations between drive folders and packages.
+ * @see DriveFolder
+ * @see DrivePackage
+ */
+public abstract class DriveItemFolderType extends DriveItemType {
+    /**
+     * Creates a new {@code DriveItemFolderType} that wraps the given {@code delegate} {@link DriveItem}.
+     *
+     * @param delegate the drive item to wrap
+     */
+    public DriveItemFolderType(final DriveItem delegate) {
+<span class="fc" id="L48">        super(delegate);</span>
+<span class="fc" id="L49">    }</span>
+
+    //////////////////////
+    // Upload
+    //////////////////////
+
+    /**
+     * Uploads the given {@code file} under this folder.
+     *
+     * @param file the file to upload
+     * @return the drive file that represents the uploaded file
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFile
+     * @deprecated use {@link #upload(Path)} instead
+     */
+    @Deprecated
+    public DriveFile upload(final File file) throws IOException {
+<span class="nc" id="L66">        return upload(file.toPath());</span>
+    }
+
+    /**
+     * Uploads the given {@code file} under this folder.
+     *
+     * @param filePath the file to upload
+     * @return the drive file that represents the uploaded file
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFile
+     */
+    public DriveFile upload(final Path filePath) throws IOException {
+<span class="fc" id="L78">        return upload(</span>
+                filePath,
+<span class="fc" id="L80">                LogProgressCallback.builder()</span>
+<span class="fc" id="L81">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
+<span class="fc" id="L82">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L83">                        .build());</span>
+    }
+
+    /**
+     * Uploads the given {@code file} under this folder and reports transfer progress to the specified
+     * {@link TransferProgressCallback}.
+     *
+     * @param file the file to upload
+     * @param callback the callback be notified of transfer progress
+     * @return the drive file that represents the uploaded file
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFile
+     * @deprecated use {@link #upload(Path, TransferProgressCallback)} instead
+     */
+    @Deprecated
+    public DriveFile upload(final File file, final TransferProgressCallback callback)
+            throws IOException {
+<span class="fc" id="L100">        return upload(file.toPath(), callback);</span>
+    }
+
+    /**
+     * Uploads the given {@code file} under this folder and reports transfer progress to the specified
+     * {@link TransferProgressCallback}.
+     *
+     * @param filePath the file to upload
+     * @param callback the callback be notified of transfer progress
+     * @return the drive file that represents the uploaded file
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFile
+     */
+    public DriveFile upload(final Path filePath, final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L114">        return new DriveFile(getDelegate().uploadNew(filePath, callback));</span>
+    }
+
+    /**
+     * Uploads the given {@code file} asynchronously under this folder.
+     *
+     * @param file the file to upload
+     * @return the async execution used to obtain the drive file once it has completed
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFileUploadExecution
+     * @deprecated use {@link #uploadAsync(Path)} instead
+     */
+    @Deprecated
+    public DriveFileUploadExecution uploadAsync(final File file) throws IOException {
+<span class="nc" id="L128">        return uploadAsync(</span>
+                file,
+<span class="nc" id="L130">                LogProgressCallback.builder()</span>
+<span class="nc" id="L131">                        .prefix(formatPrefix(file.getName(), &quot;OneDrive&quot;))</span>
+<span class="nc" id="L132">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="nc" id="L133">                        .build());</span>
+    }
+
+    /**
+     * Uploads the given {@code file} asynchronously under this folder.
+     *
+     * @param filePath the file to upload
+     * @return the async execution used to obtain the drive file once it has completed
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFileUploadExecution
+     */
+    public DriveFileUploadExecution uploadAsync(final Path filePath) throws IOException {
+<span class="fc" id="L145">        return uploadAsync(</span>
+                filePath,
+<span class="fc" id="L147">                LogProgressCallback.builder()</span>
+<span class="fc" id="L148">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
+<span class="fc" id="L149">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L150">                        .build());</span>
+    }
+
+    /**
+     * Uploads the given {@code file} asynchronously under this folder and reports transfer progress to the specified
+     * {@link TransferProgressCallback}.
+     *
+     * @param file the file to upload
+     * @param callback the callback be notified of transfer progress
+     * @return the async execution used to obtain the drive file once it has completed
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFileUploadExecution
+     * @deprecated use {@link #uploadAsync(Path, TransferProgressCallback)} instead
+     */
+    @Deprecated
+    public DriveFileUploadExecution uploadAsync(final File file, final TransferProgressCallback callback)
+            throws IOException {
+<span class="fc" id="L167">        return uploadAsync(file.toPath(), callback);</span>
+    }
+
+    /**
+     * Uploads the given {@code file} asynchronously under this folder and reports transfer progress to the specified
+     * {@link TransferProgressCallback}.
+     *
+     * @param filePath the file to upload
+     * @param callback the callback be notified of transfer progress
+     * @return the async execution used to obtain the drive file once it has completed
+     * @throws IOException if an error occurred while uploading the file
+     * @see DriveFileUploadExecution
+     */
+    public DriveFileUploadExecution uploadAsync(final Path filePath, final TransferProgressCallback callback)
+            throws IOException {
+<span class="fc" id="L182">        return new DriveFileUploadExecution(getDelegate().uploadNewAsync(filePath, callback));</span>
+    }
+
+    //////////////////////
+    // Operations
+    //////////////////////
+
+    /**
+     * Creates a new folder with the given {@code name} under this folder.
+     *
+     * @param name the name of the new folder
+     * @return the new drive folder
+     */
+    public DriveFolder createFolder(final String name) {
+<span class="fc" id="L196">        Validate.notBlank(name, &quot;name must not be blank&quot;);</span>
+
+<span class="fc" id="L198">        final DriveItem newFolderItem = DriveItem.builder()</span>
+<span class="fc" id="L199">                .connection(getDelegate().getConnection())</span>
+<span class="fc" id="L200">                .name(name)</span>
+<span class="fc" id="L201">                .folder(Folder.builder().build())</span>
+<span class="fc" id="L202">                .build();</span>
+<span class="fc" id="L203">        return new DriveFolder(getDelegate().create(newFolderItem));</span>
+    }
+
+    /**
+     * Gets the list of child drive packages under this folder.
+     *
+     * @return the list of drive packages
+     */
+    public List&lt;DrivePackage&gt; getChildPackages() {
+<span class="fc" id="L212">        return getDelegate().getChildren()</span>
+<span class="fc" id="L213">                .stream()</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">                .filter(di -&gt; di.get_package() != null)</span>
+<span class="fc" id="L215">                .map(di -&gt; new DrivePackage(di))</span>
+<span class="fc" id="L216">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets the list of child drive folders under this folder.
+     *
+     * @return the list of drive folders
+     */
+    public List&lt;DriveFolder&gt; getChildFolders() {
+<span class="fc" id="L225">        return getDelegate().getChildren()</span>
+<span class="fc" id="L226">                .stream()</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">                .filter(di -&gt; di.getFolder() != null)</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">                .filter(di -&gt; di.get_package() == null)</span>
+<span class="fc" id="L229">                .map(di -&gt; new DriveFolder(di))</span>
+<span class="fc" id="L230">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets the list of child drive files under this folder.
+     *
+     * @return the list of drive files
+     */
+    public List&lt;DriveFile&gt; getChildFiles() {
+<span class="fc" id="L239">        return getDelegate().getChildren()</span>
+<span class="fc" id="L240">                .stream()</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                .filter(di -&gt; di.getFile() != null)</span>
+<span class="fc" id="L242">                .map(di -&gt; new DriveFile(di))</span>
+<span class="fc" id="L243">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets the list of drive items (both folders and files) under this folder.
+     *
+     * @return the list of drive items
+     * @see DriveItemType
+     * @see DriveItem
+     */
+    public List&lt;? extends DriveItemType&gt; getChildren() {
+<span class="fc" id="L254">        return getDelegate().getChildren()</span>
+<span class="fc" id="L255">                .stream()</span>
+<span class="fc" id="L256">                .map(DriveItemType::wrapDriveItemToType)</span>
+<span class="fc" id="L257">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Searches this folder for the given query (e.g., file name).
+     *
+     * @param query the search query
+     * @return the list of drive item types (either a DriveFolder or DriveFile).
+     * @see DriveItemType
+     * @see DriveFile
+     */
+    public List&lt;? extends DriveItemType&gt; search(final String query) {
+<span class="fc" id="L269">        return getDelegate().search(query)</span>
+<span class="fc" id="L270">                .stream()</span>
+<span class="fc" id="L271">                .map(DriveItemType::wrapDriveItemToType)</span>
+<span class="fc" id="L272">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Updates the attributes for this folder.
+     *
+     * @return the updated drive folder
+     */
+    public DriveFolder update() {
+<span class="fc" id="L281">        return new DriveFolder(getDelegate().update());</span>
+    }
+
+    /**
+     * Moves this folder to the specified {@link DriveFolder}.
+     *
+     * @param destinationFolder the destination drive folder
+     * @return the updated drive file that represents this moved file
+     */
+    public DriveFolder move(final DriveFolder destinationFolder) {
+<span class="fc" id="L291">        return move(destinationFolder, StringUtils.EMPTY);</span>
+    }
+
+    /**
+     * Moves this folder to the specified {@link DriveFolder} along with the new file name.
+     *
+     * @param destinationFolder the destination drive folder
+     * @param newName the new name of the file
+     * @return the updated drive folder that represents this moved folder
+     */
+<span class="fc bfc" id="L301" title="All 2 branches covered.">    public DriveFolder move(@NonNull final DriveFolder destinationFolder, final String newName) {</span>
+<span class="fc" id="L302">        return move(destinationFolder.getId(), newName);</span>
+    }
+
+    /**
+     * Moves this folder to the specified {@code newParentId} (i.e., represents a new DriveFolder's ID)
+     * along with the new folder name.
+     *
+     * @param destinationParentId the new parent destination ID
+     * @param newName the new name of the file
+     * @return the updated drive folder that represents this moved folder
+     */
+    public DriveFolder move(final String destinationParentId, final String newName) {
+<span class="fc" id="L314">        return new DriveFolder(getDelegate().move(destinationParentId, newName));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

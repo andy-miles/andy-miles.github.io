@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DrivePackage.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource</a> &gt; <span class="el_source">DrivePackage.java</span></div><h1>DrivePackage.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource;
+
+import com.amilesend.onedrive.resource.item.DriveItem;
+
+/** A wrapper around a {@link DriveItem} that represents a package (OneNote). */
+public class DrivePackage extends DriveItemFolderType {
+    /**
+     * Creates a new {@code DrivePackage} that wraps the given {@code getDelegate()} {@link DriveItem}.
+     *
+     * @param delegate the drive item to wrap
+     */
+    public DrivePackage(final DriveItem delegate) {
+<span class="fc" id="L30">        super(delegate);</span>
+<span class="fc" id="L31">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L35">        return new StringBuilder(&quot;DrivePackage(name=&quot;)</span>
+<span class="fc" id="L36">                .append(getName())</span>
+<span class="fc" id="L37">                .append(&quot;, id=&quot;)</span>
+<span class="fc" id="L38">                .append(getId())</span>
+<span class="fc" id="L39">                .append(&quot;, isDeleted=&quot;)</span>
+<span class="fc" id="L40">                .append(isDeleted())</span>
+<span class="fc" id="L41">                .append(&quot;, isRemote=&quot;)</span>
+<span class="fc" id="L42">                .append(isRemote())</span>
+<span class="fc" id="L43">                .append(&quot;)&quot;)</span>
+<span class="fc" id="L44">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

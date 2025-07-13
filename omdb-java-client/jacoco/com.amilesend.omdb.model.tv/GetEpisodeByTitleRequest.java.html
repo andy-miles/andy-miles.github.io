@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GetEpisodeByTitleRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb.model.tv</a> &gt; <span class="el_source">GetEpisodeByTitleRequest.java</span></div><h1>GetEpisodeByTitleRequest.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb.model.tv;
+
+import com.amilesend.omdb.model.GetByTitleRequestBase;
+import com.amilesend.omdb.model.type.MediaType;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import okhttp3.HttpUrl;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+/**
+ * The request to fetch TV episode information by its title.
+ *
+ * @see GetByTitleRequestBase
+ * @see GetEpisodeBasedRequest
+ */
+@SuperBuilder
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class GetEpisodeByTitleRequest extends GetByTitleRequestBase implements GetEpisodeBasedRequest {
+    /** The season number. */
+    private final int season;
+    /** The episode number.*/
+    private final int episode;
+
+    @Override
+<span class="fc" id="L50">    public HttpUrl.Builder populateQueryParameters(@NonNull final HttpUrl.Builder urlBuilder) {</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        Validate.isTrue(season &gt; 0, &quot;season must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        Validate.isTrue( episode &gt;= 0, &quot;episode must be &gt;= 0&quot;);</span>
+
+<span class="fc" id="L54">        return super.populateQueryParameters(urlBuilder)</span>
+<span class="fc" id="L55">                .addQueryParameter(&quot;type&quot;, URLEncoder.encode(</span>
+<span class="fc" id="L56">                        MediaType.EPISODE.getValue(),</span>
+                        StandardCharsets.UTF_8))
+<span class="fc" id="L58">                .addQueryParameter(&quot;Season&quot;, URLEncoder.encode(String.valueOf(season), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L59">                .addQueryParameter(&quot;Episode&quot;, URLEncoder.encode(String.valueOf(episode), StandardCharsets.UTF_8));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

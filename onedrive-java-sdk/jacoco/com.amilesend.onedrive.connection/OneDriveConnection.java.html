@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OneDriveConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection</a> &gt; <span class="el_source">OneDriveConnection.java</span></div><h1>OneDriveConnection.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.connection.ConnectionException;
+import com.amilesend.client.connection.RequestException;
+import com.amilesend.client.connection.ResponseException;
+import com.amilesend.client.connection.file.TransferFileWriter;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.onedrive.connection.auth.OneDriveAuthManager;
+import com.amilesend.onedrive.parse.GsonFactory;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
+import lombok.NonNull;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.zip.GZIPInputStream;
+
+import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+
+/**
+ * Wraps a {@link OkHttpClient} that manages authentication refresh and parsing responses to corresponding POJO types.
+ * Construct a new instance via the {@link OneDriveConnectionBuilder} that simplifies configuration of the
+ * {@link OneDriveAuthManager} and automatically sets a pre-configured {@link Gson} instance for proper request/response
+ * serialization.
+ *
+ * @see OneDriveConnectionBuilder
+ * @see OneDriveAuthManager
+ */
+@SuperBuilder
+<span class="fc" id="L62">@Slf4j</span>
+public class OneDriveConnection extends Connection&lt;GsonFactory&gt; {
+    /**
+     * Creates a new {@link Request.Builder} with pre-configured headers for a request that contains both a
+     * JSON-formatted request and response body.
+     *
+     * @return the request builder
+     */
+    public Request.Builder newWithBodyRequestBuilder() {
+<span class="fc" id="L71">        return newRequestBuilder().addHeader(CONTENT_TYPE,  JSON_CONTENT_TYPE);</span>
+    }
+
+    /**
+     * Executes the given {@link Request} for a remote asynchronous operation and returns the monitoring URL.
+     *
+     * @param request the request
+     * @return the monitoring URL to track the remote asynchronous operation
+     * @throws ConnectionException if an error occurred during the transaction
+     */
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">    public String executeRemoteAsync(@NonNull final Request request) throws ConnectionException {</span>
+        try {
+<span class="fc" id="L83">            try (final Response response = getHttpClient().newCall(request).execute()) {</span>
+<span class="fc" id="L84">                validateResponseCode(response);</span>
+<span class="fc" id="L85">                final int code = response.code();</span>
+                // Specific to remote async operations
+<span class="fc bfc" id="L87" title="All 2 branches covered.">                if (code != 202) {</span>
+<span class="fc" id="L88">                    throw new ResponseException(&quot;Expected a 202 response code. Got &quot; + code);</span>
+                }
+
+<span class="fc" id="L91">                return response.header(&quot;Location&quot;);</span>
+            }
+<span class="fc" id="L93">        } catch (final IOException ex) {</span>
+<span class="fc" id="L94">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    /**
+     * Executes the given {@link Request} and parses the JSON-formatted response with given {@link GsonParser}.
+     *
+     * @param request the request
+     * @param parser the parser to decode the response body
+     * @return the CompletableFuture used to fetch the parsed response or failure exception reason
+     * @param &lt;T&gt; the POJO resource type
+     */
+    public &lt;T&gt; CompletableFuture&lt;T&gt; executeAsync(
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            @NonNull final Request request,</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            @NonNull final GsonParser&lt;T&gt; parser) {</span>
+<span class="fc" id="L109">        final OneDriveConnection connectionRef = this;</span>
+<span class="fc" id="L110">        final CompletableFuture&lt;T&gt; future = new CompletableFuture&lt;&gt;();</span>
+<span class="fc" id="L111">        getHttpClient().newCall(request).enqueue(new Callback() {</span>
+            @Override
+<span class="pc bpc" id="L113" title="2 of 4 branches missed.">            public void onFailure(@NonNull final Call call, @NonNull final IOException ex) {</span>
+<span class="fc" id="L114">                future.completeExceptionally(ex);</span>
+<span class="fc" id="L115">            }</span>
+
+            @Override
+<span class="pc bpc" id="L118" title="2 of 4 branches missed.">            public void onResponse(@NonNull final Call call, @NonNull final Response response) throws IOException {</span>
+                try {
+<span class="fc" id="L120">                    validateResponseCode(response);</span>
+                    final InputStream responseBodyInputStream =
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">                            StringUtils.equalsIgnoreCase(&quot;gzip&quot;, response.header(CONTENT_ENCODING))</span>
+<span class="fc" id="L123">                                    ? new GZIPInputStream(response.body().byteStream())</span>
+<span class="pc" id="L124">                                    : response.body().byteStream();</span>
+<span class="fc" id="L125">                    future.complete(parser.parse(getGsonFactory().getInstance(connectionRef), responseBodyInputStream));</span>
+<span class="fc" id="L126">                } catch (final Exception ex) {</span>
+<span class="fc" id="L127">                    future.completeExceptionally(ex);</span>
+                } finally {
+<span class="fc" id="L129">                    response.close();</span>
+                }
+<span class="fc" id="L131">            }</span>
+        });
+
+<span class="fc" id="L134">        return future;</span>
+    }
+
+    /**
+     * Downloads the contents for the given {@code request} to the specified {@code folderPath} and {@code name}.
+     *
+     * @param request the request
+     * @param folderPath the path of the folder to download the contents to
+     * @param name the name of the file to download the contents to
+     * @param sizeBytes the total size of the expected file in bytes
+     * @param callback the {@link TransferProgressCallback} call to invoke to report download transfer progress
+     * @return the size of the downloaded file in bytes
+     * @throws ConnectionException if an error occurred while downloading the content for the request
+     */
+    public long download(
+<span class="fc bfc" id="L149" title="All 2 branches covered.">            @NonNull final Request request,</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            @NonNull final Path folderPath,</span>
+            final String name,
+            final long sizeBytes,
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) throws ConnectionException {</span>
+<span class="fc" id="L154">        Validate.notBlank(name, &quot;name must not be blank&quot;);</span>
+
+        final Path downloadPath;
+        try {
+<span class="fc" id="L158">            downloadPath = checkFolderAndGetDestinationPath(folderPath, name);</span>
+<span class="fc" id="L159">        } catch (final Exception ex) {</span>
+<span class="fc" id="L160">            callback.onFailure(ex);</span>
+<span class="fc" id="L161">            throw new RequestException(&quot;Unable to determine download path:&quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L162">        }</span>
+
+<span class="fc" id="L164">        try (final Response response = getHttpClient().newCall(request).execute()) {</span>
+<span class="fc" id="L165">                return processDownloadResponse(response, downloadPath, sizeBytes, callback);</span>
+<span class="fc" id="L166">        } catch (final ConnectionException ex) {</span>
+            // Response failed validation, notify the callback
+<span class="fc" id="L168">            callback.onFailure(ex);</span>
+<span class="fc" id="L169">            throw ex;</span>
+<span class="fc" id="L170">        } catch (final Exception ex) {</span>
+            // The underlying TransferFileWriter will record an onFailure to the callback.
+<span class="fc" id="L172">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    /**
+     * Downloads the contents for the given {@code request} asynchronously to the specified {@code folderPath} and
+     * {@code name}.
+     *
+     * @param request the request
+     * @param folderPath the path of the folder to download the contents to
+     * @param name the name of the file to download the contents to
+     * @param sizeBytes the total size of the expected file in bytes
+     * @param callback the {@link TransferProgressCallback} call to invoke to report download transfer progress
+     * @return the CompletableFuture used to fetch the number of bytes downloaded
+     */
+    public CompletableFuture&lt;Long&gt; downloadAsync(
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            @NonNull final Request request,</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">            @NonNull final Path folderPath,</span>
+            final String name,
+            final long sizeBytes,
+<span class="fc bfc" id="L192" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) {</span>
+<span class="fc" id="L193">        Validate.notBlank(name, &quot;name must not be blank&quot;);</span>
+<span class="fc" id="L194">        final CompletableFuture&lt;Long&gt; future = new CompletableFuture&lt;&gt;();</span>
+
+<span class="fc" id="L196">        getHttpClient().newCall(request).enqueue(new Callback() {</span>
+            @Override
+<span class="pc bpc" id="L198" title="2 of 4 branches missed.">            public void onFailure(@NonNull final Call call, @NonNull final IOException ex) {</span>
+<span class="fc" id="L199">                callback.onFailure(ex);</span>
+<span class="fc" id="L200">                future.completeExceptionally(ex);</span>
+<span class="fc" id="L201">            }</span>
+
+            @Override
+<span class="pc bpc" id="L204" title="2 of 4 branches missed.">            public void onResponse(@NonNull final Call call, @NonNull final Response response) throws IOException {</span>
+                final Path downloadPath;
+                try {
+<span class="fc" id="L207">                    downloadPath = checkFolderAndGetDestinationPath(folderPath, name);</span>
+<span class="fc" id="L208">                } catch (final Exception ex) {</span>
+<span class="fc" id="L209">                    callback.onFailure(ex);</span>
+<span class="fc" id="L210">                    future.completeExceptionally(ex);</span>
+<span class="fc" id="L211">                    throw new RequestException(&quot;Unable to determine download path:&quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L212">                }</span>
+
+                try {
+<span class="fc" id="L215">                    final long totalBytes = processDownloadResponse(response, downloadPath, sizeBytes, callback);</span>
+<span class="fc" id="L216">                    future.complete(Long.valueOf(totalBytes));</span>
+<span class="fc" id="L217">                } catch (final ConnectionException ex) {</span>
+                    // Response failed validation, notify the callback
+<span class="fc" id="L219">                    callback.onFailure(ex);</span>
+<span class="fc" id="L220">                    future.completeExceptionally(ex);</span>
+<span class="fc" id="L221">                    throw ex;</span>
+<span class="fc" id="L222">                } catch (final Exception ex) {</span>
+                    // The underlying TransferFileWriter will record an onFailure to the callback.
+<span class="fc" id="L224">                    future.completeExceptionally(ex);</span>
+<span class="fc" id="L225">                    throw ex;</span>
+                } finally {
+<span class="fc" id="L227">                    response.close();</span>
+                }
+<span class="fc" id="L229">            }</span>
+        });
+
+<span class="fc" id="L232">        return future;</span>
+    }
+
+    @VisibleForTesting
+    long processDownloadResponse(
+            final Response response,
+            final Path downloadPath,
+            final long sizeBytes,
+            final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L241">        validateResponseCode(response);</span>
+
+<span class="fc" id="L243">        final long totalBytes = TransferFileWriter.builder()</span>
+<span class="fc" id="L244">                .output(downloadPath)</span>
+<span class="fc" id="L245">                .callback(callback)</span>
+<span class="fc" id="L246">                .build()</span>
+<span class="fc" id="L247">                .write(response.body().source(), sizeBytes);</span>
+
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L250">            log.debug(&quot;Downloaded [{}] bytes to [{}]&quot;, totalBytes, downloadPath);</span>
+        }
+<span class="fc" id="L252">        return totalBytes;</span>
+    }
+
+    @VisibleForTesting
+    Path checkFolderAndGetDestinationPath(final Path folderPath, final String name) throws IOException {
+<span class="fc" id="L257">        final Path normalizedFolderPath = folderPath.toAbsolutePath().normalize();</span>
+<span class="fc bfc" id="L258" title="All 4 branches covered.">        if (Files.exists(normalizedFolderPath) &amp;&amp; !Files.isDirectory(normalizedFolderPath)) {</span>
+<span class="fc" id="L259">            throw new IllegalArgumentException(normalizedFolderPath + &quot; must not already exist as a file&quot;);</span>
+        }
+
+<span class="fc" id="L262">        Files.createDirectories(normalizedFolderPath);</span>
+<span class="fc" id="L263">        return normalizedFolderPath.resolve(name);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

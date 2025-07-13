@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OneDriveFactoryStateManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive</a> &gt; <span class="el_source">OneDriveFactoryStateManager.java</span></div><h1>OneDriveFactoryStateManager.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive;
+
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.connection.OneDriveConnectionBuilder;
+import com.amilesend.onedrive.connection.auth.BusinessAccountAuthManager;
+import com.amilesend.onedrive.connection.auth.OneDriveAuthInfo;
+import com.amilesend.onedrive.connection.auth.oauth.OAuthReceiverException;
+import com.amilesend.onedrive.connection.auth.oauth.OneDriveOAuthReceiver;
+import com.amilesend.onedrive.connection.auth.store.AuthInfoStore;
+import com.amilesend.onedrive.connection.auth.store.AuthInfoStoreException;
+import com.amilesend.onedrive.connection.auth.store.SingleUserFileBasedAuthInfoStore;
+import com.amilesend.onedrive.connection.http.OkHttpClientBuilder;
+import com.amilesend.onedrive.parse.GsonFactory;
+import com.amilesend.onedrive.resource.discovery.Service;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
+import lombok.AccessLevel;
+import lombok.Data;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+
+import static com.amilesend.onedrive.connection.auth.oauth.OAuthReceiver.browse;
+
+/**
+ * A factory that vends authenticated {@link OneDrive} instances for a single authenticated user. It automatically
+ * instantiates a new OAuth flow for first-time user authorization grants and leverages persisted refresh tokens to
+ * vend subsequent instances.
+ * &lt;p&gt;
+ * See {@link CredentialConfig} on how you can configure your own application client credentials.
+ * &lt;p&gt;
+ * This factory maintains the OneDrive instance for repeated access. While the underlying connection automatically
+ * refreshes the tokens during the object runtime lifecycle, it is recommended to obtain this instance each time to
+ * automatically persist the state to disk so that future consuming application instances do not have to initiate a
+ * new OAuth flow due to stale refresh tokens. Token state can be manually persisted via {@link #saveState()}}, but
+ * can be more easily done with levering try-with-resources:
+ * &lt;pre&gt;
+ * try (OneDriveFactoryStateManager manager= OneDriveFactoryStateManager.builder()
+ *                 .stateFile(Paths.get(&quot;./OneDriveState.json&quot;))
+ *                 .build()) {
+ *     DriveFolder root = manager.getInstance().getUserDrive().getRootFolder();
+ *
+ *     // Perform operations on the root folder's contents
+ * }
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * While this factory is customizable through its builder, the defaults are intended to simplify configuration for a
+ * majority of use-cases (e.g., for a desktop application). The only required attribute is defining the path to the
+ * authentication info state file. If your use-case requires configuring the underlying {@code OkHttpClient} instance
+ * (e.g., configuring your own SSL cert verification, proxy, and/or connection timeouts), you can configure the client
+ * with the provided {@link OkHttpClientBuilder}, or alternatively with OkHttp's builder: {@link OkHttpClient.Builder}.
+ */
+<span class="fc" id="L78">@Slf4j</span>
+public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements AutoCloseable {
+    private static final int DEFAULT_RECEIVER_PORT = 8890;
+    private static final String DEFAULT_CALLBACK_PATH = &quot;/Callback&quot;;
+    private static final String DEFAULT_REDIRECT_URL = &quot;http://localhost:8890&quot; + DEFAULT_CALLBACK_PATH;
+<span class="fc" id="L83">    private static final List&lt;String&gt; DEFAULT_SCOPES = List.of(&quot;Files.ReadWrite.All&quot;, &quot;offline_access&quot;, &quot;User.Read&quot;);</span>
+    private static final String DEFAULT_USER_AUTH_KEY = &quot;DefaultUser&quot;;
+
+    /** The store used to persist user auth token state. */
+    private final AuthInfoStore authInfoStore;
+    /** The JSON serializer configured for persisting auth state. */
+    // Optional
+    private final Gson stateGson;
+    // Optional
+    @Setter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    private CredentialConfig credentialConfig;
+    /** The http client. */
+    // Optional for custom configuration (e.g., SSL, proxy, etc.).
+    private OkHttpClient httpClient;
+    /** The user agent. */
+    private String userAgent;
+    /** The port for the OAUTH redirect receiver to listen on. */
+    private int receiverPort;
+    /** The list of scopes (permissions) for accessing the Graph API. */
+    private List&lt;String&gt; scopes;
+    /** The redirect URL for the OAUTH redirect receiver. */
+    private String redirectUrl;
+    /** The callback path for the OAUTH redirect receiver. */
+    private String callbackPath;
+    private final Class&lt;? extends OneDrive&gt; onedriveType;
+    @Setter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    private T onedrive;
+
+    /**
+     * Creates a new builder. Note: Assumes that the state manager is for a personal account.
+     *
+     * @return the builder
+     */
+    public static Builder builder() {
+<span class="fc" id="L119">        return new Builder(OneDrive.class);</span>
+    }
+
+    /**
+     * Creates a new builder for the given {@code onedriveType}.
+     *
+     * @param onedriveType the OneDrive class type
+     * @return the builder
+     * @see OneDrive
+     * @see BusinessOneDrive
+     */
+    public static Builder builder(final Class&lt;? extends OneDrive&gt; onedriveType) {
+<span class="fc" id="L131">        return new Builder(onedriveType);</span>
+    }
+
+    /**
+     * Builds a new {@code OneDriveFactoryStateManager}.
+     *
+     * @param builder the builder
+     */
+<span class="fc" id="L139">    private OneDriveFactoryStateManager(final Builder builder) {</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        this.onedriveType = builder.onedriveType == null ? OneDrive.class : builder.onedriveType;</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        this.httpClient = builder.httpClient == null ? new OkHttpClientBuilder().build() : builder.httpClient;</span>
+<span class="fc" id="L142">        this.userAgent = builder.userAgent;</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        this.stateGson = builder.stateGson == null</span>
+<span class="fc" id="L144">                ? GsonFactory.getInstanceForStateManager()</span>
+<span class="fc" id="L145">                : builder.stateGson;</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        this.redirectUrl = StringUtils.isBlank(builder.redirectUrl) ? DEFAULT_REDIRECT_URL : builder.redirectUrl;</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        this.callbackPath = builder.callbackPath == null ? DEFAULT_CALLBACK_PATH : builder.callbackPath;</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        this.scopes = builder.scopes == null ? DEFAULT_SCOPES : builder.scopes;</span>
+<span class="fc" id="L149">        this.credentialConfig = builder.credentialConfig;</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        this.receiverPort = builder.receiverPort == null ? DEFAULT_RECEIVER_PORT : builder.receiverPort.intValue();</span>
+<span class="fc bfc" id="L151" title="All 4 branches covered.">        Validate.isTrue(builder.stateFile != null || builder.authInfoStore != null,</span>
+                &quot;Either stateFile or authInfoStore must be defined&quot;);
+<span class="fc" id="L153">        this.authInfoStore = Optional.ofNullable(builder.authInfoStore)</span>
+<span class="fc" id="L154">                .orElseGet(() -&gt; new SingleUserFileBasedAuthInfoStore(builder.stateFile));</span>
+<span class="fc" id="L155">    }</span>
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L159">        saveState();</span>
+<span class="fc" id="L160">    }</span>
+
+    /**
+     * Obtains an authenticated {@link OneDrive} instance.
+     *
+     * @return the authenticated OneDrive instance
+     * @throws OneDriveException if unable to authenticate while creating a new OneDrive instance
+     */
+    public T getInstance() throws OneDriveException {
+        try {
+<span class="fc" id="L170">            final T oneDrive = fetchOneDrive();</span>
+<span class="fc" id="L171">            log.info(&quot;OneDrive logged in user: {}&quot;, oneDrive.getUserDisplayName());</span>
+<span class="fc" id="L172">            return oneDrive;</span>
+<span class="fc" id="L173">        } catch (final OAuthReceiverException ex) {</span>
+<span class="fc" id="L174">            throw new OneDriveException(&quot;Error while obtaining OneDrive instance&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * Persists the authentication state.
+     *
+     * @throws OneDriveException if unable to save the authentication information
+     */
+    public void saveState() throws OneDriveException {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (onedrive == null) {</span>
+<span class="fc" id="L185">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L189">            authInfoStore.store(DEFAULT_USER_AUTH_KEY, onedrive.getAuthInfo());</span>
+<span class="fc" id="L190">        } catch (final AuthInfoStoreException ex) {</span>
+<span class="fc" id="L191">            throw new OneDriveException(&quot;Unable to save state: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L192">        }</span>
+<span class="fc" id="L193">    }</span>
+
+    @VisibleForTesting
+    T fetchOneDrive() throws OAuthReceiverException, OneDriveException {
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (onedrive != null) {</span>
+<span class="fc" id="L198">            return onedrive;</span>
+        }
+
+        try {
+<span class="fc" id="L202">            final CredentialConfig config = loadCredentialConfig();</span>
+<span class="fc" id="L203">            final Optional&lt;OneDriveAuthInfo&gt; authInfoOpt = loadState();</span>
+<span class="fc" id="L204">            final OneDriveConnectionBuilder connectionBuilder = OneDriveConnectionBuilder.newInstance()</span>
+<span class="fc" id="L205">                    .httpClient(httpClient)</span>
+<span class="fc" id="L206">                    .userAgent(userAgent)</span>
+<span class="fc" id="L207">                    .clientId(config.getClientId())</span>
+<span class="fc" id="L208">                    .clientSecret(config.getClientSecret())</span>
+<span class="fc" id="L209">                    .redirectUrl(redirectUrl);</span>
+            OneDriveConnection connection;
+            // If persisted state exists, use it to leverage the refresh token; otherwise, obtain the auth code
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            if (authInfoOpt.isPresent()) {</span>
+<span class="fc" id="L213">                log.debug(&quot;Creating OneDriveConnection from persisted state&quot;);</span>
+<span class="fc" id="L214">                connection = connectionBuilder.build(authInfoOpt.get());</span>
+            } else {
+<span class="fc" id="L216">                log.debug(&quot;No state found. Authenticating application for user&quot;);</span>
+<span class="fc" id="L217">                final String authCode = authenticate(config);</span>
+<span class="fc" id="L218">                connection = authorizeConnection(connectionBuilder, config, authCode);</span>
+            }
+
+<span class="fc" id="L221">            onedrive = (T) onedriveType.getDeclaredConstructor(OneDriveConnection.class).newInstance(connection);</span>
+<span class="fc" id="L222">            saveState();</span>
+<span class="fc" id="L223">            return onedrive;</span>
+<span class="fc" id="L224">        } catch (final IOException | ReflectiveOperationException ex) {</span>
+<span class="fc" id="L225">            throw new OneDriveException(</span>
+<span class="fc" id="L226">                    &quot;An error occurred while fetching credential or auth state: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    @VisibleForTesting
+    OneDriveConnection authorizeConnection(
+            final OneDriveConnectionBuilder connectionBuilder,
+            final CredentialConfig config,
+            final String authCode) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (onedriveType != BusinessOneDrive.class) {</span>
+<span class="fc" id="L236">            return connectionBuilder.build(authCode);</span>
+        }
+
+<span class="fc" id="L239">        final BusinessAccountAuthManager authManager = BusinessAccountAuthManager.builderWithAuthCode()</span>
+<span class="fc" id="L240">                .authCode(authCode)</span>
+<span class="fc" id="L241">                .clientId(config.getClientId())</span>
+<span class="fc" id="L242">                .clientSecret(config.getClientSecret())</span>
+<span class="fc" id="L243">                .httpClient(httpClient)</span>
+<span class="fc" id="L244">                .redirectUrl(redirectUrl)</span>
+<span class="fc" id="L245">                .buildWithAuthCode();</span>
+
+        // Discover and authenticate with the first registered service
+<span class="fc" id="L248">        final List&lt;Service&gt; services = authManager.getServices();</span>
+<span class="fc" id="L249">        authManager.authenticateService(services.get(0));</span>
+
+<span class="fc" id="L251">        return connectionBuilder.authManager(authManager)</span>
+<span class="fc" id="L252">                .build(authManager.getAuthInfo());</span>
+    }
+
+    @VisibleForTesting
+    Optional&lt;OneDriveAuthInfo&gt; loadState() throws OneDriveException {
+        try {
+<span class="fc" id="L258">            return Optional.ofNullable(authInfoStore.retrieve(DEFAULT_USER_AUTH_KEY));</span>
+<span class="fc" id="L259">        } catch (final AuthInfoStoreException ex) {</span>
+<span class="fc" id="L260">            throw new OneDriveException(&quot;Unable to load state: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    @VisibleForTesting
+    CredentialConfig loadCredentialConfig() throws IOException {
+<span class="fc bfc" id="L266" title="All 2 branches covered.">        return credentialConfig == null</span>
+<span class="fc" id="L267">                ? CredentialConfig.loadDefaultCredentialConfigResource(stateGson)</span>
+<span class="fc" id="L268">                : credentialConfig;</span>
+    }
+
+    @VisibleForTesting
+    String authenticate(final CredentialConfig config) throws OAuthReceiverException {
+<span class="fc" id="L273">        try (final OneDriveOAuthReceiver receiver = OneDriveOAuthReceiver.builder()</span>
+<span class="fc" id="L274">                .clientId(config.getClientId())</span>
+<span class="fc" id="L275">                .port(receiverPort)</span>
+<span class="fc" id="L276">                .callbackPath(callbackPath)</span>
+<span class="fc" id="L277">                .scopes(scopes)</span>
+<span class="fc" id="L278">                .build()</span>
+<span class="fc" id="L279">                .start()) {</span>
+<span class="fc" id="L280">            browse(receiver.getAuthCodeUri());</span>
+            // Obtain the authorization code in order to exchange it for an access token
+<span class="fc" id="L282">            final String authCode = receiver.waitForCode();</span>
+<span class="fc" id="L283">            log.debug(&quot;AuthCode: {}&quot;, authCode);</span>
+<span class="fc" id="L284">            return authCode;</span>
+        }
+    }
+
+    /**
+     * The builder for creating a new {@link OneDriveFactoryStateManager}.
+     */
+    public static class Builder {
+        /**
+         * The class type of the OneDrive instance that is to be created.
+         * @see OneDrive
+         * @see BusinessOneDrive
+         */
+        private final Class&lt;? extends OneDrive&gt; onedriveType;
+        /** The http client. */
+        private OkHttpClient httpClient;
+        /** The user agent. */
+        private String userAgent;
+        /** The port for the OAUTH redirect receiver to listen on. */
+        private Integer receiverPort;
+        /** The redirect URL for the OAUTH redirect receiver. */
+        private String redirectUrl;
+        /** The callback path for the OAUTH redirect receiver. */
+        private String callbackPath;
+        /** The list of scopes (permissions) for accessing the Graph API. */
+        private List&lt;String&gt; scopes;
+        /** The JSON serializer configured for persisting auth state. */
+        private Gson stateGson;
+        /** The application client credential configuration. */
+        private CredentialConfig credentialConfig;
+        /** The optional persisted auth state. */
+        private Path stateFile;
+        /** The store used to persist and retrieve the auth state. */
+        private AuthInfoStore authInfoStore;
+
+        /**
+         * Creates a new {@code Builder} for the give OneDrive type.
+         *
+         * @param onedriveType the one drive class type
+         * @see OneDrive
+         * @see BusinessOneDrive
+         */
+<span class="fc" id="L326">        private Builder(final Class&lt;? extends OneDrive&gt; onedriveType) {</span>
+<span class="fc" id="L327">            this.onedriveType = onedriveType;</span>
+<span class="fc" id="L328">        }</span>
+
+        /**
+         * Sets the http client.
+         *
+         * @param httpClient the http client
+         * @return this builder
+         */
+        public Builder httpClient(final OkHttpClient httpClient) {
+<span class="fc" id="L337">            this.httpClient = httpClient;</span>
+<span class="fc" id="L338">            return this;</span>
+        }
+
+        /**
+         * Sets the port for the OAUTH redirect receiver to listen on.
+         *
+         * @param receiverPort the port number
+         * @return this builder
+         */
+        public Builder receiverPort(final Integer receiverPort) {
+<span class="fc" id="L348">            this.receiverPort = receiverPort;</span>
+<span class="fc" id="L349">            return this;</span>
+        }
+
+        /**
+         * Sets the redirect URL for the OAUTH redirect receiver.
+         *
+         * @param redirectUrl the redirect URL
+         * @return this builder
+         */
+        public Builder redirectUrl(final String redirectUrl) {
+<span class="fc" id="L359">            this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L360">            return this;</span>
+        }
+
+        /**
+         * Sets he callback path for the OAUTH redirect receiver.
+         *
+         * @param callbackPath the callback path
+         * @return this builder
+         */
+        public Builder callbackPath(final String callbackPath) {
+<span class="fc" id="L370">            this.callbackPath = callbackPath;</span>
+<span class="fc" id="L371">            return this;</span>
+        }
+
+        /**
+         * Sets the list of scopes (permissions) for accessing the Graph API.
+         *
+         * @param scopes the list of scopes
+         * @return this builder
+         */
+        public Builder scopes(final List&lt;String&gt; scopes) {
+<span class="fc" id="L381">            this.scopes = scopes;</span>
+<span class="fc" id="L382">            return this;</span>
+        }
+
+        /**
+         * Sets the JSON serializer configured for persisting auth state.
+         *
+         * @param stateGson the Gson instance
+         * @return this builder
+         */
+        public Builder stateGson(final Gson stateGson) {
+<span class="fc" id="L392">            this.stateGson = stateGson;</span>
+<span class="fc" id="L393">            return this;</span>
+        }
+
+        /**
+         * Sets the application client credential configuration.
+         *
+         * @param credentialConfig the credential configuration
+         * @return this builder
+         */
+        public Builder credentialConfig(final CredentialConfig credentialConfig) {
+<span class="fc" id="L403">            this.credentialConfig = credentialConfig;</span>
+<span class="fc" id="L404">            return this;</span>
+        }
+
+        /**
+         * Sets the optional persisted auth state.
+         *
+         * @param stateFile the persisted auth tokens, or state file
+         * @return this builder
+         */
+        public Builder stateFile(final Path stateFile) {
+<span class="fc" id="L414">            this.stateFile = stateFile;</span>
+<span class="fc" id="L415">            return this;</span>
+        }
+
+        /**
+         * Sets the store used to persist and retrieve the auth state.
+         *
+         * @param authInfoStore the auth info store implementation
+         * @return this builder
+         */
+        public Builder authInfoStore(final AuthInfoStore authInfoStore) {
+<span class="fc" id="L425">            this.authInfoStore = authInfoStore;</span>
+<span class="fc" id="L426">            return this;</span>
+        }
+
+        /**
+         * Sets the user agent used for requests to the service.
+         *
+         * @param userAgent the user agent
+         * @return this builder
+         */
+        public Builder userAgent(final String userAgent) {
+<span class="fc" id="L436">            this.userAgent = userAgent;</span>
+<span class="fc" id="L437">            return this;</span>
+        }
+
+        /**
+         * Builds a new {@link OneDriveFactoryStateManager}.
+         *
+         * @return a new {@code OneDriveFactoryStateManager}
+         */
+        public OneDriveFactoryStateManager build() {
+<span class="fc bfc" id="L446" title="All 2 branches covered.">            return BusinessOneDrive.class.equals(onedriveType)</span>
+<span class="fc" id="L447">                    ? new OneDriveFactoryStateManager&lt;BusinessOneDrive&gt;(this)</span>
+<span class="fc" id="L448">                    : new OneDriveFactoryStateManager&lt;&gt;(this);</span>
+        }
+    }
+
+    /**
+     * Defines the consuming application's client credentials.
+     * &lt;p&gt;
+     * The {@code clientId} and {@code clientSecret} are obtained from the Azure application registration console.
+     * See the
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/getting-started/app-registration&quot;&gt;
+     * API documentation&lt;/a&gt; for more information.
+     * &lt;p&gt;
+     * Once your client identifier and secret are obtain, you may bundle your credentials as a JSON formatted text file
+     * within your JAR so that it's accessible via a resource. By default, you may save your credentials as
+     * {@code ms-onedrive-credentials.json} bundled as a JAR resource.  Example format:
+     * &lt;pre&gt;
+     * {
+     *   &quot;clientId&quot; : &quot;xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx&quot;,
+     *   &quot;clientSecret&quot; : &quot;xxxxxxxxxxxxxxxxxxxxxxxxxxx&quot;
+     * }
+     * &lt;/pre&gt;
+     */
+    @Data
+    public static class CredentialConfig {
+        private static final String DEFAULT_RESOURCE_CONFIG_PATH = &quot;/ms-onedrive-credentials.json&quot;;
+
+        /** The client identifier. */
+        private String clientId;
+        /** The client secret. */
+        private String clientSecret;
+
+        public static CredentialConfig loadDefaultCredentialConfigResource(final Gson gson) throws IOException {
+<span class="nc" id="L480">            try (final InputStreamReader isr = new InputStreamReader(</span>
+<span class="nc" id="L481">                    CredentialConfig.class.getResourceAsStream(DEFAULT_RESOURCE_CONFIG_PATH))) {</span>
+<span class="nc" id="L482">                return gson.fromJson(isr, CredentialConfig.class);</span>
+            }
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

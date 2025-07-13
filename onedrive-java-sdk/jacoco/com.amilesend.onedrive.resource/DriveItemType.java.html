@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DriveItemType.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource</a> &gt; <span class="el_source">DriveItemType.java</span></div><h1>DriveItemType.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource;
+
+import com.amilesend.onedrive.resource.activities.ItemActivity;
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.AsyncJob;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.DriveItemVersion;
+import com.amilesend.onedrive.resource.item.type.FileSystemInfo;
+import com.amilesend.onedrive.resource.item.type.ItemReference;
+import com.amilesend.onedrive.resource.item.type.Package;
+import com.amilesend.onedrive.resource.item.type.Permission;
+import com.amilesend.onedrive.resource.item.type.RemoteItem;
+import com.amilesend.onedrive.resource.item.type.ThumbnailSet;
+import com.amilesend.onedrive.resource.request.AddPermissionRequest;
+import com.amilesend.onedrive.resource.request.CreateSharingLinkRequest;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Defines the base class that wraps a {@link com.amilesend.onedrive.resource.item.DriveItem} for direct access by
+ * consumers of this SDK.
+ */
+@RequiredArgsConstructor
+public abstract class DriveItemType {
+    @Getter(AccessLevel.PROTECTED)
+    @NonNull
+    private final DriveItem delegate;
+
+    //////////////////////
+    // Accessors
+    //////////////////////
+
+    /**
+     * Gets the identity set that indicates who created this drive item.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getCreatedBy() {
+<span class="fc" id="L63">        return delegate.getCreatedBy();</span>
+    }
+
+    /**
+     * Gets the timestamp (formatted as a string) that indicates when this drive item was created.
+     *
+     * @return the timestamp
+     */
+    public String getCreatedDateTime() {
+<span class="fc" id="L72">        return delegate.getCreatedDateTime();</span>
+    }
+
+    /**
+     * Gets the eTag associated with this item.
+     *
+     * @return the etag
+     */
+    public String getETag() {
+<span class="fc" id="L81">        return delegate.getETag();</span>
+    }
+
+    /**
+     * Gets the drive item identifier.
+     *
+     * @return the drive item identifier
+     */
+    public String getId() {
+<span class="fc" id="L90">        return delegate.getId();</span>
+    }
+
+    /**
+     * Gets the identity set that indicates who made the last modification to this drive item.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getLastModifiedBy() {
+<span class="fc" id="L100">        return delegate.getLastModifiedBy();</span>
+    }
+
+    /**
+     * Gets the timestamp (formatted as a string) that indicates when this drive item was modified.
+     *
+     * @return the timestamp
+     */
+    public String getLastModifiedDateTime() {
+<span class="fc" id="L109">        return delegate.getLastModifiedDateTime();</span>
+    }
+
+    /**
+     * Gets the name of this drive item.
+     *
+     * @return the name
+     */
+    public String getName() {
+<span class="fc" id="L118">        return delegate.getName();</span>
+    }
+
+    /**
+     * Gets the parent reference of this drive item.
+     *
+     * @return the parent reference
+     * @see ItemReference
+     */
+    public ItemReference getParentReference() {
+<span class="fc" id="L128">        return delegate.getParentReference();</span>
+    }
+
+    /**
+     * Describes if this drive item has been marked for deletion.
+     *
+     * @return {@code true} if marked for deletion; else, {@code false}
+     */
+    public boolean isDeleted() {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        return delegate.getDeleted() != null;</span>
+    }
+
+    /**
+     * Describes if this drive item represents a remote item from another drive.
+     *
+     * @return {@code true} if this item is a remote item; else, {@code false}
+     */
+    public boolean isRemote() {
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        return getRemoteItem() != null;</span>
+    }
+
+    /**
+     * Gets the remote item information. Can be {@code null}.
+     *
+     * @return the remote item information
+     */
+    public RemoteItem getRemoteItem() {
+<span class="fc" id="L155">        return delegate.getRemoteItem();</span>
+    }
+
+    /**
+     * Gets the list of activities associated with this drive item.
+     *
+     * @return the list of activities
+     * @see ItemActivity
+     */
+    public List&lt;ItemActivity&gt; getActivities() {
+<span class="fc" id="L165">        return delegate.getActivities();</span>
+    }
+
+    /**
+     * Gets the list of permissions associated with this drive item.
+     *
+     * @return the list of permissions
+     * @see Permission
+     */
+    public List&lt;Permission&gt; getPermissions() {
+<span class="fc" id="L175">        return delegate.getPermissions();</span>
+    }
+
+    /**
+     * Gets the list thumbnails associated with this drive item.
+     *
+     * @return the list of thumbnail sets
+     * @see ThumbnailSet
+     */
+    public List&lt;ThumbnailSet&gt; getThumbnails() {
+<span class="fc" id="L185">        return delegate.getThumbnails();</span>
+    }
+
+    /**
+     * Gets the list of versions for this drive item.
+     *
+     * @return the list of versions
+     * @see DriveItemVersion
+     */
+    public List&lt;DriveItemVersion&gt; getVersions() {
+<span class="fc" id="L195">        return delegate.getVersions();</span>
+    }
+
+    /**
+     * Describes if this is a folder.
+     *
+     * @return {@code true} if this item is a folder; else, {@code false}
+     */
+    public boolean isFolder() {
+<span class="pc bpc" id="L204" title="1 of 4 branches missed.">        return delegate.getFolder() != null &amp;&amp; !isPackage();</span>
+    }
+
+    /**
+     * Describes if this is a file.
+     *
+     * @return {@code true} if this item is a file; else, {@code false}
+     */
+    public boolean isFile() {
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        return !isFolder();</span>
+    }
+
+    /**
+     * Gets the local file system information associated with this drive item.
+     *
+     * @return the file system information
+     * @see FileSystemInfo
+     */
+    public FileSystemInfo getFileSystemInfo() {
+<span class="fc" id="L223">        return delegate.getFileSystemInfo();</span>
+    }
+
+    /**
+     * Sets the local file system information associated with this drive item.
+     *
+     * @param fileSystemInfo the file system information
+     * @see FileSystemInfo
+     */
+<span class="fc bfc" id="L232" title="All 2 branches covered.">    public void setFileSystemInfo(@NonNull final FileSystemInfo fileSystemInfo) {</span>
+<span class="fc" id="L233">        delegate.setFileSystemInfo(fileSystemInfo);</span>
+<span class="fc" id="L234">    }</span>
+
+    /**
+     * Describes if this is a package.
+     *
+     * @return {@code true} if this item is a package; else, {@code false}
+     */
+    public boolean isPackage() {
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">        return getPackage() != null;</span>
+    }
+
+    /**
+     * Gets the package information associated with this drive item.
+     *
+     * @return the package information
+     */
+    public Package getPackage() {
+<span class="fc" id="L251">        return delegate.get_package();</span>
+    }
+
+    //////////////////////
+    // Shared Methods
+    //////////////////////
+
+    /**
+     * Adds a permission for the given request.
+     *
+     * @param request containing the recipients and roles to add
+     * @return the list of permissions
+     * @see Permission
+     * @see AddPermissionRequest
+     */
+    public List&lt;Permission&gt; addPermission(final AddPermissionRequest request) {
+<span class="fc" id="L267">        return delegate.addPermission(request);</span>
+    }
+
+    /**
+     * Creates a sharing link for the given request.
+     *
+     * @param request the descriptor of the type of link to share
+     * @return the sharing permissions that includes the link
+     */
+    public Permission createSharingLink(final CreateSharingLinkRequest request) {
+<span class="fc" id="L277">        return delegate.createSharingLink(request);</span>
+    }
+
+
+    /**
+     * Copies this drive item type to the specified {@code DriveFolder}.
+     *
+     * @param destinationFolder the destination drive folder
+     * @return the {@code AsyncJob} that can be used to poll for the remote asynchronous operation progress.
+     */
+    public AsyncJob copy(final DriveFolder destinationFolder) {
+<span class="fc" id="L288">        return copy(destinationFolder, StringUtils.EMPTY);</span>
+    }
+
+    /**
+     * Copies this drive item type to the specified {@code DriveFolder} along with the new file name.
+     *
+     * @param destinationFolder the destination drive folder
+     * @param newName the new name of the file
+     * @return the {@code AsyncJob} that can be used to poll for the remote asynchronous operation progress.
+     */
+<span class="fc bfc" id="L298" title="All 2 branches covered.">    public AsyncJob copy(@NonNull final DriveFolder destinationFolder, String newName) {</span>
+<span class="fc" id="L299">        return copy(destinationFolder.getId(), newName);</span>
+    }
+
+    /**
+     * Copies this drive item type to the specified {@code newName} within the same folder.
+     *
+     * @param newName the new name of the file
+     * @return the {@code AsyncJob} that can be used to poll for the remote asynchronous operation progress.
+     */
+    public AsyncJob copy(final String newName) {
+<span class="fc" id="L309">        return copy(StringUtils.EMPTY, newName);</span>
+    }
+
+    /**
+     * Copies this drive item type to the specified {@code newParentId} (i.e., represents a new DriveFolder's ID)
+     * along with the new file name.
+     *
+     * @param destinationParentId the destination parent identifier
+     * @param newName the new name of the file
+     * @return the {@code AsyncJob} that can be used to poll for the remote asynchronous operation progress.
+     */
+    public AsyncJob copy(final String destinationParentId, final String newName) {
+<span class="fc" id="L321">        return delegate.copy(destinationParentId, newName);</span>
+    }
+
+    /**
+     * Mark this drive item type for deletion. This item will be accessible via the drive's recycle bin.
+     */
+    public void delete() {
+<span class="fc" id="L328">        delegate.delete();</span>
+<span class="fc" id="L329">    }</span>
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L334">            return true;</span>
+        }
+
+<span class="pc bpc" id="L337" title="1 of 4 branches missed.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="fc" id="L338">            return false;</span>
+        }
+
+<span class="fc" id="L341">        final DriveItemType that = (DriveItemType) obj;</span>
+<span class="fc" id="L342">        return Objects.equals(getDelegate(), that.getDelegate());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L347">        return Objects.hash(getDelegate());</span>
+    }
+
+    static DriveItemType wrapDriveItemToType(final DriveItem driveItem) {
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        if (driveItem.get_package() != null) {</span>
+<span class="fc" id="L352">            return new DrivePackage(driveItem);</span>
+<span class="fc bfc" id="L353" title="All 2 branches covered.">        } else if (driveItem.getFolder() != null) {</span>
+<span class="fc" id="L354">            return new DriveFolder(driveItem);</span>
+        }
+
+<span class="fc" id="L357">        return new DriveFile(driveItem);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

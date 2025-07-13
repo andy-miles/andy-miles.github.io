@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PeopleApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.api</a> &gt; <span class="el_source">PeopleApi.java</span></div><h1>PeopleApi.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.connection.RequestException;
+import com.amilesend.client.parse.parser.BasicParser;
+import com.amilesend.client.parse.parser.ListParser;
+import com.amilesend.tvmaze.client.model.CastCredit;
+import com.amilesend.tvmaze.client.model.CrewCredit;
+import com.amilesend.tvmaze.client.model.Person;
+import okhttp3.HttpUrl;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
+
+
+/**
+ * TVMaze API to retrieve people information.
+ * &lt;br/&gt;
+ * For more information, please refer to &lt;a href=&quot;https://www.tvmaze.com/api#people&quot;&gt;
+ * https://www.tvmaze.com/api#people&lt;/a&gt;
+ */
+public class PeopleApi extends ApiBase {
+    private static final String PEOPLE_INDEX_PATH = &quot;/people&quot;;
+    private static final String PEOPLE_API_PATH = PEOPLE_INDEX_PATH + &quot;/&quot;;
+    private static final String CAST_CREDITS_SUB_API_PATH = &quot;/castcredits&quot;;
+    private static final String CREW_CREDITS_SUB_API_PATH = &quot;/crewcredits&quot;;
+    private static final String GUEST_CAST_CREDITS_SUB_API_PATH = &quot;/guestcastcredits&quot;;
+
+    /**
+     * Creates a new {@code PeopleApi} object.
+     *
+     * @param connection the connection
+     */
+    public PeopleApi(final Connection connection) {
+<span class="fc" id="L52">        super(connection);</span>
+<span class="fc" id="L53">    }</span>
+
+
+    //////////////
+    // getPerson
+    //////////////
+
+    /**
+     * Retrieves information for a specific person.
+     *
+     * @param personId the person identifier
+     * @param isCastCreditsIncluded if {@code true}, include cast credits in the response; else, {@code false}
+     * @return the person
+     * @see Person
+     * @see CastCredit
+     */
+    public Person getPerson(final int personId, final boolean isCastCreditsIncluded) {
+<span class="fc" id="L70">        final HttpUrl url = validateAndFormatPeopleUrl(personId, isCastCreditsIncluded);</span>
+<span class="fc" id="L71">        return connection.execute(</span>
+<span class="fc" id="L72">                connection.newRequestBuilder()</span>
+<span class="fc" id="L73">                        .url(url)</span>
+<span class="fc" id="L74">                        .build(),</span>
+                new BasicParser&lt;&gt;(Person.class));
+    }
+
+    private HttpUrl validateAndFormatPeopleUrl(final int personId, final boolean isCastCreditsIncluded) {
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        return isCastCreditsIncluded</span>
+<span class="fc" id="L80">                ? validateAndFormatUrl(PEOPLE_API_PATH, personId, StringUtils.EMPTY, Person.EmbeddedType.CAST_CREDITS)</span>
+<span class="nc" id="L81">                : validateAndFormatUrl(PEOPLE_API_PATH, personId, StringUtils.EMPTY);</span>
+    }
+
+    ///////////////////
+    // getCastCredits
+    ///////////////////
+
+    /**
+     * Retrieves the list of show-level cast credits for a specific person.
+     *
+     * @param personId the person identifier
+     * @param isShowIncluded if {@code true}, include show information in the response; else, {@code false}
+     * @return the list of cast credits
+     * @see CastCredit
+     * @see com.amilesend.tvmaze.client.model.Show
+     */
+    public List&lt;CastCredit&gt; getCastCredits(final int personId, final boolean isShowIncluded) {
+<span class="fc" id="L98">        final HttpUrl url = validateAndFormatCastCreditsUrl(personId, isShowIncluded);</span>
+<span class="fc" id="L99">        return connection.execute(</span>
+<span class="fc" id="L100">                connection.newRequestBuilder()</span>
+<span class="fc" id="L101">                        .url(url)</span>
+<span class="fc" id="L102">                        .build(),</span>
+                new ListParser&lt;&gt;(CastCredit.class));
+    }
+
+    private HttpUrl validateAndFormatCastCreditsUrl(final int personId, final boolean isShowIncluded) {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        return isShowIncluded</span>
+<span class="fc" id="L108">                ? validateAndFormatUrl(</span>
+                        PEOPLE_API_PATH,
+                        personId,
+                        CAST_CREDITS_SUB_API_PATH,
+                        CastCredit.EmbeddedType.SHOW)
+<span class="nc" id="L113">                : validateAndFormatUrl(PEOPLE_API_PATH, personId, CAST_CREDITS_SUB_API_PATH);</span>
+    }
+
+    ///////////////////
+    // getCrewCredits
+    ///////////////////
+
+    /**
+     * Retrieves the list of show-level crew credits for a specific person.
+     *
+     * @param personId the person identifier
+     * @param isShowIncluded if {@code true}, include show information in the response; else, {@code false}
+     * @return the list of crew credits
+     * @see CrewCredit
+     * @see com.amilesend.tvmaze.client.model.Show
+     */
+    public List&lt;CrewCredit&gt; getCrewCredits(final int personId, final boolean isShowIncluded) {
+<span class="fc" id="L130">        final HttpUrl url = validateAndFormatCrewCreditsUrl(personId, isShowIncluded);</span>
+<span class="fc" id="L131">        return connection.execute(</span>
+<span class="fc" id="L132">                connection.newRequestBuilder()</span>
+<span class="fc" id="L133">                        .url(url)</span>
+<span class="fc" id="L134">                        .build(),</span>
+                new ListParser&lt;&gt;(CrewCredit.class));
+    }
+
+    private HttpUrl validateAndFormatCrewCreditsUrl(final int personId, final boolean isShowIncluded) {
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        return isShowIncluded</span>
+<span class="fc" id="L140">                ? validateAndFormatUrl(</span>
+                        PEOPLE_API_PATH,
+                        personId,
+                        CREW_CREDITS_SUB_API_PATH,
+                        CastCredit.EmbeddedType.SHOW)
+<span class="nc" id="L145">                : validateAndFormatUrl(PEOPLE_API_PATH, personId, CREW_CREDITS_SUB_API_PATH);</span>
+    }
+
+    ////////////////////////
+    // getGuestCastCredits
+    ////////////////////////
+
+    /**
+     * Retrieves the list of episode-level guest cast credits for a specific person.
+     *
+     * @param personId the person identifier
+     * @param isEpisodeIncluded if {@code true}, include episode information in the response; else, {@code false}
+     * @return the list of guest cast credits
+     * @see CastCredit
+     * @see com.amilesend.tvmaze.client.model.Episode
+     */
+    public List&lt;CastCredit&gt; getGuestCastCredits(final int personId, final boolean isEpisodeIncluded) {
+<span class="fc" id="L162">        final HttpUrl url = validateAndFormatGuestCastCreditsUrl(personId, isEpisodeIncluded);</span>
+<span class="fc" id="L163">        return connection.execute(</span>
+<span class="fc" id="L164">                connection.newRequestBuilder()</span>
+<span class="fc" id="L165">                        .url(url)</span>
+<span class="fc" id="L166">                        .build(),</span>
+                new ListParser&lt;&gt;(CastCredit.class));
+    }
+
+    private HttpUrl validateAndFormatGuestCastCreditsUrl(final int personId, final boolean isEpisodeIncluded) {
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        return isEpisodeIncluded</span>
+<span class="fc" id="L172">                ? validateAndFormatUrl(</span>
+                        PEOPLE_API_PATH,
+                        personId,
+                        GUEST_CAST_CREDITS_SUB_API_PATH,
+                        CastCredit.EmbeddedType.EPISODE)
+<span class="nc" id="L177">                : validateAndFormatUrl(PEOPLE_API_PATH, personId, GUEST_CAST_CREDITS_SUB_API_PATH);</span>
+    }
+
+    /////////////
+    // getIndex
+    /////////////
+
+    /**
+     * Gets the list of all persons in the TVMaze database. Note: This is paginated and requires manual specification
+     * of the page number with a maximum of 250 shows per response. This operation will throw a {@link RequestException}
+     * when no more pages exist.
+     *
+     * @param pageNum the page number
+     * @return the list of persons
+     * @throws RequestException if there are no more persons to return
+     * @see Person
+     */
+    public List&lt;Person&gt; getIndex(final int pageNum) {
+<span class="fc" id="L195">        final HttpUrl url = validateAndFormatIndexUrl(PEOPLE_INDEX_PATH, pageNum);</span>
+<span class="fc" id="L196">        return connection.execute(</span>
+<span class="fc" id="L197">                connection.newRequestBuilder()</span>
+<span class="fc" id="L198">                        .url(url)</span>
+<span class="fc" id="L199">                        .build(),</span>
+                new ListParser&lt;&gt;(Person.class));
+    }
+ }
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

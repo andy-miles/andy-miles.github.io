@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Connection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.connection</a> &gt; <span class="el_source">Connection.java</span></div><h1>Connection.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.connection;
+
+import com.amilesend.tmdb.client.parse.GsonFactory;
+import com.amilesend.tmdb.client.parse.parser.GsonParser;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.IOException;
+
+import static com.google.common.net.HttpHeaders.ACCEPT;
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
+import static com.google.common.net.HttpHeaders.USER_AGENT;
+import static com.google.common.net.MediaType.JSON_UTF_8;
+
+/** Wraps a {@link OkHttpClient} that manages parsing responses to corresponding POJO types. */
+<span class="fc" id="L44">@Slf4j</span>
+public class Connection {
+<span class="fc" id="L46">    public static final String JSON_CONTENT_TYPE = JSON_UTF_8.toString();</span>
+<span class="fc" id="L47">    public static final MediaType JSON_MEDIA_TYPE = MediaType.parse(JSON_CONTENT_TYPE);</span>
+    public static final String DEFAULT_BASE_URL = &quot;https://api.themoviedb.org/3&quot;;
+
+    private static final String THROTTLED_RETRY_AFTER_HEADER = &quot;Retry-After&quot;;
+    private static final String USER_AGENT_VALUE = &quot;TMDBJavaClient/1.0&quot;;
+<span class="fc" id="L52">    private static final Long DEFAULT_RETRY_AFTER_SECONDS = Long.valueOf(10L);</span>
+    private static final int THROTTLED_RESPONSE_CODE = 429;
+    private static final int MAX_BASE_URL_STR_LENGTH = 256;
+
+    private final OkHttpClient httpClient;
+    /** The configured GSON instance used for marshalling request and responses to/from JSON. */
+    @Getter
+    private final Gson gson;
+    /** The base URL for the Graph API. */
+    @Getter
+    private final String baseUrl;
+    private final String readAccessToken;
+
+    /**
+     * Creates a new {@code Connection}.
+     *
+     * @param httpClient the configured HTTP client
+     * @param gsonFactory the factory used to vend configured GSON instances for request/reply serialization
+     * @param baseUrl the base URL to use for Graph API invocations
+     */
+    @Builder
+    @VisibleForTesting
+    Connection(
+<span class="fc" id="L75">            @NonNull final OkHttpClient httpClient,</span>
+<span class="fc" id="L76">            @NonNull final GsonFactory gsonFactory,</span>
+            final String baseUrl,
+<span class="fc" id="L78">            final String readAccessToken) {</span>
+<span class="fc" id="L79">        Validate.notBlank(readAccessToken, &quot;readAccessToken must not be blank&quot;);</span>
+
+<span class="fc" id="L81">        this.httpClient = httpClient;</span>
+<span class="fc" id="L82">        this.gson = gsonFactory.newInstanceForConnection();</span>
+<span class="pc bpc" id="L83" title="2 of 4 branches missed.">        this.baseUrl = StringUtils.isNotBlank(baseUrl) &amp;&amp; baseUrl.length() &lt; MAX_BASE_URL_STR_LENGTH</span>
+<span class="fc" id="L84">                ? baseUrl</span>
+<span class="pc" id="L85">                : DEFAULT_BASE_URL;</span>
+<span class="fc" id="L86">        this.readAccessToken = &quot;Bearer &quot; + readAccessToken;</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Creates a new {@code Connection} that is configured with the default settings for the given
+     * read access token.
+     *
+     * @param readAccessToken the read access token
+     * @return the connection
+     */
+    public static Connection newDefaultInstance(final String readAccessToken) {
+<span class="nc" id="L97">        return new Connection(</span>
+<span class="nc" id="L98">                new OkHttpClient.Builder().build(),</span>
+<span class="nc" id="L99">                GsonFactory.getInstance(),</span>
+                DEFAULT_BASE_URL,
+                readAccessToken);
+    }
+
+    /**
+     * Creates a new {@link Request.Builder} with pre-configured headers for request that expect a JSON-formatted
+     * response body.
+     *
+     * @return the request builder
+     */
+    public Request.Builder newRequestBuilder() {
+<span class="fc" id="L111">        return new Request.Builder()</span>
+<span class="fc" id="L112">                .addHeader(AUTHORIZATION, readAccessToken)</span>
+<span class="fc" id="L113">                .addHeader(USER_AGENT, USER_AGENT_VALUE)</span>
+<span class="fc" id="L114">                .addHeader(ACCEPT, JSON_CONTENT_TYPE);</span>
+    }
+
+    /**
+     * Executes the given {@link Request} and parses the JSON-formatted response with given {@link GsonParser}.
+     *
+     * @param request the request
+     * @param parser the parser to decode the response body
+     * @return the response as a POJO resource type
+     * @param &lt;T&gt; the POJO resource type
+     * @throws ConnectionException if an error occurred during the transaction
+     */
+<span class="fc" id="L126">    public &lt;T&gt; T execute(@NonNull final Request request, @NonNull final GsonParser&lt;T&gt; parser)</span>
+            throws ConnectionException {
+        try {
+<span class="fc" id="L129">            try (final Response response = httpClient.newCall(request).execute()) {</span>
+<span class="pc bpc" id="L130" title="1 of 2 branches missed.">                if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L131">                    log.debug(&quot;Received response: {}&quot;, response);</span>
+                }
+<span class="fc" id="L133">                validateResponse(response);</span>
+
+<span class="fc" id="L135">                return parser.parse(getGson(), response.body().byteStream());</span>
+            }
+<span class="fc" id="L137">        } catch (final IOException ex) {</span>
+<span class="fc" id="L138">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L139">        } catch (final JsonParseException ex) {</span>
+<span class="fc" id="L140">            throw new ResponseParseException(&quot;Error parsing response: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    private static void validateResponse(final Response response) {
+<span class="fc" id="L145">        final int code = response.code();</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (code == THROTTLED_RESPONSE_CODE) {</span>
+<span class="fc" id="L147">            final Long retryAfterSeconds = extractRetryAfterHeaderValue(response);</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            final String msg = retryAfterSeconds != null</span>
+<span class="fc" id="L149">                    ? &quot;Request throttled. Retry after &quot; + retryAfterSeconds + &quot; seconds&quot;</span>
+<span class="pc" id="L150">                    : &quot;Request throttled&quot;;</span>
+<span class="fc" id="L151">            throw new ThrottledException(msg, retryAfterSeconds);</span>
+        }
+
+<span class="fc" id="L154">        final boolean isRequestError = String.valueOf(code).startsWith(&quot;4&quot;);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        if (isRequestError) {</span>
+<span class="fc" id="L156">            throw new RequestException(new StringBuilder(&quot;Error with request (&quot;)</span>
+<span class="fc" id="L157">                    .append(code)</span>
+<span class="fc" id="L158">                    .append(&quot;): &quot;)</span>
+<span class="fc" id="L159">                    .append(response)</span>
+<span class="fc" id="L160">                    .toString());</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        } else if (!response.isSuccessful()) {</span>
+<span class="fc" id="L162">            throw new ResponseException(new StringBuilder(&quot;Unsuccessful response (&quot;)</span>
+<span class="fc" id="L163">                    .append(code)</span>
+<span class="fc" id="L164">                    .append(&quot;): &quot;)</span>
+<span class="fc" id="L165">                    .append(response)</span>
+<span class="fc" id="L166">                    .toString());</span>
+        }
+<span class="fc" id="L168">    }</span>
+
+    private static Long extractRetryAfterHeaderValue(final Response response) {
+<span class="fc" id="L171">        final String retryAfterHeaderValue = response.header(THROTTLED_RETRY_AFTER_HEADER);</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        return StringUtils.isNotBlank(retryAfterHeaderValue)</span>
+<span class="fc" id="L173">                ? Long.valueOf(retryAfterHeaderValue)</span>
+<span class="fc" id="L174">                : DEFAULT_RETRY_AFTER_SECONDS;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

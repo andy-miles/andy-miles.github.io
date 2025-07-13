@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PeopleApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">PeopleApi.java</span></div><h1>PeopleApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.tmdb.client.model.people.GetChangesRequest;
+import com.amilesend.tmdb.client.model.people.GetChangesResponse;
+import com.amilesend.tmdb.client.model.people.GetCombinedCreditsRequest;
+import com.amilesend.tmdb.client.model.people.GetCombinedCreditsResponse;
+import com.amilesend.tmdb.client.model.people.GetExternalIDsRequest;
+import com.amilesend.tmdb.client.model.people.GetExternalIDsResponse;
+import com.amilesend.tmdb.client.model.people.GetImagesRequest;
+import com.amilesend.tmdb.client.model.people.GetImagesResponse;
+import com.amilesend.tmdb.client.model.people.GetLatestResponse;
+import com.amilesend.tmdb.client.model.people.GetMovieCreditsRequest;
+import com.amilesend.tmdb.client.model.people.GetMovieCreditsResponse;
+import com.amilesend.tmdb.client.model.people.GetPersonDetailsRequest;
+import com.amilesend.tmdb.client.model.people.GetPersonDetailsResponse;
+import com.amilesend.tmdb.client.model.people.GetTranslationsRequest;
+import com.amilesend.tmdb.client.model.people.GetTranslationsResponse;
+import com.amilesend.tmdb.client.model.people.GetTvCreditsRequest;
+import com.amilesend.tmdb.client.model.people.GetTvCreditsResponse;
+import com.amilesend.tmdb.client.model.people.type.PersonIdRequestBase;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
+/** TMDB People API. */
+public class PeopleApi extends ApiBase {
+<span class="fc" id="L44">    private static String API_PATH = &quot;/person/&quot;;</span>
+
+    /**
+     * Creates a new {@code PeopleApi} object.
+     *
+     * @param connection the connection
+     */
+    public PeopleApi(final Connection connection) {
+<span class="fc" id="L52">        super(connection);</span>
+<span class="fc" id="L53">    }</span>
+
+    /**
+     * Gets the details for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetPersonDetailsRequest
+     * @see GetPersonDetailsResponse
+     */
+<span class="fc" id="L63">    public GetPersonDetailsResponse getPersonDetails(@NonNull final GetPersonDetailsRequest request) {</span>
+<span class="fc" id="L64">        return executeGet(getApiPath(request, StringUtils.EMPTY), request, GetPersonDetailsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of changes for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetChangesRequest
+     * @see GetChangesResponse
+     */
+<span class="fc" id="L75">    public GetChangesResponse getChanges(@NonNull final GetChangesRequest request) {</span>
+<span class="fc" id="L76">        final String apiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L77">                .append(request.getPersonId())</span>
+<span class="fc" id="L78">                .append(&quot;/changes&quot;)</span>
+<span class="fc" id="L79">                .toString();</span>
+<span class="fc" id="L80">        return executeGet(apiPath, request, GetChangesResponse.class);</span>
+    }
+
+    /**
+     * Gets the credits for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCombinedCreditsRequest
+     * @see GetCombinedCreditsResponse
+     */
+<span class="fc" id="L91">    public GetCombinedCreditsResponse getCombinedCredits(@NonNull final GetCombinedCreditsRequest request) {</span>
+<span class="fc" id="L92">        return executeGet(getApiPath(request, &quot;/combined_credits&quot;), request, GetCombinedCreditsResponse.class);</span>
+    }
+
+    /**
+     * Gets the external site identifiers for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetExternalIDsRequest
+     * @see GetExternalIDsResponse
+     */
+<span class="fc" id="L103">    public GetExternalIDsResponse getExternalIDs(@NonNull final GetExternalIDsRequest request) {</span>
+<span class="fc" id="L104">        return executeGet(getApiPath(request, &quot;/external_ids&quot;), request, GetExternalIDsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of profile images for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetImagesRequest
+     * @see GetImagesResponse
+     */
+<span class="fc" id="L115">    public GetImagesResponse getImages(@NonNull final GetImagesRequest request) {</span>
+<span class="fc" id="L116">        return executeGet(getApiPath(request, &quot;/images&quot;), request, GetImagesResponse.class);</span>
+    }
+
+    /**
+     * Gets the newest created person in the database.
+     *
+     * @return the response
+     * @see GetLatestResponse
+     */
+    public GetLatestResponse getLatest() {
+<span class="fc" id="L126">        return executeGet(API_PATH + &quot;/latest&quot;, GetLatestResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of movie credits for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetMovieCreditsRequest
+     * @see GetMovieCreditsResponse
+     */
+<span class="fc" id="L137">    public GetMovieCreditsResponse getMovieCredits(@NonNull final GetMovieCreditsRequest request) {</span>
+<span class="fc" id="L138">        return executeGet(getApiPath(request, &quot;/movie_credits&quot;), request, GetMovieCreditsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV credits for a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetTvCreditsRequest
+     * @see GetTvCreditsResponse
+     */
+<span class="fc" id="L149">    public GetTvCreditsResponse getTvCredits(@NonNull final GetTvCreditsRequest request) {</span>
+<span class="fc" id="L150">        return executeGet(getApiPath(request, &quot;/tv_credits&quot;), request, GetTvCreditsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of translations that belong to a person.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetTranslationsRequest
+     * @see GetTranslationsResponse
+     */
+<span class="fc" id="L161">    public GetTranslationsResponse getTranslations(@NonNull final GetTranslationsRequest request) {</span>
+<span class="fc" id="L162">        return executeGet(getApiPath(request, &quot;/translations&quot;), request, GetTranslationsResponse.class);</span>
+    }
+
+    private static String getApiPath(final PersonIdRequestBase request, final String subApiPath) {
+<span class="fc" id="L166">        return new StringBuilder(API_PATH)</span>
+<span class="fc" id="L167">                .append(request.getPersonId())</span>
+<span class="fc" id="L168">                .append(subApiPath)</span>
+<span class="fc" id="L169">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

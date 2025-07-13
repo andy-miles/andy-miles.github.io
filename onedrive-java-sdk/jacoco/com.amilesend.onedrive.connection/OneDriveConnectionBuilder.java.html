@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OneDriveConnectionBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection</a> &gt; <span class="el_source">OneDriveConnectionBuilder.java</span></div><h1>OneDriveConnectionBuilder.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection;
+
+import com.amilesend.onedrive.connection.auth.OneDriveAuthInfo;
+import com.amilesend.onedrive.connection.auth.OneDriveAuthManager;
+import com.amilesend.onedrive.connection.auth.PersonalAccountAuthManager;
+import com.amilesend.onedrive.connection.http.OkHttpClientBuilder;
+import com.amilesend.onedrive.parse.GsonFactory;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.NonNull;
+import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.Validate;
+
+/** Builder to configure and return a new {@link OneDriveConnection} instance. */
+public class OneDriveConnectionBuilder {
+    private String clientId;
+    private String clientSecret;
+    private String redirectUrl;
+    private String userAgent;
+<span class="fc" id="L36">    private OkHttpClient httpClient = new OkHttpClientBuilder().build();</span>
+    private OneDriveAuthManager authManager;
+    private final GsonFactory gsonFactory;
+
+    /**
+     * Creates a new {@code OneDriveConnectionBuilder} instance.
+     *
+     * @return the builder
+     */
+    public static OneDriveConnectionBuilder newInstance() {
+<span class="fc" id="L46">        return new OneDriveConnectionBuilder(new GsonFactory());</span>
+    }
+
+    @VisibleForTesting
+<span class="fc bfc" id="L50" title="All 2 branches covered.">    OneDriveConnectionBuilder(@NonNull final GsonFactory gsonFactory) {</span>
+<span class="fc" id="L51">        this.gsonFactory = gsonFactory;</span>
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * Sets the user-agent string that is included in requests.
+     *
+     * @param userAgent the user agent
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder userAgent(final String userAgent) {
+<span class="fc" id="L61">        this.userAgent = userAgent;</span>
+<span class="fc" id="L62">        return this;</span>
+    }
+
+    /**
+     * The underlying http client. This is optional.
+     *
+     * @param httpClient the http client
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder httpClient(final OkHttpClient httpClient) {
+<span class="fc" id="L72">        this.httpClient = httpClient;</span>
+<span class="fc" id="L73">        return this;</span>
+    }
+
+    /**
+     * The application client identifier. This is required.
+     *
+     * @param clientId the application client identifier
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder clientId(final String clientId) {
+<span class="fc" id="L83">        this.clientId = clientId;</span>
+<span class="fc" id="L84">        return this;</span>
+    }
+
+    /**
+     * The application client secret. This is required.
+     *
+     * @param clientSecret the application client secret
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder clientSecret(final String clientSecret) {
+<span class="fc" id="L94">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L95">        return this;</span>
+    }
+
+    /**
+     * The OAuth redirect URL. This is required.
+     *
+     * @param redirectUrl the OAuth redirectUrl
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder redirectUrl(final String redirectUrl) {
+<span class="fc" id="L105">        this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L106">        return this;</span>
+    }
+
+    /**
+     * The {@link OneDriveAuthManager} used to manage authentication and access tokens.
+     *
+     * @param authManager the auth manager
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder authManager(final OneDriveAuthManager authManager) {
+<span class="nc" id="L116">        this.authManager = authManager;</span>
+<span class="nc" id="L117">        return this;</span>
+    }
+
+    /**
+     * Builds a new {@link OneDriveConnection} instance with the given {@code authCode}.
+     *
+     * @param authCode the authorization code obtained from the OAuth handshake.
+     * @return the connection
+     */
+    public OneDriveConnection build(final String authCode) {
+<span class="fc" id="L127">        final OneDriveAuthManager authManager = getAuthManagerOrDefault(httpClient, authCode);</span>
+<span class="fc" id="L128">        return OneDriveConnection.builder()</span>
+<span class="fc" id="L129">                .httpClient(httpClient)</span>
+<span class="fc" id="L130">                .authManager(authManager)</span>
+<span class="fc" id="L131">                .gsonFactory(gsonFactory)</span>
+<span class="fc" id="L132">                .baseUrl(authManager.getAuthenticatedEndpoint())</span>
+<span class="fc" id="L133">                .userAgent(userAgent)</span>
+<span class="fc" id="L134">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L135">                .build();</span>
+    }
+
+    /**
+     * Builds a new {@link OneDriveConnection} instance with the given {@code authInfo}.
+     *
+     * @param authInfo the authorization information that contains the refresh token
+     * @return the connection
+     */
+    public OneDriveConnection build(final OneDriveAuthInfo authInfo) {
+<span class="fc" id="L145">        final OneDriveAuthManager authManager = getAuthManagerOrDefault(httpClient, authInfo);</span>
+<span class="fc" id="L146">        return OneDriveConnection.builder()</span>
+<span class="fc" id="L147">                .httpClient(httpClient)</span>
+<span class="fc" id="L148">                .authManager(authManager)</span>
+<span class="fc" id="L149">                .gsonFactory(gsonFactory)</span>
+<span class="fc" id="L150">                .baseUrl(authManager.getAuthenticatedEndpoint())</span>
+<span class="fc" id="L151">                .userAgent(userAgent)</span>
+<span class="fc" id="L152">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L153">                .build();</span>
+    }
+
+    private OneDriveAuthManager getAuthManagerOrDefault(final OkHttpClient httpClient, final String authCode) {
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (authManager != null) {</span>
+<span class="nc" id="L158">            return authManager;</span>
+        }
+
+<span class="fc" id="L161">        validateRequiredParametersForAuth();</span>
+<span class="fc" id="L162">        return PersonalAccountAuthManager.builderWithAuthCode()</span>
+<span class="fc" id="L163">                .httpClient(httpClient)</span>
+<span class="fc" id="L164">                .clientId(clientId)</span>
+<span class="fc" id="L165">                .clientSecret(clientSecret)</span>
+<span class="fc" id="L166">                .redirectUrl(redirectUrl)</span>
+<span class="fc" id="L167">                .authCode(authCode)</span>
+<span class="fc" id="L168">                .buildWithAuthCode();</span>
+    }
+
+    private OneDriveAuthManager getAuthManagerOrDefault(final OkHttpClient httpClient, final OneDriveAuthInfo authInfo) {
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (authManager != null) {</span>
+<span class="nc" id="L173">            return authManager;</span>
+        }
+
+<span class="fc" id="L176">        validateRequiredParametersForAuth();</span>
+<span class="fc" id="L177">        return PersonalAccountAuthManager.builderWithAuthInfo()</span>
+<span class="fc" id="L178">                .httpClient(httpClient)</span>
+<span class="fc" id="L179">                .clientId(clientId)</span>
+<span class="fc" id="L180">                .clientSecret(clientSecret)</span>
+<span class="fc" id="L181">                .redirectUrl(redirectUrl)</span>
+<span class="fc" id="L182">                .authInfo(authInfo)</span>
+<span class="fc" id="L183">                .buildWithAuthInfo();</span>
+    }
+
+    private void validateRequiredParametersForAuth() {
+<span class="fc" id="L187">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
+<span class="fc" id="L188">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
+<span class="fc" id="L189">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
+<span class="fc" id="L190">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

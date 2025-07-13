@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Drive.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource</a> &gt; <span class="el_source">Drive.java</span></div><h1>Drive.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource;
+
+import com.amilesend.onedrive.resource.activities.ItemActivity;
+import com.amilesend.onedrive.resource.drive.Quota;
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.type.ItemReference;
+import com.amilesend.onedrive.resource.item.type.SharePointIds;
+import com.amilesend.onedrive.resource.item.type.SpecialFolder;
+import lombok.EqualsAndHashCode;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * A wrapper around a {@link com.amilesend.onedrive.resource.drive.Drive} that represents a drive associated
+ * with the authenticated user.
+ */
+@RequiredArgsConstructor
+@EqualsAndHashCode
+public class Drive {
+    @NonNull
+    private final com.amilesend.onedrive.resource.drive.Drive delegate;
+
+    //////////////////////
+    // Accessors
+    //////////////////////
+
+    // BaseItem
+
+    /**
+     * Gets the drive identifier.
+     *
+     * @return the drive identifier
+     */
+    public String getId() {
+<span class="fc" id="L55">        return delegate.getId();</span>
+    }
+
+    /**
+     * Gets the identity set that indicates who created this drive.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getCreatedBy() {
+<span class="fc" id="L65">        return delegate.getCreatedBy();</span>
+    }
+
+    /**
+     * Gets the timestamp (formatted as a string) that indicates when this drive was created.
+     *
+     * @return the timestamp
+     */
+    public String getCreatedDateTime() {
+<span class="fc" id="L74">        return delegate.getCreatedDateTime();</span>
+    }
+
+    /**
+     * Gets the description associated with this drive.
+     *
+     * @return the description
+     */
+    public String getDescription() {
+<span class="fc" id="L83">        return delegate.getDescription();</span>
+    }
+
+    /**
+     * Gets the eTag associated with this drive.
+     *
+     * @return the etag
+     */
+    public String getETag() {
+<span class="fc" id="L92">        return delegate.getETag();</span>
+    }
+
+    /**
+     * Gets the identity set that indicates who made the last modification to this drive.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getLastModifiedBy() {
+<span class="fc" id="L102">        return delegate.getLastModifiedBy();</span>
+    }
+
+    /**
+     * Gets the timestamp (formatted as a string) that indicate when this drive was last modified.
+     *
+     * @return the timestamp
+     */
+    public String getLastModifiedDateTime() {
+<span class="fc" id="L111">        return delegate.getLastModifiedDateTime();</span>
+    }
+
+    /**
+     * Gets the name of this drive.
+     *
+     * @return the name
+     */
+    public String getName() {
+<span class="fc" id="L120">        return delegate.getName();</span>
+    }
+
+    /**
+     * Gets the parent reference of this drive.
+     *
+     * @return the parent reference
+     * @see ItemReference
+     */
+    public ItemReference getParentReference() {
+<span class="fc" id="L130">        return delegate.getParentReference();</span>
+    }
+
+    /**
+     * Gets the web URL formatted as a string for this drive.
+     *
+     * @return the web URL
+     */
+    public String getWebUrl() {
+<span class="fc" id="L139">        return delegate.getWebUrl();</span>
+    }
+
+    // Drive
+
+    /**
+     * Gets the type for this drive.
+     *
+     * @return the drive type
+     */
+    public String getDriveType() {
+<span class="fc" id="L150">        return delegate.getDriveType();</span>
+    }
+
+    /**
+     * Gets the owner information for this drive.
+     *
+     * @return the identity set
+     * @see IdentitySet
+     */
+    public IdentitySet getOwner() {
+<span class="fc" id="L160">        return delegate.getOwner();</span>
+    }
+
+    /**
+     * Gets the quota information for this drive.
+     *
+     * @return the quota information
+     * @see Quota
+     */
+    public Quota getQuota() {
+<span class="fc" id="L170">        return delegate.getQuota();</span>
+    }
+
+    /**
+     * Gets the Sharepoint identifiers for this drive.
+     *
+     * @return the sharepoint identifiers
+     * @see SharePointIds
+     */
+    public SharePointIds getSharepointIds() {
+<span class="fc" id="L180">        return delegate.getSharepointIds();</span>
+    }
+
+    /**
+     * Describes if this drive is a system-managed drive. Most consumers should ignore this drive type for use
+     * in their application.
+     *
+     * @return {@code true} if this drive is system managed; else, {@code false}
+     */
+    public boolean isSystemManaged() {
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        return delegate.getSystem() != null;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L195">        return new StringBuilder(&quot;Drive(name=&quot;)</span>
+<span class="fc" id="L196">                .append(getName())</span>
+<span class="fc" id="L197">                .append(&quot;, id=&quot;)</span>
+<span class="fc" id="L198">                .append(getId())</span>
+<span class="fc" id="L199">                .append(&quot;)&quot;)</span>
+<span class="fc" id="L200">                .toString();</span>
+    }
+
+    //////////////////////
+    // Operations
+    //////////////////////
+
+    /**
+     * Gets the root folder for this drive.
+     *
+     * @return the root drive folder
+     * @see DriveFolder
+     */
+    public DriveFolder getRootFolder() {
+<span class="fc" id="L214">        return new DriveFolder(delegate.getRootFolder());</span>
+    }
+
+    /**
+     * Searches this drive for the given query (e.g., file name).
+     *
+     * @param query the search query
+     * @return the list of drive item types (either a DriveFolder or DriveFile).
+     * @see DriveItemType
+     * @see DriveFolder
+     * @see DriveFile
+     */
+    public List&lt;? extends DriveItemType&gt; search(final String query) {
+<span class="fc" id="L227">        return delegate.search(query)</span>
+<span class="fc" id="L228">                .stream()</span>
+<span class="fc" id="L229">                .map(DriveItemType::wrapDriveItemToType)</span>
+<span class="fc" id="L230">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets the list of changes associated with this drive.
+     *
+     * @return the list of drive item types (either a DriveFolder or DriveFile).
+     * @see DriveItemType
+     * @see DriveFolder
+     * @see DriveFile
+     */
+    public List&lt;? extends DriveItemType&gt; getChanges() {
+<span class="fc" id="L242">        return delegate.getChanges()</span>
+<span class="fc" id="L243">                .stream()</span>
+<span class="fc" id="L244">                .map(DriveItemType::wrapDriveItemToType)</span>
+<span class="fc" id="L245">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets the special folder for the given {@link com.amilesend.onedrive.resource.item.type.SpecialFolder.Type}.
+     *
+     * @param type the type
+     * @return the special drive folder
+     * @see com.amilesend.onedrive.resource.item.type.SpecialFolder.Type
+     * @see DriveFolder
+     */
+    public DriveFolder getSpecialFolder(final SpecialFolder.Type type) {
+<span class="fc" id="L257">        return new DriveFolder(delegate.getSpecialFolder(type));</span>
+    }
+
+    /**
+     * Gets the list of activities that took place for this drive.
+     *
+     * @return the list of activities
+     * @see ItemActivity
+     */
+    public List&lt;ItemActivity&gt; getActivities() {
+<span class="fc" id="L267">        return delegate.getActivities();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UpdatesApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.api</a> &gt; <span class="el_source">UpdatesApi.java</span></div><h1>UpdatesApi.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.parse.parser.MapParser;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import okhttp3.HttpUrl;
+import org.apache.commons.lang3.Validate;
+
+import java.util.Map;
+import java.util.Objects;
+
+
+/**
+ * TVMaze API to retrieve database update information
+ * &lt;br/&gt;
+ * For more information, please refer to &lt;a href=&quot;https://www.tvmaze.com/api#updates&quot;&gt;
+ * https://www.tvmaze.com/api#updates&lt;/a&gt;
+ */
+public class UpdatesApi extends ApiBase {
+    private static final String SHOW_UPDATES_API_PATH = &quot;/updates/shows&quot;;
+    private static final String PERSON_UPDATES_API_PATH = &quot;/updates/people&quot;;
+
+    /**
+     * Creates a new {@code UpdateApi} object.
+     *
+     * @param connection the connection
+     */
+    public UpdatesApi(final Connection connection) {
+<span class="fc" id="L47">        super(connection);</span>
+<span class="fc" id="L48">    }</span>
+
+    ///////////////////
+    // getShowUpdates
+    ///////////////////
+
+    /**
+     * Retrieves a map of shows in the TVMaze database and the corresponding last updated timestamp.
+     *
+     * @param since specifies the time range limit to apply to the query. Note: can be {@code null} for all tv shows
+     * @return a map of updates with the key as the show identifier and the value as the last updated timestamp
+     */
+    public Map&lt;Integer, Long&gt; getShowUpdates(final Since since) {
+<span class="fc" id="L61">        final HttpUrl url = validateAndFormatUpdatesUrl(SHOW_UPDATES_API_PATH, since);</span>
+<span class="fc" id="L62">        return connection.execute(</span>
+<span class="fc" id="L63">                connection.newRequestBuilder()</span>
+<span class="fc" id="L64">                        .url(url)</span>
+<span class="fc" id="L65">                        .build(),</span>
+                new MapParser&lt;&gt;(Integer.class, Long.class));
+    }
+
+    /////////////////////
+    // getPersonUpdates
+    /////////////////////
+
+    /**
+     * Retrieves a map of persons in the TVMaze database and the corresponding last updated timestamp.
+     *
+     * @param since specifies the time range limit to apply to the query. Note: can be {@code null} for all people
+     * @return a map of updates with the key as the person identifier and the value as the last updated timestamp
+     */
+    public Map&lt;Integer, Long&gt; getPersonUpdates(final Since since) {
+<span class="fc" id="L80">        final HttpUrl url = validateAndFormatUpdatesUrl(PERSON_UPDATES_API_PATH, since);</span>
+<span class="fc" id="L81">        return connection.execute(</span>
+<span class="fc" id="L82">                connection.newRequestBuilder()</span>
+<span class="fc" id="L83">                        .url(url)</span>
+<span class="fc" id="L84">                        .build(),</span>
+                new MapParser&lt;&gt;(Integer.class, Long.class));
+    }
+
+    private HttpUrl validateAndFormatUpdatesUrl(final String apiPath, final Since since) {
+<span class="fc" id="L89">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
+
+<span class="fc" id="L91">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(</span>
+<span class="fc" id="L92">                        new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L93">                                .append(apiPath)</span>
+<span class="fc" id="L94">                                .toString())</span>
+<span class="fc" id="L95">                .newBuilder();</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (Objects.nonNull(since)) {</span>
+<span class="fc" id="L97">            urlBuilder.addQueryParameter(&quot;since&quot;, since.getQueryParameter());</span>
+        }
+
+<span class="fc" id="L100">        return urlBuilder.build();</span>
+    }
+
+    /** The time range limiting specifier. */
+<span class="fc" id="L104">    @RequiredArgsConstructor</span>
+    public enum Since {
+<span class="fc" id="L106">        DAY(&quot;day&quot;),</span>
+<span class="fc" id="L107">        WEEK(&quot;week&quot;),</span>
+<span class="fc" id="L108">        MONTH(&quot;month&quot;);</span>
+
+        @Getter
+        private final String queryParameter;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

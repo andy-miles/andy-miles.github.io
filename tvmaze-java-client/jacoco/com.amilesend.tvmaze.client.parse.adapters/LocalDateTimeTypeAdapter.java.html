@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LocalDateTimeTypeAdapter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.parse.adapters</a> &gt; <span class="el_source">LocalDateTimeTypeAdapter.java</span></div><h1>LocalDateTimeTypeAdapter.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.parse.adapters;
+
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import org.apache.commons.lang3.StringUtils;
+
+import java.lang.reflect.Type;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
+
+/** GSON adapter to format and series {@link java.time.LocalDateTime} objects. */
+<span class="fc" id="L35">public class LocalDateTimeTypeAdapter implements JsonSerializer&lt;LocalDateTime&gt;, JsonDeserializer&lt;LocalDateTime&gt; {</span>
+    @Override
+    public JsonElement serialize(
+            final LocalDateTime dateTime,
+            final Type typeOfSrc,
+            final JsonSerializationContext context) {
+<span class="nc" id="L41">        return Optional.ofNullable(dateTime)</span>
+<span class="nc" id="L42">                .map(dt -&gt; new JsonPrimitive(dt.format(DateTimeFormatter.ISO_DATE_TIME)))</span>
+<span class="nc" id="L43">                .orElse(null);</span>
+    }
+
+    @Override
+    public LocalDateTime deserialize(
+            final JsonElement jsonElement,
+            final Type typeOfT,
+            final JsonDeserializationContext context) throws JsonParseException {
+<span class="fc" id="L51">        final String dateTimeAsString = jsonElement.getAsString();</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (StringUtils.isBlank(dateTimeAsString)) {</span>
+<span class="nc" id="L53">            return null;</span>
+        }
+
+<span class="fc" id="L56">        return LocalDateTime.parse(dateTimeAsString, DateTimeFormatter.ISO_DATE_TIME);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

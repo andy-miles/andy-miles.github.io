@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RequestTokenGrantReceiver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.connection.auth</a> &gt; <span class="el_source">RequestTokenGrantReceiver.java</span></div><h1>RequestTokenGrantReceiver.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.connection.auth;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.sun.net.httpserver.HttpServer;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.awt.*;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
+<span class="fc" id="L39">@Slf4j</span>
+public class RequestTokenGrantReceiver implements AutoCloseable {
+    private static final int DEFAULT_SYSTEM_BACKLOG = 0;
+    private static final int MAX_PROTOCOL_STR_LENGTH = 10;
+
+    private final Config config;
+
+    @VisibleForTesting
+    @Getter(value = AccessLevel.PACKAGE)
+    private final RequestTokenGrantCallback callback;
+    private HttpServer server;
+
+    @Builder
+<span class="fc" id="L52">    private RequestTokenGrantReceiver(@NonNull final Config config) {</span>
+<span class="fc" id="L53">        this.config = config;</span>
+<span class="fc" id="L54">        this.callback = RequestTokenGrantCallback.builder()</span>
+<span class="fc" id="L55">                .callbackPath(config.getCallbackPath())</span>
+<span class="fc" id="L56">                .successLandingPageUrl(config.getSuccessLandingPageUrl())</span>
+<span class="fc" id="L57">                .build();</span>
+<span class="fc" id="L58">    }</span>
+
+    /**
+     * Closes the HTTP server resource.
+     *
+     * @throws SessionException if an error occurred while closing the HTTP server resource
+     */
+    @Override
+    public void close() throws SessionException {
+<span class="fc" id="L67">        stop();</span>
+<span class="fc" id="L68">    }</span>
+
+    /**
+     * Open a browser at the given URL using {@link Desktop} if available, or alternatively output the
+     * URL to {@link System#out} for command-line applications.
+     *
+     * @param url URL to browse
+     */
+    public static void browse(final String url) {
+<span class="nc" id="L77">        Validate.notBlank(url, &quot;url must not be blank&quot;);</span>
+<span class="nc" id="L78">        log.info(&quot;Opening browser to: {}&quot;, url);</span>
+
+        // Ask user to open in their browser using copy-paste
+<span class="nc" id="L81">        System.out.println(&quot;Please open the following address in your browser: &quot; + url);</span>
+        try {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            if (!Desktop.isDesktopSupported()) {</span>
+<span class="nc" id="L84">                return;</span>
+            }
+
+<span class="nc" id="L87">            final Desktop desktop = Desktop.getDesktop();</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (!desktop.isSupported(Desktop.Action.BROWSE)) {</span>
+<span class="nc" id="L89">                return;</span>
+            }
+
+<span class="nc" id="L92">            System.out.println(&quot;Attempting to open that address in the default browser now...&quot;);</span>
+<span class="nc" id="L93">            desktop.browse(URI.create(url));</span>
+<span class="nc" id="L94">        } catch (IOException | InternalError ex) {</span>
+<span class="nc" id="L95">            log.warn(&quot;Unable to open browser&quot;, ex);</span>
+<span class="nc" id="L96">        }</span>
+<span class="nc" id="L97">    }</span>
+
+    /**
+     * Starts the HTTP server to handle OAuth callbacks.
+     *
+     * @return this OAuthReceiver instance
+     * @throws SessionException if an error occurred while starting the HTTP server
+     */
+    public &lt;T&gt; T start() throws SessionException {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (server != null) {</span>
+<span class="fc" id="L107">            return (T) this;</span>
+        }
+
+        try {
+<span class="fc" id="L111">            server = HttpServer.create(new InetSocketAddress(config.getPort()), DEFAULT_SYSTEM_BACKLOG);</span>
+<span class="fc" id="L112">            server.createContext(config.getCallbackPath(), callback);</span>
+<span class="fc" id="L113">            server.setExecutor(null);</span>
+<span class="fc" id="L114">            server.start();</span>
+<span class="fc" id="L115">            return (T) this;</span>
+<span class="fc" id="L116">        } catch (final Exception ex) {</span>
+<span class="fc" id="L117">            throw new SessionException(&quot;Error starting OAuthReceiver&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * Stops the running HTTP server.
+     *
+     * @throws SessionException if an error occurred while stopping the server
+     */
+    public void stop() throws SessionException {
+<span class="fc" id="L127">        callback.releaseLock();</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (server != null) {</span>
+            try {
+<span class="fc" id="L130">                server.stop(0);</span>
+<span class="fc" id="L131">            } catch (final Exception ex) {</span>
+<span class="fc" id="L132">                throw new SessionException(&quot;Error stopping SessionManager&quot;, ex);</span>
+<span class="fc" id="L133">            }</span>
+<span class="fc" id="L134">            server = null;</span>
+        }
+<span class="fc" id="L136">    }</span>
+
+    /**
+     * Blocks until the server receives a request token grant approval, or when the server is stopped by
+     * {@link #stop()}.
+     *
+     * @return authorization code if login succeeds; may return {@code null} if the server is stopped
+     *     by {@link #close()}
+     * @throws SessionException if an error occurred
+     */
+    public boolean waitForApprovalStatus() throws SessionException {
+<span class="fc" id="L147">        return callback.waitForApprovalStatus();</span>
+    }
+
+    @Data
+    public static class Config {
+        /** Max allowed port range for listening for the OAuth redirect. */
+        @VisibleForTesting
+        static final int MAX_PORT_RANGE = 65535;
+
+        private static final String DEFAULT_PROTOCOL_PREFIX = &quot;http://&quot;;
+        private static final String DEFAULT_HOST = &quot;localhost&quot;;
+        private static final int DEFAULT_RECEIVER_PORT = 8895;
+        private static final String DEFAULT_CALLBACK_PATH = &quot;/Approved&quot;;
+
+        private final String protocolPrefix;
+        private final String host;
+        private final String callbackPath;
+        private final int port;
+        private final String successLandingPageUrl;
+
+        @Builder
+        public Config(
+                final String protocolPrefix,
+                final String host,
+                final String callbackPath,
+                final Integer port,
+<span class="fc" id="L173">                final String successLandingPageUrl) {</span>
+<span class="fc" id="L174">            this.protocolPrefix =</span>
+<span class="pc bpc" id="L175" title="3 of 4 branches missed.">                    StringUtils.isNotBlank(protocolPrefix) &amp;&amp; protocolPrefix.length() &lt; MAX_PROTOCOL_STR_LENGTH</span>
+<span class="nc" id="L176">                            ? protocolPrefix</span>
+<span class="fc" id="L177">                            : DEFAULT_PROTOCOL_PREFIX;</span>
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">            this.host = StringUtils.isNotBlank(host) ? URLEncoder.encode(host, StandardCharsets.UTF_8) : DEFAULT_HOST;</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            this.callbackPath = StringUtils.isNotBlank(callbackPath)</span>
+<span class="pc" id="L180">                    ? URLEncoder.encode(callbackPath, StandardCharsets.UTF_8) : DEFAULT_CALLBACK_PATH;</span>
+<span class="fc" id="L181">            this.port = Optional.ofNullable(port).orElse(DEFAULT_RECEIVER_PORT);</span>
+<span class="fc" id="L182">            validatePort(this.port);</span>
+<span class="fc" id="L183">            this.successLandingPageUrl = successLandingPageUrl;</span>
+<span class="fc" id="L184">        }</span>
+
+        /**
+         * Gets the redirect URL where the callback handler is listening on.
+         *
+         * @return the redirect URL
+         */
+        public String getRedirectUrl() {
+<span class="fc" id="L192">            return new StringBuilder(protocolPrefix)</span>
+<span class="fc" id="L193">                    .append(host)</span>
+<span class="fc" id="L194">                    .append(&quot;:&quot;)</span>
+<span class="fc" id="L195">                    .append(port)</span>
+<span class="fc" id="L196">                    .append(callbackPath)</span>
+<span class="fc" id="L197">                    .toString();</span>
+        }
+
+        private static void validatePort(final int port) {
+<span class="pc bpc" id="L201" title="2 of 4 branches missed.">            Validate.isTrue(port &gt; 0 &amp;&amp; port &lt;= MAX_PORT_RANGE,</span>
+                    &quot;Invalid port. Must be between 0 and &quot; + MAX_PORT_RANGE);
+<span class="fc" id="L203">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

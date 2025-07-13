@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BaseItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.item</a> &gt; <span class="el_source">BaseItem.java</span></div><h1>BaseItem.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.item;
+
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.type.ItemReference;
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * Defines common attributes for drive items.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/baseitem&quot;&gt; API Documentation&lt;/a&gt;.
+ */
+@Data
+@SuperBuilder
+public class BaseItem {
+    /** The unique identifier for the item. */
+    private final String id;
+    /** The source identity that created the item. */
+    private final IdentitySet createdBy;
+    /** Describes when the item was created. */
+    private final String createdDateTime;
+    /** Associated ETag for the item. */
+    private final String eTag;
+    /** The identity that last modified the item. */
+    private final IdentitySet lastModifiedBy;
+    /** Describes when the item was last modified. */
+    private final String lastModifiedDateTime;
+    /** URL for the resource shown in a browser. */
+    private final String webUrl;
+
+    /** Description of the item. */
+    private String description;
+    /** The name of the item. */
+    private String name;
+    /** Describes the parent information. */
+    private ItemReference parentReference;
+
+    /**
+     * Utility method for child method operations that determines if a given {@link DriveItemPage} contains a
+     * next page.
+     *
+     * @param page the page
+     * @return {@code true} if the page has a next page; else, {@code false}
+     */
+    protected static boolean hasNextPage(final DriveItemPage page) {
+<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        return page != null &amp;&amp; StringUtils.isNotBlank(page.getNextLink());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

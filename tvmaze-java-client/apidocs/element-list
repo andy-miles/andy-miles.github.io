@@ -1,0 +1,6 @@
+com.amilesend.tvmaze.client
+com.amilesend.tvmaze.client.api
+com.amilesend.tvmaze.client.model
+com.amilesend.tvmaze.client.model.type
+com.amilesend.tvmaze.client.parse
+com.amilesend.tvmaze.client.parse.adapters

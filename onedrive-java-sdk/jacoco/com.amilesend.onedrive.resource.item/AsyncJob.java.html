@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AsyncJob.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.item</a> &gt; <span class="el_source">AsyncJob.java</span></div><h1>AsyncJob.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.item;
+
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.item.type.AsyncJobStatus;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import org.apache.commons.lang3.Validate;
+
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.ASYNC_JOB_STATUS_PARSER;
+
+/**
+ * Utility that allows consumers to query for remote asynchronous operation status from the OneDrive API.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/concepts/long-running-actions&quot;&gt;
+ * API Documentation&lt;/a&gt;
+ *
+ * @see AsyncJobStatus
+ */
+@Builder
+@EqualsAndHashCode
+public class AsyncJob {
+
+    @Getter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    private final String monitorUrl;
+    @EqualsAndHashCode.Exclude
+    private final OneDriveConnection connection;
+
+    /**
+     * Creates a new {@code AsyncJob}.
+     *
+     * @param monitorUrl the URL used to monitor the asynchronous job status
+     * @param connection the API connection used to query the job status
+     */
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    public AsyncJob(final String monitorUrl, @NonNull OneDriveConnection connection) {</span>
+<span class="fc" id="L57">        Validate.notBlank(monitorUrl, &quot;monitorUrl must not be blank&quot;);</span>
+
+<span class="fc" id="L59">        this.monitorUrl = monitorUrl;</span>
+<span class="fc" id="L60">        this.connection = connection;</span>
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Gets the current {@link AsyncJobStatus} for the remote asynchronous operation.
+     *
+     * @return the job status
+     * @see AsyncJobStatus
+     */
+    public AsyncJobStatus getStatus() {
+<span class="fc" id="L70">        return connection.execute(</span>
+<span class="fc" id="L71">                connection.newRequestBuilder()</span>
+<span class="fc" id="L72">                        .url(monitorUrl)</span>
+<span class="fc" id="L73">                        .build(),</span>
+                ASYNC_JOB_STATUS_PARSER);
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

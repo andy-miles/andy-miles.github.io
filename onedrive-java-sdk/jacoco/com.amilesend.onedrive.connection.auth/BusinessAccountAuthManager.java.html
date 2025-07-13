@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BusinessAccountAuthManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth</a> &gt; <span class="el_source">BusinessAccountAuthManager.java</span></div><h1>BusinessAccountAuthManager.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth;
+
+import com.amilesend.onedrive.parse.GsonFactory;
+import com.amilesend.onedrive.resource.discovery.DiscoverServiceResponse;
+import com.amilesend.onedrive.resource.discovery.Service;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.MediaType.FORM_DATA;
+
+/**
+ * Manager that is responsible for obtaining and refreshing tokens to interact with a business
+ * OneDrive account for a specific resource. Note: This does not manage the initial stages of the OAUTH request
+ * flow and instead relies on a provided auth code or a pre-existing refresh token.
+ *
+ * &lt;p&gt;Example initializing with an auth code:&lt;/p&gt;
+ * &lt;pre&gt;
+ * BusinessAccountAuthManager authManager = BusinessAccountAuthManager.builderWithAuthCode()
+ *         .httpClient(client) // the OKHttpClient instance
+ *         .gsonFactory(gsonFactory) // preconfigured Gson instances
+ *         .clientId(clientId) // the client ID of your application
+ *         .clientSecret(clientSecret) // the client secret of your application
+ *         .redirectUrl(redirectUrl) // the redirect URL for OAUTH flow
+ *         .resourceId(resourceId) // the specific resource identifier
+ *         .authCode(authCode) // The obtained auth code from initial OAUTH handshake
+ *         .buildWithAuthCode();
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * Once the BusinessAccountAuthManager is created, the next step is to discover available services to connect to and
+ * authorize access to a chosen service:
+ * &lt;pre&gt;
+ * List&lt;Service&gt; services = authManager.getServices();
+ * authManager.authorizeService(services.get(0));
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;Example initializing with an AuthInfo (pre-existing refresh token):&lt;/p&gt;
+ * &lt;pre&gt;
+ * BusinessAccountAuthManager authManager = BusinessAccountAuthManager.builderWithAuthInfo()
+ *         .httpClient(client)
+ *         .gsonFactory(gsonFactory)
+ *         .clientId(clientId)
+ *         .clientSecret(clientSecret)
+ *         .redirectUrl(redirectUrl)
+ *         .resourceId(resourceId) // the specific resource identifier
+ *         .authInfo(authInfo) // Instead of an auth code, an AuthInfo object is used to obtain the refresh token
+ *         .buildWithAuthInfo();
+ * &lt;/pre&gt;
+ * Note: Existing persisted authInfo is only valid for a single resource. If the user is to access a different
+ * resource than the one that that is persisted with the auth tokens, then new access tokens are required and
+ * should invoke the {@code builderWithAuthCode()} flow.
+ *
+ * @see OneDriveAuthInfo
+ */
+public class BusinessAccountAuthManager implements OneDriveAuthManager {
+    private static final String ENDPOINT_SUFFIX = &quot;/_api/v2.0&quot;;
+    private static final String RESOURCE_DISCOVERY_URL = &quot;https://api.office.com/discovery/&quot;;
+    private static final String SERVICE_INFO_URL_SUFFIX = &quot;v2.0/me/services&quot;;
+    private static final String RESOURCE_BODY_PARAM = &quot;resource&quot;;
+
+    /** The client identifier. */
+    private final String clientId;
+    /** The client secret. */
+    private final String clientSecret;
+    /** The redirect URL. */
+    private final String redirectUrl;
+    /** The underlying HTTP client. */
+    private final OkHttpClient httpClient;
+    /** The GSON instance used for JSON serialization. */
+    private final String authBaseTokenUrl;
+    /** The URL to query for a list of authorized services. */
+    private final String discoveryBaseTokenUrl;
+<span class="fc" id="L104">    private final ReentrantLock lock = new ReentrantLock();</span>
+
+    @Getter
+    @Setter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    private String resourceId;
+
+    /**
+     * The current authentication information.
+     */
+    @Setter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    private volatile OneDriveAuthInfo authInfo;
+
+    /**
+     * Used to initialize and manage authentication for a given auth code.
+     */
+    @Builder(builderClassName = &quot;BuilderWithAuthCode&quot;,
+            buildMethodName = &quot;buildWithAuthCode&quot;,
+            builderMethodName = &quot;builderWithAuthCode&quot;)
+    private BusinessAccountAuthManager(
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">            @NonNull final OkHttpClient httpClient,</span>
+            final String authBaseTokenUrl,
+            final String discoveryBaseTokenUrl,
+            final String clientId,
+            final String clientSecret,
+            final String redirectUrl,
+<span class="fc" id="L131">            final String authCode) {</span>
+<span class="fc" id="L132">        Validate.notBlank(authCode, &quot;authCode must not be blank&quot;);</span>
+<span class="fc" id="L133">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
+<span class="fc" id="L134">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
+<span class="fc" id="L135">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
+
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        this.authBaseTokenUrl = StringUtils.isNotBlank(authBaseTokenUrl) ? authBaseTokenUrl : AUTH_TOKEN_URL;</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        this.discoveryBaseTokenUrl = StringUtils.isNotBlank(discoveryBaseTokenUrl)</span>
+<span class="fc" id="L139">                ? discoveryBaseTokenUrl</span>
+<span class="fc" id="L140">                : RESOURCE_DISCOVERY_URL;</span>
+<span class="fc" id="L141">        this.httpClient = httpClient;</span>
+<span class="fc" id="L142">        this.clientId = clientId;</span>
+<span class="fc" id="L143">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L144">        this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L145">        resourceId = this.discoveryBaseTokenUrl;</span>
+<span class="fc" id="L146">        authInfo = redeemToken(authCode);</span>
+<span class="fc" id="L147">    }</span>
+
+    /**
+     * Used to manage authentication for an existing AuthInfo that contains a refresh token.
+     */
+    @Builder(builderClassName = &quot;BuilderWithAuthInfo&quot;,
+            builderMethodName = &quot;builderWithAuthInfo&quot;,
+            buildMethodName = &quot;buildWithAuthInfo&quot;)
+    private BusinessAccountAuthManager(
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">            @NonNull final OkHttpClient httpClient,</span>
+            final String authBaseTokenUrl,
+            final String discoveryBaseTokenUrl,
+            final String clientId,
+            final String clientSecret,
+            final String redirectUrl,
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">            @NonNull final OneDriveAuthInfo authInfo) {</span>
+<span class="fc" id="L163">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
+<span class="fc" id="L164">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
+<span class="fc" id="L165">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
+<span class="fc" id="L166">        Validate.notBlank(authInfo.getResourceId(), &quot;AuthInfo.resourceId must not be blank&quot;);</span>
+
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        this.authBaseTokenUrl = StringUtils.isNotBlank(authBaseTokenUrl) ? authBaseTokenUrl : AUTH_TOKEN_URL;</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        this.discoveryBaseTokenUrl = StringUtils.isNotBlank(discoveryBaseTokenUrl)</span>
+<span class="fc" id="L170">                ? discoveryBaseTokenUrl</span>
+<span class="fc" id="L171">                : RESOURCE_DISCOVERY_URL;</span>
+<span class="fc" id="L172">        this.httpClient = httpClient;</span>
+<span class="fc" id="L173">        this.clientId = clientId;</span>
+<span class="fc" id="L174">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L175">        this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L176">        this.authInfo = authInfo;</span>
+<span class="fc" id="L177">        resourceId = authInfo.getResourceId();</span>
+<span class="fc" id="L178">        refreshToken();</span>
+<span class="fc" id="L179">    }</span>
+
+    @Override
+    public boolean isAuthenticated() {
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        return authInfo != null;</span>
+    }
+
+    @Override
+    public boolean isExpired() {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (!isAuthenticated()) {</span>
+<span class="fc" id="L189">            throw new AuthManagerException(&quot;Not authenticated&quot;);</span>
+        }
+
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        return System.currentTimeMillis() &gt;= authInfo.getExpiresIn();</span>
+    }
+
+    @Override
+    public OneDriveAuthInfo getAuthInfo() {
+<span class="fc" id="L197">        refreshIfExpired();</span>
+<span class="fc" id="L198">        return authInfo;</span>
+    }
+
+    @Override
+    public String getAuthenticatedEndpoint() {
+<span class="fc bfc" id="L203" title="All 4 branches covered.">        if (StringUtils.isBlank(resourceId) || RESOURCE_DISCOVERY_URL.equals(resourceId)) {</span>
+<span class="fc" id="L204">            throw new AuthManagerException(&quot;No valid service resource ID is defined. &quot; +</span>
+                    &quot;You must authenticate with a specific service. Was authenticateService() invoked?&quot;);
+        }
+
+<span class="fc" id="L208">        return resourceId + ENDPOINT_SUFFIX;</span>
+    }
+
+    @Override
+    public OneDriveAuthInfo redeemToken(final String authCode) {
+<span class="fc" id="L213">        Validate.notBlank(authCode, &quot;authCode must not be blank&quot;);</span>
+<span class="fc" id="L214">        lock.lock();</span>
+        try {
+<span class="fc" id="L216">            return authInfo =</span>
+<span class="fc" id="L217">                    OneDriveAuthManager.fetchAuthInfo(httpClient, new Request.Builder()</span>
+<span class="fc" id="L218">                                    .url(authBaseTokenUrl)</span>
+<span class="fc" id="L219">                                    .header(CONTENT_TYPE, FORM_DATA.toString())</span>
+<span class="fc" id="L220">                                    .post(new FormBody.Builder()</span>
+<span class="fc" id="L221">                                            .add(CLIENT_ID_BODY_PARAM, clientId)</span>
+<span class="fc" id="L222">                                            .add(CLIENT_SECRET_BODY_PARAM, clientSecret)</span>
+<span class="fc" id="L223">                                            .add(REDIRECT_URI_BODY_PARAM, redirectUrl)</span>
+<span class="fc" id="L224">                                            .add(RESOURCE_BODY_PARAM, resourceId)</span>
+<span class="fc" id="L225">                                            .add(AUTH_CODE_BODY_ARAM, authCode)</span>
+<span class="fc" id="L226">                                            .add(GRANT_TYPE_BODY_PARAM, AUTH_CODE_GRANT_TYPE_BODY_PARAM_VALUE)</span>
+<span class="fc" id="L227">                                            .build())</span>
+<span class="fc" id="L228">                                    .build())</span>
+<span class="fc" id="L229">                            .copyWithResourceId(resourceId);</span>
+        } finally {
+<span class="fc" id="L231">            lock.unlock();</span>
+        }
+    }
+
+    @Override
+    public OneDriveAuthInfo refreshToken() {
+<span class="fc" id="L237">        lock.lock();</span>
+        try {
+<span class="fc" id="L239">            return authInfo =</span>
+<span class="fc" id="L240">                    OneDriveAuthManager.fetchAuthInfo(httpClient, new Request.Builder()</span>
+<span class="fc" id="L241">                                    .url(authBaseTokenUrl)</span>
+<span class="fc" id="L242">                                    .header(CONTENT_TYPE, FORM_DATA_CONTENT_TYPE)</span>
+<span class="fc" id="L243">                                    .post(new FormBody.Builder()</span>
+<span class="fc" id="L244">                                            .add(CLIENT_ID_BODY_PARAM, clientId)</span>
+<span class="fc" id="L245">                                            .add(CLIENT_SECRET_BODY_PARAM, clientSecret)</span>
+<span class="fc" id="L246">                                            .add(REDIRECT_URI_BODY_PARAM, redirectUrl)</span>
+<span class="fc" id="L247">                                            .add(RESOURCE_BODY_PARAM, resourceId)</span>
+<span class="fc" id="L248">                                            .add(REFRESH_TOKEN_BODY_PARAM, authInfo.getRefreshToken())</span>
+<span class="fc" id="L249">                                            .add(GRANT_TYPE_BODY_PARAM, REFRESH_TOKEN_GRANT_TYPE_BODY_PARAM_VALUE)</span>
+<span class="fc" id="L250">                                            .build())</span>
+<span class="fc" id="L251">                                    .build())</span>
+<span class="fc" id="L252">                            .copyWithResourceId(resourceId);</span>
+        } finally {
+<span class="fc" id="L254">            lock.unlock();</span>
+        }
+    }
+
+    /**
+     * Fetches the list of services available to the authenticated business user. Note:
+     * Once a service is selected, you must invoke {@link #authenticateService(Service)} prior to
+     * instantiating a new connection.
+     *
+     * @return the list of services
+     */
+    public List&lt;Service&gt; getServices() {
+<span class="fc" id="L266">        final Request request = new Request.Builder()</span>
+<span class="fc" id="L267">                .url(discoveryBaseTokenUrl + SERVICE_INFO_URL_SUFFIX)</span>
+<span class="fc" id="L268">                .header(&quot;Authorization&quot;, getAuthInfo().getFullToken())</span>
+<span class="fc" id="L269">                .header(&quot;Accept&quot;, &quot;application/json;odata=verbose &quot;)</span>
+<span class="fc" id="L270">                .get()</span>
+<span class="fc" id="L271">                .build();</span>
+
+        try {
+<span class="fc" id="L274">            try (final Response response = httpClient.newCall(request).execute()) {</span>
+<span class="fc bfc" id="L275" title="All 2 branches covered.">                if (!response.isSuccessful()) {</span>
+<span class="fc" id="L276">                    throw new AuthManagerException(&quot;Unsuccessful service discovery request: &quot; + response);</span>
+                }
+
+<span class="fc" id="L279">                final String json = response.body().string();</span>
+<span class="fc" id="L280">                return GsonFactory.getInstanceForServiceDiscovery()</span>
+<span class="fc" id="L281">                        .fromJson(json, DiscoverServiceResponse.class)</span>
+<span class="fc" id="L282">                        .getServices();</span>
+            }
+<span class="fc" id="L284">        } catch (final AuthManagerException ex) {</span>
+<span class="fc" id="L285">            throw ex;</span>
+<span class="fc" id="L286">        } catch (final Exception ex) {</span>
+<span class="fc" id="L287">            throw new AuthManagerException(&quot;Error fetching service info: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    /**
+     * Authenticates with the given {@code service} and refreshes the auth tokens so that a new
+     * {@code OneDriveConnection} can be used to access the service.
+     *
+     * @param service the service to authenticate
+     */
+<span class="fc bfc" id="L297" title="All 2 branches covered.">    public void authenticateService(@NonNull final Service service) {</span>
+<span class="fc" id="L298">        Validate.notBlank(service.getServiceResourceId(), &quot;service#getServiceResourceId() must not be blank&quot;);</span>
+<span class="fc" id="L299">        resourceId = service.getServiceResourceId();</span>
+<span class="fc" id="L300">        refreshToken();</span>
+<span class="fc" id="L301">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

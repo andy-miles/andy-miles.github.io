@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Drive.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.drive</a> &gt; <span class="el_source">Drive.java</span></div><h1>Drive.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.drive;
+
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.activities.ItemActivity;
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.BaseItem;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.DriveItemPage;
+import com.amilesend.onedrive.resource.item.SpecialDriveItem;
+import com.amilesend.onedrive.resource.item.type.SharePointIds;
+import com.amilesend.onedrive.resource.item.type.SpecialFolder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PAGE_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.ITEM_ACTIVITY_LIST_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newSpecialDriveItemParser;
+import static com.amilesend.onedrive.resource.ResourceHelper.objectDefinedEquals;
+
+/**
+ * Top-level object that represents a user's OneDrive or SharePoint document library.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/drive&quot;&gt;API Documentation.&lt;/a&gt;
+ */
+@Getter
+@SuperBuilder
+@ToString(callSuper = true)
+public class Drive extends BaseItem {
+    public static final String DRIVE_BASE_URL_PATH = &quot;/drive/&quot;;
+    public static final String DRIVES_BASE_URL_PATH = &quot;/drives/&quot;;
+    public static final String DRIVE_URL_PATH_SUFFIX = &quot;/drive&quot;;
+    public static final String DRIVES_URL_PATH_SUFFIX = &quot;/drives&quot;;
+
+    private static final String ACTIVITIES_URL_SUFFIX = &quot;/activities&quot;;
+    private static final String ROOT_FOLDER_URL_PATH = DRIVE_BASE_URL_PATH + &quot;root&quot;;
+    private static final String CHANGES_URL_PATH = ROOT_FOLDER_URL_PATH + &quot;/delta&quot;;
+    private static final String SEARCH_URL_PATH = ROOT_FOLDER_URL_PATH + &quot;/search&quot;;
+    private static final String SPECIAL_FOLDER_URL_PATH = DRIVE_BASE_URL_PATH + &quot;special/&quot;;
+    private static final int MAX_QUERY_LENGTH = 1000;
+
+    /**
+     * The drive type descriptor. Valid types are:
+     * &lt;ul&gt;
+     *     &lt;li&gt;{@literal personal} - Personal drive&lt;/li&gt;
+     *     &lt;li&gt;{@literal business} - Business drive&lt;/li&gt;
+     *     &lt;li&gt;{@literal documentLibrary} - Sharepoint document library&lt;/li&gt;
+     * &lt;/ul&gt;
+     */
+    private final String driveType;
+    /** The user account that owns the drive. */
+    private final IdentitySet owner;
+    /** Drive storage space quota information. */
+    private final Quota quota;
+    /** Identifiers used for SharePoint. */
+    private final SharePointIds sharepointIds;
+    /** Indicates that this is a system-managed drive:  Note: Either {@code null} or defined as empty. */
+    private final Object system;
+    @GsonExclude
+    private final OneDriveConnection connection;
+
+    /**
+     * Queries and fetches the activities associated with this {@code Drive}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/activities_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of activities
+     */
+    public List&lt;ItemActivity&gt; getActivities() {
+<span class="fc" id="L98">        return connection.execute(</span>
+<span class="fc" id="L99">                connection.newRequestBuilder()</span>
+<span class="fc" id="L100">                        .url(getActivitiesUrl(getId()))</span>
+<span class="fc" id="L101">                        .build(),</span>
+                ITEM_ACTIVITY_LIST_PARSER);
+    }
+
+    /**
+     * Fetches the root folder associated with this {@code Drive}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     * @return the root folder drive item
+     */
+    public DriveItem getRootFolder() {
+<span class="fc" id="L113">        return connection.execute(</span>
+<span class="fc" id="L114">                connection.newRequestBuilder()</span>
+<span class="fc" id="L115">                        .url(connection.getBaseUrl() + ROOT_FOLDER_URL_PATH)</span>
+<span class="fc" id="L116">                        .build(),</span>
+                DRIVE_ITEM_PARSER);
+    }
+
+    /**
+     * Fetches the list of changes associated with this {@code Drive}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_delta&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of drive item changes
+     */
+    public List&lt;DriveItem&gt; getChanges() {
+<span class="fc" id="L129">        final List&lt;DriveItem&gt; changes = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L131">        DriveItemPage currentPage = null;</span>
+        do {
+<span class="fc" id="L133">            currentPage = connection.execute(</span>
+<span class="fc" id="L134">                    connection.newRequestBuilder()</span>
+<span class="fc" id="L135">                            .url(getChangesUrl(currentPage))</span>
+<span class="fc" id="L136">                            .build(),</span>
+                    DRIVE_ITEM_PAGE_PARSER);
+<span class="fc" id="L138">            changes.addAll(currentPage.getValue());</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
+
+<span class="fc" id="L141">        return changes;</span>
+    }
+
+    /**
+     * Search for items associated with this {@code Drive}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_search&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param query the search query
+     * @return the list of drive items associated with the query
+     */
+    public List&lt;DriveItem&gt; search(final String query) {
+<span class="fc" id="L154">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
+                &quot;query length must be less than &quot; + MAX_QUERY_LENGTH);
+
+<span class="fc" id="L158">        final String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L159">        final List&lt;DriveItem&gt; results = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L161">        DriveItemPage currentPage = null;</span>
+        do {
+<span class="fc" id="L163">            currentPage = connection.execute(</span>
+<span class="fc" id="L164">                    connection.newRequestBuilder()</span>
+<span class="fc" id="L165">                            .url(getSearchUrl(currentPage, encodedQuery))</span>
+<span class="fc" id="L166">                            .build(),</span>
+                    DRIVE_ITEM_PAGE_PARSER);
+<span class="fc" id="L168">            results.addAll(currentPage.getValue());</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
+
+<span class="fc" id="L171">        return results;</span>
+    }
+
+    /**
+     * Retrieves a special folder for the given {@link SpecialFolder.Type}.
+     *
+     * @param type the special folder type
+     * @return the special folder drive item
+     * @see SpecialFolder.Type
+     */
+<span class="fc bfc" id="L181" title="All 2 branches covered.">    public SpecialDriveItem getSpecialFolder(@NonNull final SpecialFolder.Type type) {</span>
+<span class="fc" id="L182">        return connection.execute(</span>
+<span class="fc" id="L183">                connection.newRequestBuilder()</span>
+<span class="fc" id="L184">                        .url(getSpecialFolderUrl(type))</span>
+<span class="fc" id="L185">                        .build(),</span>
+<span class="fc" id="L186">                newSpecialDriveItemParser(type));</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L192">            return true;</span>
+        }
+
+<span class="fc bfc" id="L195" title="All 4 branches covered.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="fc" id="L196">            return false;</span>
+        }
+
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (!super.equals(obj)) {</span>
+<span class="fc" id="L200">            return false;</span>
+        }
+
+<span class="fc" id="L203">        final Drive drive = (Drive) obj;</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        return Objects.equals(getDriveType(), drive.getDriveType())</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getOwner(), drive.getOwner())</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getQuota(), drive.getQuota())</span>
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSharepointIds(), drive.getSharepointIds())</span>
+<span class="fc bfc" id="L208" title="All 2 branches covered.">                &amp;&amp; objectDefinedEquals(getSystem(), drive.getSystem());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L213">        return Objects.hash(</span>
+<span class="fc" id="L214">                super.hashCode(),</span>
+<span class="fc" id="L215">                getDriveType(),</span>
+<span class="fc" id="L216">                getOwner(),</span>
+<span class="fc" id="L217">                getQuota(),</span>
+<span class="fc" id="L218">                getSharepointIds(),</span>
+<span class="fc" id="L219">                Objects.nonNull(getSystem()));</span>
+    }
+
+    private String getActivitiesUrl(final String driveId) {
+<span class="fc" id="L223">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L224">                .append(DRIVE_BASE_URL_PATH)</span>
+<span class="fc" id="L225">                .append(URLEncoder.encode(driveId, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L226">                .append(ACTIVITIES_URL_SUFFIX)</span>
+<span class="fc" id="L227">                .toString();</span>
+    }
+
+    private String getChangesUrl(final DriveItemPage page) {
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        return page == null ? connection.getBaseUrl() + CHANGES_URL_PATH : page.getNextLink();</span>
+    }
+
+    private String getSearchUrl(final DriveItemPage page, final String searchQuery) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        return page == null</span>
+<span class="fc" id="L236">                ? new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L237">                        .append(SEARCH_URL_PATH)</span>
+<span class="fc" id="L238">                        .append(&quot;(q='&quot;)</span>
+<span class="fc" id="L239">                        .append(URLEncoder.encode(searchQuery, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L240">                        .append(&quot;')&quot;)</span>
+<span class="fc" id="L241">                        .toString()</span>
+<span class="fc" id="L242">                : page.getNextLink();</span>
+    }
+
+    private String getSpecialFolderUrl(final SpecialFolder.Type type) {
+<span class="fc" id="L246">        return connection.getBaseUrl() + SPECIAL_FOLDER_URL_PATH + type.getId();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

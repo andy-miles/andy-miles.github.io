@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GsonFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.parse</a> &gt; <span class="el_source">GsonFactory.java</span></div><h1>GsonFactory.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.parse;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.parse.GsonFactoryBase;
+import com.amilesend.client.parse.strategy.AnnotationBasedExclusionStrategy;
+import com.amilesend.client.parse.strategy.AnnotationBasedSerializationExclusionStrategy;
+import com.amilesend.tmdb.client.model.search.type.MediaType;
+import com.amilesend.tmdb.client.model.search.type.PersonCredit;
+import com.amilesend.tmdb.client.model.search.type.SearchResult;
+import com.amilesend.tmdb.client.model.trending.type.TimeWindow;
+import com.amilesend.tmdb.client.model.tv.episodes.groups.type.TvEpisodeGroupType;
+import com.amilesend.tmdb.client.parse.adapters.LocalDateTimeTypeAdapter;
+import com.amilesend.tmdb.client.parse.adapters.LocalDateTypeAdapter;
+import com.amilesend.tmdb.client.parse.adapters.LocalTimeTypeAdapter;
+import com.amilesend.tmdb.client.parse.adapters.MediaTypeTypeAdapter;
+import com.amilesend.tmdb.client.parse.adapters.PersonCreditDeserializer;
+import com.amilesend.tmdb.client.parse.adapters.SearchResultDeserializer;
+import com.amilesend.tmdb.client.parse.adapters.TimeWindowTypeAdapter;
+import com.amilesend.tmdb.client.parse.adapters.TvEpisodeGroupTypeTypeAdapter;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.gsonfire.GsonFireBuilder;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
+/** Factory that vends new pre-configured {@link Gson} instances. */
+@NoArgsConstructor
+public class GsonFactory extends GsonFactoryBase&lt;Connection&gt; {
+       @Override
+    protected GsonBuilder configure(final GsonBuilder gsonBuilder, final Connection connection) {
+<span class="fc" id="L52">        return gsonBuilder.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)</span>
+<span class="fc" id="L53">                .registerTypeAdapter(LocalDate.class, new LocalDateTypeAdapter())</span>
+<span class="fc" id="L54">                .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())</span>
+<span class="fc" id="L55">                .registerTypeAdapter(LocalTime.class, new LocalTimeTypeAdapter())</span>
+<span class="fc" id="L56">                .registerTypeAdapter(MediaType.class, new MediaTypeTypeAdapter())</span>
+<span class="fc" id="L57">                .registerTypeAdapter(TvEpisodeGroupType.class, new TvEpisodeGroupTypeTypeAdapter())</span>
+<span class="fc" id="L58">                .registerTypeAdapter(SearchResult.class, new SearchResultDeserializer())</span>
+<span class="fc" id="L59">                .registerTypeAdapter(PersonCredit.class, new PersonCreditDeserializer())</span>
+<span class="fc" id="L60">                .registerTypeAdapter(TimeWindow.class, new TimeWindowTypeAdapter());</span>
+    }
+
+    @Override
+    protected GsonBuilder newGsonBuilder() {
+<span class="fc" id="L65">        return new GsonFireBuilder().createGsonBuilder()</span>
+<span class="fc" id="L66">                .setExclusionStrategies(new AnnotationBasedExclusionStrategy())</span>
+<span class="fc" id="L67">                .addSerializationExclusionStrategy(new AnnotationBasedSerializationExclusionStrategy());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

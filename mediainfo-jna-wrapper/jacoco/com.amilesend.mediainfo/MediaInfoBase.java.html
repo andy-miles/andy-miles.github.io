@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MediaInfoBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mediainfo-jna-wrapper</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.mediainfo</a> &gt; <span class="el_source">MediaInfoBase.java</span></div><h1>MediaInfoBase.java</h1><pre class="source lang-java linenums">/*
+ * The MIT License
+ * Copyright © 2024-2025 Andy Miles
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the &quot;Software&quot;), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package com.amilesend.mediainfo;
+
+import com.amilesend.mediainfo.lib.MediaInfoAccessor;
+import com.amilesend.mediainfo.type.Status;
+import com.google.common.annotations.VisibleForTesting;
+import com.sun.jna.Platform;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
+/**
+ * Base class for opening media files and accessing media information.
+ *
+ * Example usage:
+ *
+ * &lt;pre&gt;
+ * // Extend to define which parameters to access for your java application
+ * public class MyVideoMediaInfoType extends MediaInfoBase&lt;MyVideoMediaInfoType&gt; {
+ *     public MyMediaInfoType(MediaInfoAccessor accessor) {
+ *         super(accessor);
+ *     }
+ *
+ *     public List&lt;String&gt; getVideoCodecs() {
+ *         String codecsList = mediaInfo.get(StreamType.General, 0, &quot;Video_Codec_List&quot;);
+ *         return parseList(codecsList);
+ *     }
+ *
+ *     // Define additional accessor methods here...
+ * }
+ *
+ * MediaInfoLibrary library = MediaInfoLibrary.newInstance();
+ * MediaInfoAccessor accessor = new MediaInfoAccessor(library);
+ * try (MyVideoMediaInfoType myVideo = new MyVideoMediaInfoType(accessor).open(&quot;./MyVideo.mkv&quot;)) {
+ *     List&lt;String&gt; videoCodecs = myVideo.getVideoCodecs();
+ *
+ *     // Access customized parameters accessor methods
+ * }
+ * &lt;/pre&gt;
+ *
+ * @param &lt;T&gt; the concrete media info implementation type
+ */
+<span class="fc" id="L82">@Slf4j</span>
+@RequiredArgsConstructor
+public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements AutoCloseable {
+    private static final int BUFFER_SIZE_4_MB = 4194304;
+    private static final int MIN_FILE_SIZE = 65536;
+    private static final int MAX_FILENAME_LENGTH_WIN = 250;
+    private static final String LIST_DELIMITER = &quot;/&quot;;
+<span class="fc" id="L89">    private static final DateTimeFormatter DATE_TIME_FORMATTER =</span>
+<span class="fc" id="L90">            DateTimeFormatter.ofPattern(&quot;zzz uuuu-MM-dd HH:mm:ss&quot;);</span>
+<span class="fc" id="L91">    private static final DateTimeFormatter DATE_TIME_FORMATTER_ALT =</span>
+<span class="fc" id="L92">            DateTimeFormatter.ofPattern(&quot;uuuu-MM-dd HH:mm:ss zzz&quot;);</span>
+
+    private final Object lock = new Object();
+    @Getter(AccessLevel.PROTECTED)
+    private final MediaInfoAccessor accessor;
+
+    /**
+     * Opens a file for analysis to parse media information.
+     *
+     * @param file the media file
+     * @return the analyzer to retrieve information
+     * @throws IOException if an error occurred while opening the media file
+     */
+<span class="fc" id="L105">    public T open(@NonNull final File file) throws IOException {</span>
+<span class="fc" id="L106">        Validate.isTrue(file.isFile(), &quot;File must be a file&quot;);</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        Validate.isTrue(file.length() &gt;= MIN_FILE_SIZE, &quot;File size must be &gt;= &quot; + MIN_FILE_SIZE);</span>
+
+<span class="fc" id="L109">        synchronized (lock) {</span>
+<span class="fc" id="L110">            final String filePath = file.getCanonicalPath();</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (preferOpenViaBuffer(filePath)) {</span>
+<span class="fc" id="L112">                return readViaBuffer(file);</span>
+            }
+
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (accessor.open(filePath) == true) {</span>
+<span class="fc" id="L116">                return (T) this;</span>
+            }
+
+<span class="fc" id="L119">            throw new IOException(&quot;Failed to open media file: &quot; + filePath);</span>
+        }
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L125">        synchronized (lock) {</span>
+<span class="fc" id="L126">            accessor.close();</span>
+<span class="fc" id="L127">        }</span>
+<span class="fc" id="L128">    }</span>
+
+    @VisibleForTesting
+    T readViaBuffer(final File file) throws IOException {
+<span class="fc" id="L132">        try (RandomAccessFile raf = new RandomAccessFile(file, &quot;r&quot;)) {</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            if (openViaBuffer(raf)) {</span>
+<span class="fc" id="L134">                return (T) this;</span>
+            }
+
+<span class="fc" id="L137">            throw new IOException(&quot;Failed to open media file buffer: &quot; + file.getCanonicalPath());</span>
+        }
+    }
+
+    @VisibleForTesting
+    boolean openViaBuffer(final RandomAccessFile file) throws IOException {
+<span class="fc" id="L143">        final byte[] buffer = new byte[BUFFER_SIZE_4_MB]; // Use 4MB buffer to reduce JNA calls</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (accessor.openBufferInit(file.length(), 0) == false) {</span>
+<span class="fc" id="L145">            return false;</span>
+        }
+
+<span class="fc" id="L148">        int read = -1;</span>
+        do {
+<span class="fc" id="L150">            read = file.read(buffer);</span>
+<span class="fc" id="L151">            final int result = accessor.openBufferContinue(buffer, read);</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            if ((result &amp; 8) == Status.Finalized.getValue()) {</span>
+<span class="fc" id="L153">                break;</span>
+            }
+
+<span class="fc" id="L156">            final long gotoPos = accessor.openBufferContinueGotoGet();</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (gotoPos &gt;= Status.None.getValue()) {</span>
+<span class="fc" id="L158">                file.seek(gotoPos);</span>
+<span class="fc" id="L159">                accessor.openBufferInit(file.length(), gotoPos);</span>
+            }
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        } while (read &gt; 0);</span>
+
+<span class="fc" id="L163">        accessor.openBufferFinalize();</span>
+<span class="fc" id="L164">        return true;</span>
+    }
+
+    @VisibleForTesting
+    boolean preferOpenViaBuffer(final String path) {
+<span class="fc bfc" id="L169" title="All 4 branches covered.">        if (Platform.isWindows() &amp;&amp; path.length() &gt; MAX_FILENAME_LENGTH_WIN) {</span>
+<span class="fc" id="L170">            return true;</span>
+        }
+
+<span class="fc bfc" id="L173" title="All 4 branches covered.">        if (Platform.isMac() &amp;&amp; !US_ASCII.newEncoder().canEncode(path)) {</span>
+<span class="fc" id="L174">            return true;</span>
+        }
+
+<span class="fc" id="L177">        return false;</span>
+    }
+
+    /**
+     * Helper method used to parse timestamps.
+     *
+     * @param time the time as a String
+     * @return the parsed Instant, or {@code null} if the time value is blank
+     */
+    public static Instant parseTime(final String time) {
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (StringUtils.isBlank(time)) {</span>
+<span class="fc" id="L188">            return null;</span>
+        }
+
+        try {
+<span class="fc" id="L192">            return ZonedDateTime.parse(time, DATE_TIME_FORMATTER).toInstant();</span>
+<span class="fc" id="L193">        } catch (final DateTimeParseException ex) {</span>
+<span class="fc" id="L194">            log.debug(&quot;Timestamp does not match pattern: \&quot;zzz uuuu-MM-dd HH:mm:ss\&quot;&quot;);</span>
+        }
+
+<span class="fc" id="L197">        return ZonedDateTime.parse(time, DATE_TIME_FORMATTER_ALT).toInstant();</span>
+    }
+
+    /**
+     * Helper method used to parse a list of values.
+     *
+     * @param listValue the value with a list of items
+     * @return the list of values
+     */
+    public static List&lt;String&gt; parseList(final String listValue) {
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (StringUtils.isBlank(listValue)) {</span>
+<span class="fc" id="L208">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L211">        return Arrays.stream(listValue.split(LIST_DELIMITER))</span>
+<span class="fc" id="L212">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L213">                .map(String::trim)</span>
+<span class="fc" id="L214">                .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

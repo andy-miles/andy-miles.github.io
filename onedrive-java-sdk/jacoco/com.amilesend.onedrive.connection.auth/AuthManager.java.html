@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth</a> &gt; <span class="el_source">AuthManager.java</span></div><h1>AuthManager.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth;
+
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import static com.google.common.net.MediaType.FORM_DATA;
+
+/**
+ *  The interface that defines the manager that is responsible for obtaining and refreshing tokens
+ *  to interact with a OneDrive account. Note: This does not manage the initial stages of the OAUTH request
+ *  flow and instead relies on a provided auth code or a pre-existing refresh token.
+ */
+public interface AuthManager {
+    String AUTH_TOKEN_URL = &quot;https://login.microsoftonline.com/common/oauth2/v2.0/token&quot;;
+<span class="fc" id="L33">    String FORM_DATA_CONTENT_TYPE = FORM_DATA.toString();</span>
+    String CLIENT_ID_BODY_PARAM = &quot;client_id&quot;;
+    String CLIENT_SECRET_BODY_PARAM = &quot;client_secret&quot;;
+    String REDIRECT_URI_BODY_PARAM = &quot;redirect_uri&quot;;
+    String AUTH_CODE_BODY_ARAM = &quot;code&quot;;
+    String REFRESH_TOKEN_BODY_PARAM = &quot;refresh_token&quot;;
+    String GRANT_TYPE_BODY_PARAM = &quot;grant_type&quot;;
+    String AUTH_CODE_GRANT_TYPE_BODY_PARAM_VALUE = &quot;authorization_code&quot;;
+    String REFRESH_TOKEN_GRANT_TYPE_BODY_PARAM_VALUE = REFRESH_TOKEN_BODY_PARAM;
+
+    /**
+     * Determines if the current authentication information is up-to-date.
+     *
+     * @return {@code true} if authenticated; else, {@code false}
+     */
+    boolean isAuthenticated();
+
+    /**
+     * Determines if the current authentication information is expired.
+     *
+     * @return {@code true} if expired; else, {@code false}
+     */
+    boolean isExpired();
+
+    /**
+     * Checks to see if the current authentication info is expired and refreshes the tokens
+     * accordingly.
+     */
+    default void refreshIfExpired() {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (isExpired()) {</span>
+<span class="fc" id="L63">            refreshToken();</span>
+        }
+<span class="fc" id="L65">    }</span>
+
+    /**
+     * Helper method to refresh authentication if expired and return the full token used in request headers.
+     *
+     * @return the full auth token
+     */
+    default String refreshIfExpiredAndFetchFullToken() {
+<span class="fc" id="L73">        refreshIfExpired();</span>
+<span class="fc" id="L74">        return getAuthInfo().getFullToken();</span>
+    }
+
+    /**
+     * Retrieves the current authentication info.
+     *
+     * @return the authentication info
+     * @see AuthInfo
+     */
+    AuthInfo getAuthInfo();
+
+    /** Retrieves the associated endpoint to use for OneDrive operations. */
+    String getAuthenticatedEndpoint();
+
+    /**
+     * Issues a request to redeem the given {@code authCode} in order to retrieve access and refresh tokens as a
+     * {@link AuthInfo}.
+     *
+     * @param authCode the authorization code
+     * @return the authorization information
+     * @see AuthInfo
+     */
+    AuthInfo redeemToken(String authCode);
+
+    /**
+     * Issues a request to refresh the auth tokens and returns the refreshed tokens as a {@link AuthInfo}.
+     *
+     * @return the authorization information
+     * @see AuthInfo
+     */
+    AuthInfo refreshToken();
+
+    /**
+     * Helper method to dispatch the request to redeem or refresh authorization tokens.
+     *
+     * @param httpClient the http client
+     * @param request the request
+     * @return the authorization information
+     */
+    static AuthInfo fetchAuthInfo(final OkHttpClient httpClient, final Request request) {
+        try {
+<span class="fc" id="L115">            try (final Response response = httpClient.newCall(request).execute()) {</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">                if (!response.isSuccessful()) {</span>
+<span class="fc" id="L117">                    throw new AuthManagerException(&quot;Unsuccessful refresh token request: &quot; + response);</span>
+                }
+
+<span class="fc" id="L120">                final String json = response.body().string();</span>
+<span class="fc" id="L121">                return AuthInfo.fromJson(json);</span>
+            }
+<span class="fc" id="L123">        } catch (final AuthManagerException ex) {</span>
+<span class="fc" id="L124">            throw ex;</span>
+<span class="fc" id="L125">        } catch (final Exception ex) {</span>
+<span class="fc" id="L126">            throw new AuthManagerException(&quot;Error refreshing token: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,10 @@
+com.amilesend.omdb.client
+com.amilesend.omdb.client.connection
+com.amilesend.omdb.client.model
+com.amilesend.omdb.client.model.movie
+com.amilesend.omdb.client.model.movie.type
+com.amilesend.omdb.client.model.tv
+com.amilesend.omdb.client.model.tv.type
+com.amilesend.omdb.client.model.type
+com.amilesend.omdb.client.parse
+com.amilesend.omdb.client.parse.adapters

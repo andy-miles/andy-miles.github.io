@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OkHttpClientBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb.connection.http</a> &gt; <span class="el_source">OkHttpClientBuilder.java</span></div><h1>OkHttpClientBuilder.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb.connection.http;
+
+import com.amilesend.omdb.connection.ConnectionException;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import okhttp3.Authenticator;
+import okhttp3.ConnectionSpec;
+import okhttp3.Credentials;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.Route;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+import java.net.Proxy;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.util.List;
+
+/**
+ * Utility to configure and build a {@link OkHttpClient} with the option of default configuration for this SDK.
+ * This supports configuring a client that:
+ * &lt;ul&gt;
+ *     &lt;li&gt;Customizes the SSL trust manager and hostname verifier&lt;/li&gt;
+ *     &lt;li&gt;Configures a proxy with username and password&lt;/li&gt;
+ *     &lt;li&gt;Configures support to follow redirects&lt;/li&gt;
+ *     &lt;li&gt;Configures connection and read/write timeouts (default is disabled)&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+<span class="fc" id="L53">public class OkHttpClientBuilder {</span>
+    private X509TrustManager trustManager;
+    private HostnameVerifier hostnameVerifier;
+    private Proxy proxy;
+    private String proxyUsername;
+    private String proxyPassword;
+    private Authenticator proxyAuthenticator;
+<span class="fc" id="L60">    private boolean isRedirectsAllowed = true;</span>
+    private boolean isForTest;
+<span class="fc" id="L62">    private Duration connectTimeout = Duration.ofMillis(10000L);</span>
+<span class="fc" id="L63">    private Duration readTimeout = Duration.ofMillis(10000L);</span>
+<span class="fc" id="L64">    private Duration writeTimeout = Duration.ofMillis(10000L);</span>
+
+    /**
+     * Sets the SSL/TLS trust manager to use with the HTTP client.
+     *
+     * @param trustManager the trust manager
+     * @return the builder instance
+     * @see X509TrustManager
+     */
+    public OkHttpClientBuilder trustManager(final X509TrustManager trustManager) {
+<span class="fc" id="L74">        this.trustManager = trustManager;</span>
+<span class="fc" id="L75">        return this;</span>
+    }
+
+    /**
+     * Sets the hostname verifier to use with the HTTP client.
+     *
+     * @param hostnameVerifier the trust manager
+     * @return the builder instance
+     * @see HostnameVerifier
+     */
+    public OkHttpClientBuilder hostnameVerifier(final HostnameVerifier hostnameVerifier) {
+<span class="fc" id="L86">        this.hostnameVerifier = hostnameVerifier;</span>
+<span class="fc" id="L87">        return this;</span>
+    }
+
+    /**
+     * Sets the proxy and associated username plus password to use with the HTTP client. Note: if {@code username} and
+     * {@code password} is undefined, then no credential-based authentication will be configured.
+     *
+     * @param proxy the proxy settings
+     * @param username the username
+     * @param password the password
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder proxy(final Proxy proxy, final String username, final String password) {
+<span class="fc" id="L100">        this.proxy = proxy;</span>
+<span class="fc" id="L101">        this.proxyUsername = username;</span>
+<span class="fc" id="L102">        this.proxyPassword = password;</span>
+<span class="fc" id="L103">        return this;</span>
+    }
+
+    /**
+     * Sets the proxy and associated authenticator to use with the HTTP client.
+     *
+     * @param proxy the proxy settings
+     * @param proxyAuthenticator the proxy authenticator
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder proxy(final Proxy proxy, final Authenticator proxyAuthenticator) {
+<span class="fc" id="L114">        this.proxy = proxy;</span>
+<span class="fc" id="L115">        this.proxyAuthenticator = proxyAuthenticator;</span>
+<span class="fc" id="L116">        return this;</span>
+    }
+
+    /**
+     * Sets the connection timeout for the HTTP client.
+     *
+     * @param connectTimeout the connection timeout
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder connectTimeout(final Duration connectTimeout) {
+<span class="fc" id="L126">        this.connectTimeout = connectTimeout;</span>
+<span class="fc" id="L127">        return this;</span>
+    }
+
+    /**
+     * Sets the read timeout for the HTTP client.
+     *
+     * @param readTimeout the read timeout
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder readTimeout(final Duration readTimeout) {
+<span class="fc" id="L137">        this.readTimeout = readTimeout;</span>
+<span class="fc" id="L138">        return this;</span>
+    }
+
+    /**
+     * Sets the write timeout for the HTTP client.
+     *
+     * @param writeTimeout the write timeout.
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder writeTimeout(final Duration writeTimeout) {
+<span class="fc" id="L148">        this.writeTimeout = writeTimeout;</span>
+<span class="fc" id="L149">        return this;</span>
+    }
+
+    /**
+     * Sets the flag to allow for automatic URL redirects when responses return 300-based HTTP responses.
+     *
+     * @param isRedirectsAllowed If {@code true}, then the client will automatically invoke the redirected URL;
+     *                           else, {@code false}
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder isRedirectsAllowed(final boolean isRedirectsAllowed) {
+<span class="fc" id="L160">        this.isRedirectsAllowed = isRedirectsAllowed;</span>
+<span class="fc" id="L161">        return this;</span>
+    }
+
+    /**
+     * Sets the flag to allow for non-SSL/TLS based requests used for testing. Note: Should not be set for normal
+     * use with real calls to the Graph API.
+     *
+     * @param isForTest If {@code true}, then the client will allow HTTP-based invocations; else, {@code false}.
+     * @return the builder instance
+     */
+    public OkHttpClientBuilder isForTest(final boolean isForTest) {
+<span class="fc" id="L172">        this.isForTest = isForTest;</span>
+<span class="fc" id="L173">        return this;</span>
+    }
+
+    /**
+     * Builds a new {@code OkHttpClient} instance.
+     *
+     * @return the configured HTTP client
+     */
+    public OkHttpClient build() {
+<span class="fc" id="L182">        return configureProxy(</span>
+<span class="fc" id="L183">                configureSsl(new OkHttpClient.Builder()</span>
+<span class="fc" id="L184">                        .followSslRedirects(isRedirectsAllowed)</span>
+<span class="fc" id="L185">                        .followRedirects(isRedirectsAllowed)</span>
+<span class="fc" id="L186">                        .connectTimeout(connectTimeout)</span>
+<span class="fc" id="L187">                        .readTimeout(readTimeout)</span>
+<span class="fc" id="L188">                        .writeTimeout(writeTimeout)</span>
+<span class="fc" id="L189">                        .connectionSpecs(getConnectionSpecs())))</span>
+<span class="fc" id="L190">                .build();</span>
+    }
+
+    private List&lt;ConnectionSpec&gt; getConnectionSpecs() {
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        return isForTest</span>
+<span class="fc" id="L195">                ? List.of(ConnectionSpec.CLEARTEXT, ConnectionSpec.MODERN_TLS)</span>
+<span class="fc" id="L196">                : List.of(ConnectionSpec.MODERN_TLS);</span>
+    }
+
+    private OkHttpClient.Builder configureSsl(OkHttpClient.Builder builder) {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        if (trustManager == null) {</span>
+<span class="fc" id="L201">            return builder;</span>
+        }
+
+        try {
+<span class="fc" id="L205">            final SSLContext sslContext = SSLContext.getInstance(&quot;TLS&quot;);</span>
+<span class="fc" id="L206">            sslContext.init(null, new TrustManager[]{ trustManager }, new SecureRandom());</span>
+<span class="fc" id="L207">            builder = builder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);</span>
+<span class="fc" id="L208">        } catch (final KeyManagementException | NoSuchAlgorithmException ex) {</span>
+<span class="fc" id="L209">            throw new ConnectionException(&quot;Unable to create HttpClient: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L210">        }</span>
+
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if (hostnameVerifier == null) {</span>
+<span class="fc" id="L213">            return builder;</span>
+        }
+
+<span class="fc" id="L216">        return builder.hostnameVerifier(hostnameVerifier);</span>
+    }
+
+    private OkHttpClient.Builder configureProxy(OkHttpClient.Builder builder) {
+<span class="fc bfc" id="L220" title="All 2 branches covered.">        if (proxy == null) {</span>
+<span class="fc" id="L221">            return builder;</span>
+        }
+
+<span class="fc" id="L224">        builder = builder.proxy(proxy);</span>
+
+        final Authenticator authenticatorToSet;
+<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (proxyAuthenticator != null) {</span>
+<span class="fc" id="L228">            authenticatorToSet = proxyAuthenticator;</span>
+<span class="pc bpc" id="L229" title="1 of 4 branches missed.">        } else if (StringUtils.isNotBlank(proxyUsername) || StringUtils.isNotBlank(proxyPassword)) {</span>
+<span class="fc" id="L230">            authenticatorToSet = new CredentialAuthenticator(proxyUsername, proxyPassword);</span>
+        } else {
+<span class="fc" id="L232">            authenticatorToSet = null;</span>
+        }
+
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        return authenticatorToSet != null ? builder.proxyAuthenticator(authenticatorToSet) : builder;</span>
+    }
+
+    @RequiredArgsConstructor
+    private static class CredentialAuthenticator implements Authenticator {
+        private final String username;
+        private final String password;
+
+        @Override
+<span class="fc" id="L244">        public Request authenticate(final Route route, @NonNull final Response response) {</span>
+<span class="fc" id="L245">            final String credential = Credentials.basic(username, password);</span>
+<span class="fc" id="L246">            return response.request()</span>
+<span class="fc" id="L247">                    .newBuilder()</span>
+<span class="fc" id="L248">                    .header(&quot;Proxy-Authorization&quot;, credential)</span>
+<span class="fc" id="L249">                    .build();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

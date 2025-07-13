@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlternateList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.model</a> &gt; <span class="el_source">AlternateList.java</span></div><h1>AlternateList.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.model;
+
+import com.amilesend.tvmaze.client.model.type.Network;
+import com.amilesend.tvmaze.client.model.type.ResourceLink;
+import com.amilesend.tvmaze.client.model.type.WebChannel;
+import com.google.gson.annotations.SerializedName;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Defines different types of episode lists for a tv show (e.g.,., differing order and/or releases in one
+ * region vs. another, etc.).  For more information: &lt;a href=&quot;https://www.tvmaze.com/faq/40/alternate-episodes&quot;&gt;
+ * https://www.tvmaze.com/faq/40/alternate-episodes&lt;/a&gt;
+ */
+@SuperBuilder
+@Getter
+@ToString(callSuper = true)
+<span class="fc" id="L44">@Slf4j</span>
+public class AlternateList extends Resource&lt;AlternateList, ResourceLink&gt; {
+    /** The associated TVMaze website URL for this list. */
+    private final String url;
+    /** Flag indicator if this list represents a DVD release ordering. */
+    @SerializedName(&quot;dvd_release&quot;)
+    private final boolean isDvdRelease;
+    /** Flag indicator if this list represents ordering that does not follow the original networks'. */
+    @SerializedName(&quot;verbatim_order&quot;)
+    private final boolean isVerbatimOrder;
+    /** Flag indicator if this list represents the ordering of a show that aired in a different country. */
+    @SerializedName(&quot;country_premiere&quot;)
+    private final boolean isCountryPremiere;
+    /** Flag indicator if this list represents ordering for a show that is distributed via a web/streaming channel. */
+    @SerializedName(&quot;streaming_premiere&quot;)
+    private final boolean isStreamingPremiere;
+    /** Flag indicator if this list represents ordering for a show that is distributed via a traditional TV network. */
+    @SerializedName(&quot;broadcast_premiere&quot;)
+    private final boolean isBroadcastPremiere;
+    /**
+     * Flag indicator if this list represents ordering for a show that is aired in a different language than the \
+     * original.
+     */
+    @SerializedName(&quot;language_premiere&quot;)
+    private final boolean isLanguagePremiere;
+    /** The show's language. */
+    private final String language;
+    /** The distribution network. */
+    private final Network network;
+    /** The streaming distribution network. */
+    private final WebChannel webChannel;
+    /** The optional embedded resources. */
+    @SerializedName(&quot;_embedded&quot;)
+    private final EmbeddedResource embeddedResource;
+
+    /**
+     * Gets the list of alternate episodes. Can be {@code null}.
+     *
+     * @return the list of alternate episodes
+     * @see AlternateEpisode
+     */
+    public List&lt;AlternateEpisode&gt; getAlternateEpisodes() {
+<span class="fc" id="L86">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L87">                .map(EmbeddedResource::getAlternateEpisodes)</span>
+<span class="fc" id="L88">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the lsit of episodes. Can be {@code null}.
+     *
+     * @return the list of episdoes
+     * @see Episode
+     */
+    public List&lt;Episode&gt; getEpisodes() {
+<span class="fc" id="L98">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L99">                .map(EmbeddedResource::getEpisodes)</span>
+<span class="fc" id="L100">                .orElse(null);</span>
+    }
+
+    /** The possible embedded resource types that can be included in an {@link AlternateList}. */
+    @Builder
+    @Data
+    public static class EmbeddedResource {
+        @SerializedName(&quot;alternateepisodes&quot;)
+        private final List&lt;AlternateEpisode&gt; alternateEpisodes;
+        private final List&lt;Episode&gt; episodes;
+    }
+
+    /** The supported embedded resource types that can be included in an {@link AlternateList}. */
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    @Data
+    public static class EmbeddedType implements EmbeddedQueryParameter {
+        /** Include the list of alternate episodes. */
+<span class="fc" id="L117">        public static final EmbeddedType ALTERNATE_EPISODES = new EmbeddedType(&quot;alternateepisodes&quot;);</span>
+        /** Include the list of episodes. */
+<span class="fc" id="L119">        public static final EmbeddedType EPISODES = new EmbeddedType(&quot;episodes&quot;);</span>
+
+        private final String queryParameterValue;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

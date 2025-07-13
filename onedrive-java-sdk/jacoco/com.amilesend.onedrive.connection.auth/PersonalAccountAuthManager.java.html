@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PersonalAccountAuthManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth</a> &gt; <span class="el_source">PersonalAccountAuthManager.java</span></div><h1>PersonalAccountAuthManager.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth;
+
+import com.google.common.annotations.VisibleForTesting;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
+import static com.google.common.net.MediaType.FORM_DATA;
+
+/**
+ * Manager that is responsible for obtaining and refreshing tokens to interact with a personal
+ * OneDrive account.  Note: This does not manage the initial stages of the OAUTH request
+ * flow and instead relies on a provided auth code or a pre-existing refresh token.
+ * &lt;p&gt;Example initializing with an auth code:&lt;/p&gt;
+ * &lt;pre&gt;
+ * PersonalAccountAuthManager.builderWithAuthCode()
+ *         .httpClient(client) // the OKHttpClient instance
+ *         .gsonFactory(gsonFactory) // preconfigured Gson instances
+ *         .clientId(clientId) // the client ID of your application
+ *         .clientSecret(clientSecret) // the client secret of your application
+ *         .redirectUrl(redirectUrl) // the redirect URL for OAUTH flow
+ *         .authCode(authCode) // The obtained auth code from initial OAUTH handshake
+ *         .buildWithAuthCode();
+ * &lt;/pre&gt;
+ * &lt;p&gt;Example initializing with an AuthInfo (pre-existing refresh token):&lt;/p&gt;
+ * &lt;pre&gt;
+ * PersonalAccountAuthManager.builderWithAuthInfo()
+ *         .httpClient(client)
+ *         .gsonFactory(gsonFactory)
+ *         .clientId(clientId)
+ *         .clientSecret(clientSecret)
+ *         .redirectUrl(redirectUrl)
+ *         .authInfo(authInfo) // Instead of an auth code, an AuthInfo object is used to obtain the refresh token
+ *         .buildWithAuthInfo();
+ * &lt;/pre&gt;
+ *
+ * @see OneDriveAuthInfo
+ */
+public class PersonalAccountAuthManager implements OneDriveAuthManager {
+    private static final String PERSONAL_ENDPOINT_URL = &quot;https://graph.microsoft.com/v1.0/me&quot;;
+
+<span class="fc" id="L67">    private final Object lock = new Object();</span>
+
+    /** The client identifier. */
+    @Getter(AccessLevel.PROTECTED)
+    protected final String clientId;
+    /** The client secret. */
+    @Getter(AccessLevel.PROTECTED)
+    protected final String clientSecret;
+    /** The redirect URL. */
+    @Getter(AccessLevel.PROTECTED)
+    protected final String redirectUrl;
+    /** The underlying HTTP client. */
+    @Getter(AccessLevel.PROTECTED)
+    protected final OkHttpClient httpClient;
+    /** The GSON instance used for JSON serialization. */
+    @Getter(AccessLevel.PROTECTED)
+    protected final String baseTokenUrl;
+    /** The current authentication information. */
+    @Setter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    protected volatile OneDriveAuthInfo authInfo;
+
+    /** Used to initialize and manage authentication for a given auth code. */
+    @Builder(builderClassName = &quot;BuilderWithAuthCode&quot;,
+             buildMethodName = &quot;buildWithAuthCode&quot;,
+             builderMethodName = &quot;builderWithAuthCode&quot;)
+    protected PersonalAccountAuthManager(
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">            @NonNull final OkHttpClient httpClient,</span>
+            final String baseTokenUrl,
+            final String clientId,
+            final String clientSecret,
+            final String redirectUrl,
+<span class="fc" id="L99">            final String authCode) {</span>
+<span class="fc" id="L100">        Validate.notBlank(authCode, &quot;authCode must not be blank&quot;);</span>
+<span class="fc" id="L101">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
+<span class="fc" id="L102">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
+<span class="fc" id="L103">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        this.baseTokenUrl = StringUtils.isNotBlank(baseTokenUrl) ? baseTokenUrl : AUTH_TOKEN_URL;</span>
+<span class="fc" id="L106">        this.httpClient = httpClient;</span>
+<span class="fc" id="L107">        this.clientId = clientId;</span>
+<span class="fc" id="L108">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L109">        this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L110">        this.authInfo = redeemToken(authCode);</span>
+<span class="fc" id="L111">    }</span>
+
+    /** Used to manage authentication for an existing AuthInfo that contains a refresh token. */
+    @Builder(builderClassName = &quot;BuilderWithAuthInfo&quot;,
+             builderMethodName = &quot;builderWithAuthInfo&quot;,
+             buildMethodName = &quot;buildWithAuthInfo&quot;)
+    private PersonalAccountAuthManager(
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            @NonNull final OkHttpClient httpClient,</span>
+            final String baseTokenUrl,
+            final String clientId,
+            final String clientSecret,
+            final String redirectUrl,
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            @NonNull final OneDriveAuthInfo authInfo) {</span>
+<span class="fc" id="L124">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
+<span class="fc" id="L125">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
+<span class="fc" id="L126">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
+
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        this.baseTokenUrl = StringUtils.isNotBlank(baseTokenUrl) ? baseTokenUrl : AUTH_TOKEN_URL;</span>
+<span class="fc" id="L129">        this.httpClient = httpClient;</span>
+<span class="fc" id="L130">        this.clientId = clientId;</span>
+<span class="fc" id="L131">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L132">        this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L133">        this.authInfo = authInfo;</span>
+<span class="fc" id="L134">        refreshToken();</span>
+<span class="fc" id="L135">    }</span>
+
+    @Override
+    public boolean isAuthenticated() {
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        return authInfo != null;</span>
+    }
+
+    @Override
+    public boolean isExpired() {
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (!isAuthenticated()) {</span>
+<span class="fc" id="L145">            throw new AuthManagerException(&quot;Not authenticated&quot;);</span>
+        }
+
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        return System.currentTimeMillis() &gt;= authInfo.getExpiresIn();</span>
+    }
+
+    @Override
+    public OneDriveAuthInfo getAuthInfo() {
+<span class="fc" id="L153">        refreshIfExpired();</span>
+<span class="fc" id="L154">        return authInfo;</span>
+    }
+
+    @Override
+    public String getAuthenticatedEndpoint() {
+<span class="fc" id="L159">        return PERSONAL_ENDPOINT_URL;</span>
+    }
+
+    @Override
+    public OneDriveAuthInfo redeemToken(final String authCode) {
+<span class="fc" id="L164">        Validate.notBlank(authCode, &quot;authCode must not be blank&quot;);</span>
+<span class="fc" id="L165">        synchronized (lock) {</span>
+<span class="fc" id="L166">            authInfo = OneDriveAuthManager.fetchAuthInfo(httpClient, new Request.Builder()</span>
+<span class="fc" id="L167">                    .url(baseTokenUrl)</span>
+<span class="fc" id="L168">                    .header(CONTENT_TYPE, FORM_DATA.toString())</span>
+<span class="fc" id="L169">                    .post(new FormBody.Builder()</span>
+<span class="fc" id="L170">                            .add(CLIENT_ID_BODY_PARAM, clientId)</span>
+<span class="fc" id="L171">                            .add(CLIENT_SECRET_BODY_PARAM, clientSecret)</span>
+<span class="fc" id="L172">                            .add(REDIRECT_URI_BODY_PARAM, redirectUrl)</span>
+<span class="fc" id="L173">                            .add(AUTH_CODE_BODY_ARAM, authCode)</span>
+<span class="fc" id="L174">                            .add(GRANT_TYPE_BODY_PARAM, AUTH_CODE_GRANT_TYPE_BODY_PARAM_VALUE)</span>
+<span class="fc" id="L175">                            .build())</span>
+<span class="fc" id="L176">                    .build());</span>
+<span class="fc" id="L177">            return authInfo;</span>
+        }
+    }
+
+    @Override
+    public OneDriveAuthInfo refreshToken() {
+<span class="fc" id="L183">        synchronized (lock) {</span>
+<span class="fc" id="L184">            authInfo = OneDriveAuthManager.fetchAuthInfo(httpClient, new Request.Builder()</span>
+<span class="fc" id="L185">                    .url(baseTokenUrl)</span>
+<span class="fc" id="L186">                    .header(CONTENT_TYPE, FORM_DATA_CONTENT_TYPE)</span>
+<span class="fc" id="L187">                    .post(new FormBody.Builder()</span>
+<span class="fc" id="L188">                            .add(CLIENT_ID_BODY_PARAM, clientId)</span>
+<span class="fc" id="L189">                            .add(CLIENT_SECRET_BODY_PARAM, clientSecret)</span>
+<span class="fc" id="L190">                            .add(REDIRECT_URI_BODY_PARAM, redirectUrl)</span>
+<span class="fc" id="L191">                            .add(REFRESH_TOKEN_BODY_PARAM, authInfo.getRefreshToken())</span>
+<span class="fc" id="L192">                            .add(GRANT_TYPE_BODY_PARAM, REFRESH_TOKEN_GRANT_TYPE_BODY_PARAM_VALUE)</span>
+<span class="fc" id="L193">                            .build())</span>
+<span class="fc" id="L194">                    .build());</span>
+<span class="fc" id="L195">            return authInfo;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

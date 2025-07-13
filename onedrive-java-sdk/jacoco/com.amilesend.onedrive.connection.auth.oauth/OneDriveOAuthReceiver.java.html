@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OneDriveOAuthReceiver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth.oauth</a> &gt; <span class="el_source">OneDriveOAuthReceiver.java</span></div><h1>OneDriveOAuthReceiver.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth.oauth;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+
+import java.util.List;
+import java.util.StringJoiner;
+
+/**
+ * Extends {@link OAuthReceiver} that accounts for MS Graph scopes and client ID in order to provide the URI to query
+ * for the auth code during the OAUTH exchange.
+ *
+ * @see #getAuthCodeUri()
+ * @see OAuthReceiver
+ */
+public class OneDriveOAuthReceiver extends OAuthReceiver {
+    private static final String URL_ENCODED_SPACE = &quot;%20&quot;;
+
+    /** The registered application client identifier. */
+    @Getter
+    private final String clientId;
+    /** The list of scopes (permissions) for accessing the Graph API. */
+    @Getter
+    private final List&lt;String&gt; scopes;
+
+    /**
+     * Builds a new {@code OneDriveOAuthReceiver}.
+     *
+     * @param host host of the receiver (Default: {@code localhost})
+     * @param port optional port of the receiver to listen on
+     * @param callbackPath the path to listen for the redirect (Default: {@code /Callback})
+     * @param clientId the registered application client identifier
+     * @param scopes the list of scopes (permissions) for accessing the Graph API
+     * @param successLandingPageUrl optional URL for a custom successful landing page
+     * @param failureLandingPageUrl optional URL for a custom failure landing page
+     */
+    @Builder
+    private OneDriveOAuthReceiver(
+            final String host,
+            final int port,
+            final String callbackPath,
+            final String clientId,
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            final @NonNull List&lt;String&gt; scopes,</span>
+            final String successLandingPageUrl,
+            final String failureLandingPageUrl) {
+<span class="fc" id="L64">        super(host, port, callbackPath, successLandingPageUrl, failureLandingPageUrl);</span>
+<span class="fc" id="L65">        this.clientId = clientId;</span>
+<span class="fc" id="L66">        this.scopes = scopes;</span>
+<span class="fc" id="L67">    }</span>
+
+    /**
+     * Gets the AuthCode URI that is used when initiating an OAuth handshake.
+     *
+     * @return the AuthCode URI
+     * @throws OAuthReceiverException if an error occurred while fetching the redirect URI attribute
+     */
+    public String getAuthCodeUri() throws OAuthReceiverException {
+<span class="fc" id="L76">        return new StringBuilder(&quot;https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=&quot;)</span>
+<span class="fc" id="L77">                .append(getClientId())</span>
+<span class="fc" id="L78">                .append(&quot;&amp;scope=&quot;)</span>
+<span class="fc" id="L79">                .append(getFormattedScopes())</span>
+<span class="fc" id="L80">                .append(&quot;&amp;response_type=code&amp;redirect_uri=&quot;)</span>
+<span class="fc" id="L81">                .append(getRedirectUri())</span>
+<span class="fc" id="L82">                .toString();</span>
+    }
+
+    private String getFormattedScopes() {
+<span class="fc" id="L86">        final StringJoiner sj = new StringJoiner(URL_ENCODED_SPACE);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        for (String s : getScopes()) sj.add(s);</span>
+<span class="fc" id="L88">        return sj.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

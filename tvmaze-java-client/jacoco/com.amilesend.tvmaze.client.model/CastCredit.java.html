@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CastCredit.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.model</a> &gt; <span class="el_source">CastCredit.java</span></div><h1>CastCredit.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.model;
+
+import com.amilesend.tvmaze.client.model.type.ResourceLink;
+import com.google.gson.annotations.SerializedName;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.UtilityClass;
+
+import java.util.Map;
+import java.util.Optional;
+
+/** Describes a cast credit for a person. */
+@Builder
+@Data
+public class CastCredit {
+    /** Flag indicator if the person plays themself. */
+    @SerializedName(&quot;self&quot;)
+    private final boolean isSelf;
+    /** Flag indicator if the person performed with their voice only (e.g., narration or a animation character). */
+    @SerializedName(&quot;voice&quot;)
+    private final boolean isVoice;
+    /** The links associated with the credit. */
+    @SerializedName(&quot;_links&quot;)
+    private final Map&lt;String, ResourceLink&gt; links;
+    /** Any embedded resources associated with the {@link CastCredit}. Note: can be {@code null}. */
+    @SerializedName(&quot;_embedded&quot;)
+    private final CastCredit.EmbeddedResource embeddedResource;
+
+    /**
+     * Gets the show associated with the cast credit. Note: Can be {@code null}.
+     *
+     * @return the show
+     * @see Show
+     */
+    public Show getShow() {
+<span class="fc" id="L55">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L56">                .map(CastCredit.EmbeddedResource::getShow)</span>
+<span class="fc" id="L57">                .orElse(null);</span>
+    }
+
+    /**
+     * Gets the episode associated with the cast credit. Note: Can be {@code null}.
+     * @return
+     */
+    public Episode getEpisode() {
+<span class="fc" id="L65">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L66">                .map(CastCredit.EmbeddedResource::getEpisode)</span>
+<span class="fc" id="L67">                .orElse(null);</span>
+    }
+
+    /** Describes the supported resource links for a {@link CastCredit}. */
+    @UtilityClass
+    public static class ResourceLinkType {
+        /** Link to the show resource. */
+        public static final String SHOW = &quot;show&quot;;
+        /** Link to the episode resource. */
+        public static final String EPISODE = &quot;episode&quot;;
+        /** Link to the character resource. */
+        public static final String CHARACTER = &quot;character&quot;;
+    }
+
+    /** Encapsulates the possible embedded resources for the {@link CastCredit}. */
+    @Builder
+    @Data
+    public static class EmbeddedResource {
+        private final Show show;
+        private final Episode episode;
+    }
+
+    /** Describes the type of additional embedded information to include in the {@link CastCredit}. */
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    @Data
+    public static class EmbeddedType implements EmbeddedQueryParameter {
+        /** Include the associated show. */
+<span class="fc" id="L94">        public static final EmbeddedType SHOW = new EmbeddedType(&quot;show&quot;);</span>
+        /** Include the associated episode. */
+<span class="fc" id="L96">        public static final EmbeddedType EPISODE = new EmbeddedType(&quot;episode&quot;);</span>
+
+        private final String queryParameterValue;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

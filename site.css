@@ -1,0 +1,113 @@
+@font-face {
+	font-family: "Nunito Sans";
+	font-optical-sizing: auto;
+	font-weight: 100;
+	font-style: normal;
+	font-variation-settings:
+  	"wdth" 100,
+  	"YTLC" 500;
+	src: url(./fonts/NunitoSans-VariableFont_YTLC,opsz,wdth,wght.ttf) format("truetype");
+}
+
+@font-face {
+  font-family: "Nunito Sans";
+  font-optical-sizing: auto;
+  font-weight: 100;
+	font-style: italic;
+  font-variation-settings:
+  	"wdth" 100,
+  	"YTLC" 500;
+	src: url(./fonts/NunitoSans-Italic-VariableFont_YTLC,opsz,wdth,wght.ttf) format("truetype");
+}
+
+body {
+  background-color: black;
+  color: white;
+}
+
+a {
+  color: DeepSkyBlue;
+
+}
+
+a:link {
+	text-decoration: none;
+}
+
+a:visited {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+a:active {
+  text-decoration: none;
+}
+
+table {
+  width: 1000px;
+  border-collapse: collapse;
+}
+
+.project-title {
+  color: white;
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-size: 28px;
+  width: 300px;
+  text-align: right;
+  padding-right: 30px;
+  padding-top: 30px;
+  border-right: 1px solid;
+}
+
+.project-info-last {
+  padding-bottom: 30px;
+}
+
+.project-info {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-size: 18px;
+  width: 60px;
+  padding-top: 30px;
+}
+
+.project-info-first {
+  padding-left: 30px;
+}
+
+.project-desc {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-size: 14px;
+  padding-left: 30px;
+  padding-top: 30px;
+}
+
+.title-text {
+  color: white;
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-weight: bold;
+  font-size: 48px;
+}
+
+.sub-title-text {
+  color: white;
+  font-family: "Nunito Sans";
+  font-style: italic;
+  font-size: 28px;
+}
+
+.contact-icon {
+  padding: 10px;
+}
+
+.contact-email {
+  font-family: "Nunito Sans";
+  font-style: normal;
+  font-size: 12px;
+}

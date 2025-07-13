@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TvSeriesApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">TvSeriesApi.java</span></div><h1>TvSeriesApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.tmdb.client.model.tv.series.AddRatingRequest;
+import com.amilesend.tmdb.client.model.tv.series.AddRatingResponse;
+import com.amilesend.tmdb.client.model.tv.series.DeleteRatingRequest;
+import com.amilesend.tmdb.client.model.tv.series.DeleteRatingResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetAccountStatesRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetAccountStatesResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetAggregateCreditsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetAggregateCreditsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetAlternativeTitlesRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetAlternativeTitlesResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetChangesRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetChangesResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetContentRatingsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetContentRatingsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetCreditsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetCreditsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetEpisodeGroupsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetEpisodeGroupsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetExternalIdsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetExternalIdsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetImagesRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetImagesResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetKeywordsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetKeywordsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetListsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetListsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetRecommendationsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetRecommendationsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetReviewsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetReviewsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetScreenedTheatricallyRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetScreenedTheatricallyResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetSeriesDetailsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetSeriesDetailsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetSimilarRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetSimilarResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetTranslationsRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetTranslationsResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetVideosRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetVideosResponse;
+import com.amilesend.tmdb.client.model.tv.series.GetWatchProvidersRequest;
+import com.amilesend.tmdb.client.model.tv.series.GetWatchProvidersResponse;
+import com.amilesend.tmdb.client.model.tv.series.type.SeriesRequestBase;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
+/** TMDB TV Series API. */
+public class TvSeriesApi extends ApiBase {
+    private static final String API_PATH = &quot;/tv/&quot;;
+
+    /**
+     * Creates a new {@code TvSeriesApi} object.
+     *
+     * @param connection the connection
+     */
+    public TvSeriesApi(final Connection connection) {
+<span class="fc" id="L77">        super(connection);</span>
+<span class="fc" id="L78">    }</span>
+
+    /**
+     * Gets the details for a TV series
+     *
+     * @param request the request
+     * @return the response
+     * @see GetSeriesDetailsRequest
+     * @see GetSeriesDetailsResponse
+     */
+<span class="fc" id="L88">    public GetSeriesDetailsResponse getSeriesDetails(@NonNull final GetSeriesDetailsRequest request) {</span>
+<span class="fc" id="L89">        return executeGet(getApiPath(request, StringUtils.EMPTY), request, GetSeriesDetailsResponse.class);</span>
+    }
+
+    /**
+     * Gets the associated account states for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetAccountStatesRequest
+     * @see GetAccountStatesResponse
+     */
+<span class="fc" id="L100">    public GetAccountStatesResponse getAccountStates(@NonNull final GetAccountStatesRequest request) {</span>
+<span class="fc" id="L101">        return executeGet(getApiPath(request, &quot;/account_states&quot;), request, GetAccountStatesResponse.class);</span>
+    }
+
+    /**
+     * Gets the associated credits for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetAggregateCreditsRequest
+     * @see GetAggregateCreditsResponse
+     */
+<span class="fc" id="L112">    public GetAggregateCreditsResponse getAggregateCredits(@NonNull final GetAggregateCreditsRequest request) {</span>
+<span class="fc" id="L113">        return executeGet(getApiPath(request, &quot;/aggregate_credits&quot;), request, GetAggregateCreditsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of alternative titles for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetAlternativeTitlesRequest
+     * @see GetAlternativeTitlesResponse
+     */
+<span class="fc" id="L124">    public GetAlternativeTitlesResponse getAlternativeTitles(@NonNull final GetAlternativeTitlesRequest request) {</span>
+<span class="fc" id="L125">        return executeGet(</span>
+<span class="fc" id="L126">                getApiPath(request, &quot;/alternative_titles&quot;),</span>
+                request,
+                GetAlternativeTitlesResponse.class);
+    }
+
+    /**
+     * Gets the changes for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetChangesRequest
+     * @see GetChangesResponse
+     */
+<span class="fc" id="L139">    public GetChangesResponse getChanges(@NonNull final GetChangesRequest request) {</span>
+<span class="fc" id="L140">        final String apiPath = new StringBuilder(&quot;/tv/&quot;)</span>
+<span class="fc" id="L141">                .append(request.getSeriesId())</span>
+<span class="fc" id="L142">                .append(&quot;/changes&quot;)</span>
+<span class="fc" id="L143">                .toString();</span>
+<span class="fc" id="L144">        return executeGet(apiPath, request, GetChangesResponse.class);</span>
+    }
+
+    /**
+     * Gets the content ratings for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetContentRatingsRequest
+     * @see GetContentRatingsResponse
+     */
+<span class="fc" id="L155">    public GetContentRatingsResponse getContentRatings(@NonNull final GetContentRatingsRequest request) {</span>
+<span class="fc" id="L156">        return executeGet(getApiPath(request, &quot;/content_ratings&quot;), request, GetContentRatingsResponse.class);</span>
+    }
+
+    /**
+     * Gets the credits for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCreditsRequest
+     * @see GetCreditsResponse
+     */
+<span class="fc" id="L167">    public GetCreditsResponse getCredits(@NonNull final GetCreditsRequest request) {</span>
+<span class="fc" id="L168">        return executeGet(getApiPath(request, &quot;/credits&quot;), request, GetCreditsResponse.class);</span>
+    }
+
+    /**
+     * Gets the episode groups for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetEpisodeGroupsRequest
+     * @see GetEpisodeGroupsResponse
+     */
+<span class="fc" id="L179">    public GetEpisodeGroupsResponse getEpisodesGroups(@NonNull final GetEpisodeGroupsRequest request) {</span>
+<span class="fc" id="L180">        return executeGet(getApiPath(request, &quot;/episode_groups&quot;), request, GetEpisodeGroupsResponse.class);</span>
+    }
+
+    /**
+     * Gets the external identifiers for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetExternalIdsRequest
+     * @see GetExternalIdsResponse
+     */
+<span class="fc" id="L191">    public GetExternalIdsResponse getExternalIds(@NonNull final GetExternalIdsRequest request) {</span>
+<span class="fc" id="L192">        return executeGet(getApiPath(request, &quot;/external_ids&quot;), request, GetExternalIdsResponse.class);</span>
+    }
+
+    /**
+     * Gets the images associated with a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetImagesRequest
+     * @see GetImagesResponse
+     */
+<span class="fc" id="L203">    public GetImagesResponse getImages(@NonNull final GetImagesRequest request) {</span>
+<span class="fc" id="L204">        return executeGet(getApiPath(request, &quot;/images&quot;), request, GetImagesResponse.class);</span>
+    }
+
+    /**
+     * Gets the keywords associated with a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetKeywordsRequest
+     * @see GetKeywordsResponse
+     */
+<span class="fc" id="L215">    public GetKeywordsResponse getKeywords(@NonNull final GetKeywordsRequest request) {</span>
+<span class="fc" id="L216">        return executeGet(getApiPath(request, &quot;/keywords&quot;), request, GetKeywordsResponse.class);</span>
+    }
+
+    /**
+     * Gets the latest TV series details.
+     *
+     * @return the response
+     * @see GetSeriesDetailsResponse
+     */
+    public GetSeriesDetailsResponse getLatest() {
+<span class="fc" id="L226">        return executeGet(API_PATH + &quot;latest&quot;, GetSeriesDetailsResponse.class);</span>
+    }
+
+    /**
+     * Gets the lists for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetListsRequest
+     * @see GetListsResponse
+     */
+<span class="fc" id="L237">    public GetListsResponse getLists(@NonNull final GetListsRequest request) {</span>
+<span class="fc" id="L238">        return executeGet(getApiPath(request, &quot;/lists&quot;), request, GetListsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of recommendations associated with a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetRecommendationsRequest
+     * @see GetRecommendationsResponse
+     */
+<span class="fc" id="L249">    public GetRecommendationsResponse getRecommendations(@NonNull final GetRecommendationsRequest request) {</span>
+<span class="fc" id="L250">        return executeGet(getApiPath(request, &quot;/recommendations&quot;), request, GetRecommendationsResponse.class);</span>
+    }
+
+    /**
+     * Gets the reviews for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetReviewsRequest
+     * @see GetReviewsResponse
+     */
+<span class="fc" id="L261">    public GetReviewsResponse getReviews(@NonNull final GetReviewsRequest request) {</span>
+<span class="fc" id="L262">        return executeGet(getApiPath(request, &quot;/reviews&quot;), request, GetReviewsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV series episodes that were screened theatrically for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetScreenedTheatricallyRequest
+     * @see GetScreenedTheatricallyResponse
+     */
+    public GetScreenedTheatricallyResponse getScreenedTheatrically(
+<span class="fc" id="L274">            @NonNull final GetScreenedTheatricallyRequest request) {</span>
+<span class="fc" id="L275">        return executeGet(</span>
+<span class="fc" id="L276">                getApiPath(request, &quot;/screened_theatrically&quot;),</span>
+                request,
+                GetScreenedTheatricallyResponse.class);
+    }
+
+    /**
+     * Gets a list of TV series that are similar to the given TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetSimilarRequest
+     * @see GetSimilarResponse
+     */
+<span class="fc" id="L289">    public GetSimilarResponse getSimilar(@NonNull final GetSimilarRequest request) {</span>
+<span class="fc" id="L290">        return executeGet(getApiPath(request, &quot;/similar&quot;), request, GetSimilarResponse.class);</span>
+    }
+
+    /**
+     * Gets a list of translations for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetTranslationsRequest
+     * @see GetTranslationsResponse
+     */
+<span class="fc" id="L301">    public GetTranslationsResponse getTranslations(@NonNull final GetTranslationsRequest request) {</span>
+<span class="fc" id="L302">        return executeGet(getApiPath(request, &quot;/translations&quot;), request, GetTranslationsResponse.class);</span>
+    }
+
+    /**
+     * Gets a list of related videos for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetVideosRequest
+     * @see GetVideosResponse
+     */
+<span class="fc" id="L313">    public GetVideosResponse getVideos(@NonNull final GetVideosRequest request) {</span>
+<span class="fc" id="L314">        return executeGet(getApiPath(request, &quot;/videos&quot;), request, GetVideosResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of streaming providers for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetWatchProvidersRequest
+     * @see GetWatchProvidersResponse
+     */
+<span class="fc" id="L325">    public GetWatchProvidersResponse getWatchProviders(@NonNull final GetWatchProvidersRequest request) {</span>
+<span class="fc" id="L326">        return executeGet(getApiPath(request, &quot;/watch/providers&quot;), request, GetWatchProvidersResponse.class);</span>
+    }
+
+    /**
+     * Adds a rating for the TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see AddRatingRequest
+     * @see AddRatingResponse
+     */
+<span class="fc" id="L337">    public AddRatingResponse addRating(@NonNull final AddRatingRequest request) {</span>
+<span class="fc" id="L338">        return executePost(getApiPath(request, &quot;/rating&quot;), request, AddRatingResponse.class);</span>
+    }
+
+    /**
+     * Deletes a rating for a TV series.
+     *
+     * @param request the request
+     * @return the response
+     * @see DeleteRatingRequest
+     * @see DeleteRatingResponse
+     */
+<span class="fc" id="L349">    public DeleteRatingResponse deleteRating(@NonNull final DeleteRatingRequest request) {</span>
+<span class="fc" id="L350">        return executeDelete(getApiPath(request, &quot;/rating&quot;), request, DeleteRatingResponse.class);</span>
+    }
+
+    private static String getApiPath(final SeriesRequestBase request, final String suffix) {
+<span class="fc" id="L354">        return new StringBuilder(API_PATH)</span>
+<span class="fc" id="L355">                .append(request.getSeriesId())</span>
+<span class="fc" id="L356">                .append(suffix)</span>
+<span class="fc" id="L357">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

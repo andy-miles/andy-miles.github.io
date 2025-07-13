@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DriveItemVersion.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.item</a> &gt; <span class="el_source">DriveItemVersion.java</span></div><h1>DriveItemVersion.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.item;
+
+import com.amilesend.client.connection.file.LogProgressCallback;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.DriveFileDownloadExecution;
+import com.amilesend.onedrive.resource.identity.IdentitySet;
+import com.amilesend.onedrive.resource.item.type.PublicationFacet;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NonNull;
+import okhttp3.RequestBody;
+import org.apache.commons.lang3.StringUtils;
+
+import java.nio.file.Path;
+
+import static com.amilesend.client.connection.file.LogProgressCallback.formatPrefix;
+import static com.amilesend.onedrive.connection.OneDriveConnection.JSON_MEDIA_TYPE;
+import static com.amilesend.onedrive.resource.item.DriveItem.DRIVE_ITEM_BASE_URL_PATH;
+
+/**
+ * Represents a specific version of a drive item.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/driveitemversion&quot;&gt;
+ * API Documentation.&lt;/a&gt;
+ * @see DriveItem
+ */
+@Builder
+@Data
+public class DriveItemVersion {
+    @VisibleForTesting
+    static final int NO_CONTENT_RESPONSE_HTTP_CODE = 204;
+
+    private static final String VERSIONS_URL_SPECIFIER = &quot;/versions/&quot;;
+    private static final String CONTENT_URL_SUFFIX = &quot;/content&quot;;
+    private static final String RESTORE_URL_SUFFIX = &quot;/restoreVersion&quot;;
+
+    /** The version identifier. */
+    private final String id;
+    /** The identity of whom last modified the version. */
+    private final IdentitySet lastModifiedBy;
+    /** The date and time of when the version was last modified. */
+    private final String lastModifiedDateTime;
+    /** Describes the published status of the version. */
+    private final PublicationFacet publication;
+    /** The size in bytes of the version. */
+    private final long size;
+    /** The name of the item associated with the version. */
+    // Used to structure the name of the download.
+    @GsonExclude
+    private final String name;
+    /** The associated item identifier for the version. */
+    @GsonExclude
+    private final String driveItemId;
+    @GsonExclude
+    @EqualsAndHashCode.Exclude
+    private final OneDriveConnection connection;
+
+    /**
+     * Downloads a specific drive item version.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitemversion_get_contents&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param folderPath the path of the folder to download the drive item version content to
+     */
+    public void download(final Path folderPath) {
+<span class="fc" id="L88">        download(</span>
+                folderPath,
+<span class="fc" id="L90">                LogProgressCallback.builder()</span>
+<span class="fc" id="L91">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
+<span class="fc" id="L92">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="fc" id="L93">                        .build());</span>
+<span class="fc" id="L94">    }</span>
+
+    /**
+     * Downloads a specific drive item version and reports transfer progress to the specified
+     * {@link TransferProgressCallback}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitemversion_get_contents&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param folderPath the path of the folder to download the drive item version content to
+     * @param callback the callback be notified of transfer progress
+     */
+<span class="fc bfc" id="L106" title="All 4 branches covered.">    public void download(@NonNull final Path folderPath, @NonNull TransferProgressCallback callback) {</span>
+<span class="fc" id="L107">        connection.download(</span>
+<span class="fc" id="L108">                connection.newRequestBuilder()</span>
+<span class="fc" id="L109">                        .url(getContentUrl(getDriveItemId(), getId()))</span>
+<span class="fc" id="L110">                        .build(),</span>
+                folderPath,
+<span class="fc" id="L112">                getName(),</span>
+<span class="fc" id="L113">                getSize(),</span>
+                callback);
+<span class="fc" id="L115">    }</span>
+
+    /**
+     * Downloads a specific drive item version asynchronously.
+     *
+     * @param folderPath the folder to download the file to
+     * @return the asynchronous execution that contains the number of bytes downloaded
+     * @see DriveFileDownloadExecution
+     */
+    public DriveFileDownloadExecution downloadAsync(final Path folderPath) {
+<span class="fc" id="L125">        return downloadAsync(</span>
+                folderPath,
+<span class="fc" id="L127">                LogProgressCallback.builder()</span>
+<span class="fc" id="L128">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
+<span class="fc" id="L129">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="fc" id="L130">                        .build());</span>
+    }
+
+    /**
+     * Downloads a specific drive item version asynchronously and reports transfer progress to the specified
+     * {@link TransferProgressCallback}. Consumers can block on transfer completion by invoking
+     * {@link DriveFileDownloadExecution#get()}.
+     *
+     * @param folderPath the folder to download the file to
+     * @param callback the callback be notified of transfer progress
+     * @return the asynchronous execution that contains the number of bytes downloaded
+     * @see TransferProgressCallback
+     * @see DriveFileDownloadExecution
+     */
+    public DriveFileDownloadExecution downloadAsync(
+<span class="fc bfc" id="L145" title="All 2 branches covered.">            @NonNull final Path folderPath,</span>
+<span class="fc bfc" id="L146" title="All 2 branches covered.">            @NonNull TransferProgressCallback callback) {</span>
+<span class="fc" id="L147">        return new DriveFileDownloadExecution(connection.downloadAsync(</span>
+<span class="fc" id="L148">                connection.newRequestBuilder()</span>
+<span class="fc" id="L149">                        .url(getContentUrl(getDriveItemId(), getId()))</span>
+<span class="fc" id="L150">                        .build(),</span>
+                folderPath,
+<span class="fc" id="L152">                getName(),</span>
+<span class="fc" id="L153">                getSize(),</span>
+                callback));
+    }
+
+    /**
+     * Restores this version as the primary drive item version.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitemversion_restore&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return {@code true} if successful; else, {@code false}
+     */
+    public boolean restore() {
+<span class="fc" id="L166">        final int responseCode = connection.execute(</span>
+<span class="fc" id="L167">                connection.newRequestBuilder()</span>
+<span class="fc" id="L168">                        .url(getRestoreUrl(getDriveItemId(), getId()))</span>
+<span class="fc" id="L169">                        .post(RequestBody.create(StringUtils.EMPTY, JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L170">                        .build())</span>
+<span class="fc" id="L171">                .code();</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        return responseCode == NO_CONTENT_RESPONSE_HTTP_CODE;</span>
+    }
+
+    private String getContentUrl(final String driveItemId, final String versionId) {
+<span class="fc" id="L176">        return getVersionBasedUrl(driveItemId, versionId, CONTENT_URL_SUFFIX);</span>
+    }
+
+    private String getRestoreUrl(final String driveItemId, final String versionId) {
+<span class="fc" id="L180">        return getVersionBasedUrl(driveItemId, versionId, RESTORE_URL_SUFFIX);</span>
+    }
+
+    private String getVersionBasedUrl(final String driveItemId, final String versionId, final String suffix) {
+<span class="fc" id="L184">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L185">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L186">                .append(driveItemId)</span>
+<span class="fc" id="L187">                .append(VERSIONS_URL_SPECIFIER)</span>
+<span class="fc" id="L188">                .append(versionId)</span>
+<span class="fc" id="L189">                .append(suffix)</span>
+<span class="fc" id="L190">                .toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

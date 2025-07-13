@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OneDriveAuthInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth</a> &gt; <span class="el_source">OneDriveAuthInfo.java</span></div><h1>OneDriveAuthInfo.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth;
+
+import com.amilesend.client.connection.auth.AuthInfo;
+import com.amilesend.onedrive.parse.GsonFactory;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
+
+/**
+ * Represents the authentication information for OAuth (OBO) access to a user's MS OneDrive account.
+ * This is returned in response when making calls to acquire the initial token or when refreshing the token.
+ * &lt;p&gt;
+ * Note: For business accounts, the auth tokens are only valid with a single resource. If
+ * the user is to access a different resource (different service/site), then new access tokens are required.
+ * See {@link BusinessAccountAuthManager} for more information.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/graph/auth-v2-user?tabs=http&quot;&gt;Official documentation&lt;/a&gt;
+ */
+<span class="fc" id="L48">@Slf4j</span>
+@Builder
+@Getter
+@EqualsAndHashCode
+public class OneDriveAuthInfo implements AuthInfo {
+    private static final String STANDARD_SPACE = &quot; &quot;;
+    private static final String URL_ENCODED_SPACE = &quot;%20&quot;;
+
+    /** The auth token type. Default is {@code Bearer}. */
+    @Builder.Default
+    private final String tokenType = &quot;Bearer&quot;;
+    /** The list of scopes, or permissions to access the Graph API. */
+    @Builder.Default
+    private final List&lt;String&gt; scopes = Collections.emptyList();
+    /** Time in milliseconds when the auth token expires. */
+    private final long expiresIn;
+    /** Time in milliseconds when the auth token expires. */
+    private final long extExpiresIn;
+    /** The current authorization token used to make API requests. */
+    @NonNull
+    private final String accessToken;
+    /** The current refresh token used to refresh access tokens. */
+    @NonNull
+    private final String refreshToken;
+    /** The associated resource identifier associated with the access tokens (business accounts only). */
+    @Builder.Default
+    private final String resourceId = StringUtils.EMPTY;
+
+    /**
+     * Deserializes the given {@code authInfoJson} string to a new {@code AuthInfo} object.
+     *
+     * @param authInfoJson the JSON-formatted auth info
+     * @return the new {@code AuthInfo} object
+     * @throws JsonSyntaxException if there is an error while deserializing the JSON string
+     */
+    public static OneDriveAuthInfo fromJson(final String authInfoJson) {
+<span class="fc" id="L84">        final Gson gson = GsonFactory.getInstanceForAuthManager();</span>
+<span class="fc" id="L85">        final AuthInfoInternal internalAuthInfo = gson.fromJson(authInfoJson, AuthInfoInternal.class);</span>
+<span class="fc" id="L86">        return OneDriveAuthInfo.builder()</span>
+<span class="fc" id="L87">                .accessToken(internalAuthInfo.getAccessToken())</span>
+<span class="fc" id="L88">                .expiresIn(internalAuthInfo.getExpiresIn())</span>
+<span class="fc" id="L89">                .extExpiresIn(internalAuthInfo.getExtExpiresIn())</span>
+<span class="fc" id="L90">                .refreshToken(internalAuthInfo.getRefreshToken())</span>
+<span class="fc" id="L91">                .resourceId(internalAuthInfo.getResourceId())</span>
+<span class="fc" id="L92">                .scopes(fromScope(internalAuthInfo.getScope()))</span>
+<span class="fc" id="L93">                .tokenType(internalAuthInfo.getTokenType())</span>
+<span class="fc" id="L94">                .build();</span>
+    }
+
+    /**
+     * Gets the full token that is used in request headers to sign API requests.
+     * Full token strings are formatted as {@code &quot;[Token Type] [Access token]&quot;}
+     *
+     * @return the full token
+     */
+    public String getFullToken() {
+<span class="fc" id="L104">        return new StringJoiner(STANDARD_SPACE)</span>
+<span class="fc" id="L105">                .add(tokenType)</span>
+<span class="fc" id="L106">                .add(accessToken)</span>
+<span class="fc" id="L107">                .toString();</span>
+    }
+
+    /**
+     * Serializes this {@code AuthInfo} to a JSON formatted string.
+     *
+     * @return the JSON formatted {@code AuthInfo}
+     */
+    public String toJson() {
+<span class="fc" id="L116">        final Gson gson = GsonFactory.getInstanceForAuthManager();</span>
+<span class="fc" id="L117">        final AuthInfoInternal internalAuthInfo = AuthInfoInternal.builder()</span>
+<span class="fc" id="L118">                .accessToken(accessToken)</span>
+<span class="fc" id="L119">                .expiresIn(expiresIn)</span>
+<span class="fc" id="L120">                .extExpiresIn(extExpiresIn)</span>
+<span class="fc" id="L121">                .refreshToken(refreshToken)</span>
+<span class="fc" id="L122">                .resourceId(resourceId)</span>
+<span class="fc" id="L123">                .scope(toScope(scopes))</span>
+<span class="fc" id="L124">                .tokenType(tokenType)</span>
+<span class="fc" id="L125">                .build();</span>
+<span class="fc" id="L126">        return gson.toJson(internalAuthInfo);</span>
+    }
+
+    /**
+     * Creates a copy of this object while injecting the given {@code resourceId}.
+     *
+     * @param resourceId the resource identifier associated with the auth tokens
+     * @return the copy
+     */
+    public OneDriveAuthInfo copyWithResourceId(final String resourceId) {
+<span class="fc" id="L136">        return OneDriveAuthInfo.builder()</span>
+<span class="fc" id="L137">                .accessToken(getAccessToken())</span>
+<span class="fc" id="L138">                .expiresIn(getExpiresIn())</span>
+<span class="fc" id="L139">                .extExpiresIn(getExtExpiresIn())</span>
+<span class="fc" id="L140">                .refreshToken(getRefreshToken())</span>
+<span class="fc" id="L141">                .resourceId(resourceId)</span>
+<span class="fc" id="L142">                .scopes(getScopes())</span>
+<span class="fc" id="L143">                .tokenType(getTokenType())</span>
+<span class="fc" id="L144">                .build();</span>
+    }
+
+    private static String toScope(final List&lt;String&gt; scopes) {
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if (CollectionUtils.isEmpty(scopes)) {</span>
+<span class="fc" id="L149">            return StringUtils.EMPTY;</span>
+        }
+
+<span class="fc" id="L152">        return String.join(URL_ENCODED_SPACE, scopes);</span>
+    }
+
+    private static List&lt;String&gt; fromScope(final String scope) {
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (StringUtils.isBlank(scope)) {</span>
+<span class="fc" id="L157">            return Collections.emptyList();</span>
+        }
+
+<span class="fc" id="L160">        return Collections.unmodifiableList(</span>
+<span class="fc" id="L161">                Arrays.stream(scope.split(&quot; &quot;))</span>
+<span class="fc" id="L162">                        .map(String::trim)</span>
+<span class="fc" id="L163">                        .collect(Collectors.toList()));</span>
+    }
+
+    /**
+     * Internal representation that is actually serialized and deserialized to/from JSON. This is to serialize
+     * the list of scopes to a space-delimited string used with API resource types that require it.
+     */
+    @Builder
+    @Getter
+    private static class AuthInfoInternal {
+        /** The type of token. */
+        private final String tokenType;
+        /** The scopes associated with the authentication. */
+        private final String scope;
+        /** The expiration time in milliseconds. */
+        private final long expiresIn;
+        /** The expiration time in milliseconds. */
+        private final long extExpiresIn;
+        /** The current access token. */
+        private final String accessToken;
+        /** the current refresh token. */
+        private final String refreshToken;
+        /** The associated resource identifier associated with the access tokens (business accounts only). */
+        private final String resourceId;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>List.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.site</a> &gt; <span class="el_source">List.java</span></div><h1>List.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.site;
+
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.activities.ItemActivity;
+import com.amilesend.onedrive.resource.drive.Drive;
+import com.amilesend.onedrive.resource.item.BaseItem;
+import com.amilesend.onedrive.resource.site.request.CreateListItemRequest;
+import com.amilesend.onedrive.resource.site.type.ColumnDefinition;
+import com.amilesend.onedrive.resource.site.type.ContentType;
+import com.amilesend.onedrive.resource.site.type.ListInfo;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import okhttp3.RequestBody;
+
+import java.util.Map;
+import java.util.Objects;
+
+import static com.amilesend.onedrive.connection.OneDriveConnection.JSON_MEDIA_TYPE;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.ITEM_ACTIVITY_LIST_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemParser;
+import static com.amilesend.onedrive.resource.ResourceHelper.objectDefinedEquals;
+import static com.amilesend.onedrive.resource.site.ListItem.LIST_ITEM_URL_SUFFIX;
+import static com.amilesend.onedrive.resource.site.Site.SITE_BASE_URL_PATH;
+
+/**
+ * Represents a list resource in a site that describes the top-level properties of a list.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/list&quot;&gt;API Documentation.&lt;/a&gt;
+ * @see Site
+ * @see ListItem
+ */
+@Getter
+@SuperBuilder
+@ToString(callSuper = true)
+public class List extends BaseItem {
+    public static final String LIST_BASE_URL_PATH = &quot;/lists/&quot;;
+    public static final String LIST_URL_PATH_SUFFIX = &quot;/lists&quot;;
+
+    private static final String ACTIVITIES_URL_SUFFIX = &quot;/activities&quot;;
+
+    /** Indicates that this is a system-managed list. Note: Either {@code null} or defined as empty. */
+    private final Object system;
+    /** The column definitions that apply to this list. */
+    private final java.util.List&lt;ColumnDefinition&gt; columns;
+    /** The content types for this list. */
+    private final java.util.List&lt;ContentType&gt; contentTypes;
+    /** When defined, indicates that this list exists within a document library and can be treated as a drive. */
+    private final Drive drive;
+    /** The associated site identifier that this list is associated with. */
+    @GsonExclude
+    private final String siteId;
+    /** The OneDrive API connection. */
+    @GsonExclude
+    private final OneDriveConnection connection;
+    /** The list title. */
+    private String displayName;
+    /** Additional list information. */
+    private ListInfo list;
+
+    /**
+     * Creates a new {@link ListItem} for the given {@link CreateListItemRequest}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitem_create&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param fields The map of fields, with the key being the column name and the Object being its value
+     * @return the created list item
+     */
+    public ListItem createListItem(final Map&lt;String, Object&gt; fields) {
+<span class="fc" id="L89">        final CreateListItemRequest request = CreateListItemRequest.builder()</span>
+<span class="fc" id="L90">                .fields(fields)</span>
+<span class="fc" id="L91">                .gson(connection.getGsonFactory().getInstance(connection))</span>
+<span class="fc" id="L92">                .build();</span>
+<span class="fc" id="L93">        request.validate();</span>
+
+<span class="fc" id="L95">        return connection.execute(</span>
+<span class="fc" id="L96">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L97">                        .url(newStringBuilderForListUrl()</span>
+<span class="fc" id="L98">                                .append(LIST_ITEM_URL_SUFFIX)</span>
+<span class="fc" id="L99">                                .toString())</span>
+<span class="fc" id="L100">                        .post(RequestBody.create(request.toJson(), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L101">                        .build(),</span>
+<span class="fc" id="L102">                newListItemParser(getSiteId(), getId()));</span>
+    }
+
+    /**
+     * Queries and fetches the activities associated with this {@code List}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/activities_list&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list of activities
+     */
+    public java.util.List&lt;ItemActivity&gt; getActivities() {
+<span class="fc" id="L114">        return connection.execute(</span>
+<span class="fc" id="L115">                connection.newRequestBuilder()</span>
+<span class="fc" id="L116">                        .url(newStringBuilderForListUrl()</span>
+<span class="fc" id="L117">                                .append(ACTIVITIES_URL_SUFFIX)</span>
+<span class="fc" id="L118">                                .toString())</span>
+<span class="fc" id="L119">                        .build(),</span>
+                ITEM_ACTIVITY_LIST_PARSER);
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L126">            return true;</span>
+        }
+
+<span class="fc bfc" id="L129" title="All 4 branches covered.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="fc" id="L130">            return false;</span>
+        }
+
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (!super.equals(obj)) {</span>
+<span class="fc" id="L134">            return false;</span>
+        }
+
+<span class="fc" id="L137">        final List that = (List) obj;</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        return objectDefinedEquals(getSystem(), that.getSystem())</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getColumns(), that.getColumns())</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getContentTypes(), that.getContentTypes())</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getDrive(), that.getDrive())</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSiteId(), that.getSiteId())</span>
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getDisplayName(), that.getDisplayName())</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getList(), that.getList());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L149">        return Objects.hash(</span>
+<span class="fc" id="L150">                super.hashCode(),</span>
+<span class="fc" id="L151">                Objects.nonNull(getSystem()),</span>
+<span class="fc" id="L152">                getColumns(),</span>
+<span class="fc" id="L153">                getContentTypes(),</span>
+<span class="fc" id="L154">                getDrive(),</span>
+<span class="fc" id="L155">                getSiteId(),</span>
+<span class="fc" id="L156">                getDisplayName(),</span>
+<span class="fc" id="L157">                getList());</span>
+    }
+
+    private StringBuilder newStringBuilderForListUrl() {
+<span class="fc" id="L161">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L162">                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L163">                .append(getSiteId())</span>
+<span class="fc" id="L164">                .append(LIST_BASE_URL_PATH)</span>
+<span class="fc" id="L165">                .append(getId());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

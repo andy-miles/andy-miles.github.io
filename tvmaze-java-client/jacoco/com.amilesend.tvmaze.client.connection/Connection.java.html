@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Connection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.connection</a> &gt; <span class="el_source">Connection.java</span></div><h1>Connection.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.connection;
+
+import com.amilesend.tvmaze.client.parse.GsonFactory;
+import com.amilesend.tvmaze.client.parse.parser.GsonParser;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.IOException;
+import java.util.zip.GZIPInputStream;
+
+import static com.google.common.net.HttpHeaders.ACCEPT;
+import static com.google.common.net.HttpHeaders.ACCEPT_ENCODING;
+import static com.google.common.net.HttpHeaders.USER_AGENT;
+import static com.google.common.net.MediaType.JSON_UTF_8;
+
+/** Wraps a {@link OkHttpClient} that manages parsing responses to corresponding POJO types. */
+<span class="fc" id="L43">@Slf4j</span>
+public class Connection {
+<span class="fc" id="L45">    public static final String JSON_CONTENT_TYPE = JSON_UTF_8.toString();</span>
+    public static final String DEFAULT_BASE_URL = &quot;https://api.tvmaze.com&quot;;
+
+    private static final String GZIP_ENCODING = &quot;gzip&quot;;
+    private static final String THROTTLED_RETRY_AFTER_HEADER = &quot;Retry-After&quot;;
+    private static final String USER_AGENT_VALUE = &quot;TvMazeJavaClient/1.0&quot;;
+<span class="fc" id="L51">    private static final Long DEFAULT_RETRY_AFTER_SECONDS = Long.valueOf(10L);</span>
+<span class="fc" id="L52">    private static int THROTTLED_RESPONSE_CODE = 429;</span>
+
+    private final OkHttpClient httpClient;
+    /** The configured GSON instance used for marshalling request and responses to/from JSON. */
+    @Getter
+    private final Gson gson;
+    /** The base URL for the Graph API. */
+    @Getter
+    private final String baseUrl;
+
+    /**
+     * Creates a new {@code Connection}.
+     *
+     * @param httpClient the configured HTTP client
+     * @param gsonFactory the factory used to vend configured GSON instances for request/reply serialization
+     * @param baseUrl the base URL to use for Graph API invocations
+     */
+    @Builder
+    @VisibleForTesting
+    Connection(
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            @NonNull final OkHttpClient httpClient,</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">            @NonNull final GsonFactory gsonFactory,</span>
+<span class="fc" id="L74">            final String baseUrl) {</span>
+<span class="fc" id="L75">        this.httpClient = httpClient;</span>
+<span class="fc" id="L76">        this.gson = gsonFactory.newInstanceForConnection();</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">        this.baseUrl = StringUtils.isNotBlank(baseUrl) ? baseUrl : DEFAULT_BASE_URL;</span>
+<span class="fc" id="L78">    }</span>
+
+    public static Connection newDefaultInstance() {
+<span class="nc" id="L81">        return new Connection(</span>
+<span class="nc" id="L82">                new OkHttpClient.Builder().build(),</span>
+<span class="nc" id="L83">                GsonFactory.getInstance(),</span>
+                DEFAULT_BASE_URL);
+    }
+
+    /**
+     * Creates a new {@link Request.Builder} with pre-configured headers for request that expect a JSON-formatted
+     * response body.
+     *
+     * @return the request builder
+     */
+    public Request.Builder newRequestBuilder() {
+<span class="fc" id="L94">        return new Request.Builder()</span>
+<span class="fc" id="L95">                .addHeader(USER_AGENT, USER_AGENT_VALUE)</span>
+<span class="fc" id="L96">                .addHeader(ACCEPT_ENCODING, GZIP_ENCODING)</span>
+<span class="fc" id="L97">                .addHeader(ACCEPT, JSON_CONTENT_TYPE);</span>
+
+    }
+
+    /**
+     * Executes the given {@link Request} and parses the JSON-formatted response with given {@link GsonParser}.
+     *
+     * @param request the request
+     * @param parser the parser to decode the response body
+     * @return the response as a POJO resource type
+     * @param &lt;T&gt; the POJO resource type
+     * @throws ConnectionException if an error occurred during the transaction
+     */
+<span class="fc bfc" id="L110" title="All 4 branches covered.">    public &lt;T&gt; T execute(@NonNull final Request request, @NonNull final GsonParser&lt;T&gt; parser)</span>
+            throws ConnectionException {
+        try {
+<span class="fc" id="L113">            try (final Response response = httpClient.newCall(request).execute()) {</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                if (log.isDebugEnabled())</span>
+<span class="nc" id="L115">                    log.debug(&quot;Received response: {}&quot;, response);</span>
+<span class="fc" id="L116">                validateResponse(response);</span>
+
+<span class="fc" id="L118">                return parser.parse(getGson(), new GZIPInputStream(response.body().byteStream()));</span>
+            }
+<span class="fc" id="L120">        } catch (final IOException ex) {</span>
+<span class="fc" id="L121">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L122">        } catch (final JsonParseException ex) {</span>
+<span class="fc" id="L123">            throw new ResponseParseException(&quot;Error parsing response: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    private static void validateResponse(final Response response) {
+<span class="fc" id="L128">        final int code = response.code();</span>
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (code == THROTTLED_RESPONSE_CODE) {</span>
+<span class="fc" id="L130">            final Long retryAfterSeconds = extractRetryAfterHeaderValue(response);</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">            final String msg = retryAfterSeconds != null</span>
+<span class="fc" id="L132">                    ? &quot;Request throttled. Retry after &quot; + retryAfterSeconds + &quot; seconds&quot;</span>
+<span class="pc" id="L133">                    : &quot;Request throttled&quot;;</span>
+<span class="fc" id="L134">            throw new ThrottledException(msg, retryAfterSeconds);</span>
+        }
+
+<span class="fc" id="L137">        final boolean isRequestError = String.valueOf(code).startsWith(&quot;4&quot;);</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (isRequestError) {</span>
+<span class="fc" id="L139">            throw new RequestException(new StringBuilder(&quot;Error with request (&quot;)</span>
+<span class="fc" id="L140">                    .append(code)</span>
+<span class="fc" id="L141">                    .append(&quot;): &quot;)</span>
+<span class="fc" id="L142">                    .append(response)</span>
+<span class="fc" id="L143">                    .toString());</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        } else if (!response.isSuccessful()) {</span>
+<span class="fc" id="L145">            throw new ResponseException(new StringBuilder(&quot;Unsuccessful response (&quot;)</span>
+<span class="fc" id="L146">                    .append(code)</span>
+<span class="fc" id="L147">                    .append(&quot;): &quot;)</span>
+<span class="fc" id="L148">                    .append(response)</span>
+<span class="fc" id="L149">                    .toString());</span>
+        }
+<span class="fc" id="L151">    }</span>
+
+    private static Long extractRetryAfterHeaderValue(final Response response) {
+<span class="fc" id="L154">        final String retryAfterHeaderValue = response.header(THROTTLED_RETRY_AFTER_HEADER);</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">        return StringUtils.isNotBlank(retryAfterHeaderValue)</span>
+<span class="fc" id="L156">                ? Long.valueOf(retryAfterHeaderValue)</span>
+<span class="fc" id="L157">                : DEFAULT_RETRY_AFTER_SECONDS;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

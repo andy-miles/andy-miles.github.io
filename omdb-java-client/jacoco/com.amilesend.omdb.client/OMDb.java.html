@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OMDb.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb.client</a> &gt; <span class="el_source">OMDb.java</span></div><h1>OMDb.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb.client;
+
+import com.amilesend.client.connection.auth.NoOpAuthManager;
+import com.amilesend.client.parse.parser.BasicParser;
+import com.amilesend.omdb.client.connection.OmdbConnection;
+import com.amilesend.omdb.client.connection.OmdbConnectionBuilder;
+import com.amilesend.omdb.client.model.QueryParameterBasedRequest;
+import com.amilesend.omdb.client.model.movie.GetMovieBasedRequest;
+import com.amilesend.omdb.client.model.movie.GetMovieByIdRequest;
+import com.amilesend.omdb.client.model.movie.GetMovieByTitleRequest;
+import com.amilesend.omdb.client.model.movie.SearchMovieRequest;
+import com.amilesend.omdb.client.model.movie.type.Movie;
+import com.amilesend.omdb.client.model.tv.GetEpisodeBasedRequest;
+import com.amilesend.omdb.client.model.tv.GetEpisodeByIdRequest;
+import com.amilesend.omdb.client.model.tv.GetEpisodeByTitleRequest;
+import com.amilesend.omdb.client.model.tv.GetSeasonBasedRequest;
+import com.amilesend.omdb.client.model.tv.GetSeasonByIdRequest;
+import com.amilesend.omdb.client.model.tv.GetSeasonByTitleRequest;
+import com.amilesend.omdb.client.model.tv.GetSeriesBasedRequest;
+import com.amilesend.omdb.client.model.tv.GetSeriesByIdRequest;
+import com.amilesend.omdb.client.model.tv.GetSeriesByTitleRequest;
+import com.amilesend.omdb.client.model.tv.SearchSeriesRequest;
+import com.amilesend.omdb.client.model.tv.type.Episode;
+import com.amilesend.omdb.client.model.tv.type.Season;
+import com.amilesend.omdb.client.model.tv.type.Series;
+import com.amilesend.omdb.client.model.type.SearchResponse;
+import com.amilesend.omdb.client.parse.GsonFactory;
+import lombok.NonNull;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
+/** The Open Movie Database client. */
+public class OMDb {
+    public static final String USER_AGENT = &quot;OMDbJavaClient/2.0&quot;;
+    public static final String API_URL = &quot;http://www.omdbapi.com/&quot;;
+
+    /** The underlying connection. */
+    private final OmdbConnection connection;
+    /** The consumer-provided API key. */
+    private final String apiKey;
+
+    /**
+     * Creates a new {@code OMDb} with the provided API key.
+     *
+     * @param apiKey the API key
+     */
+    public OMDb(final String apiKey) {
+<span class="nc" id="L71">        this(apiKey, USER_AGENT, null);</span>
+<span class="nc" id="L72">    }</span>
+
+    /**
+     * Creates a nwe {@code OMDb} with the provided API key and user agent.
+     *
+     * @param apiKey the API key
+     * @param userAgent the user agent
+     */
+    public OMDb(final String apiKey, final String userAgent) {
+<span class="nc" id="L81">        this(apiKey, userAgent, null);</span>
+<span class="nc" id="L82">    }</span>
+
+    /**
+     * Creates a new {@code OMDb} with the provided connection and API key.
+     *
+     * @param apiKey the API key
+     * @param userAgent the user agent
+     * @param connection the underlying connection
+     */
+<span class="fc" id="L91">    public OMDb(final String apiKey, final String userAgent, final OmdbConnection connection) {</span>
+<span class="fc" id="L92">        Validate.notBlank(apiKey, &quot;apiKey must not be blank. You can obtain one via &quot; +</span>
+                &quot;https://www.omdbapi.com/apikey.aspx&quot;);
+<span class="fc" id="L94">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
+
+<span class="pc" id="L96">        this.connection = Optional.ofNullable(connection).orElseGet(() -&gt; newConnection(userAgent));</span>
+<span class="fc" id="L97">        this.apiKey = apiKey;</span>
+<span class="fc" id="L98">    }</span>
+
+    private static OmdbConnection newConnection(final String userAgent) {
+<span class="nc" id="L101">        return new OmdbConnectionBuilder()</span>
+<span class="nc" id="L102">                .baseUrl(API_URL)</span>
+<span class="nc" id="L103">                .userAgent(userAgent)</span>
+<span class="nc" id="L104">                .gsonFactory(new GsonFactory())</span>
+<span class="nc" id="L105">                .authManager(new NoOpAuthManager())</span>
+<span class="nc" id="L106">                .httpClient(new OkHttpClient.Builder().build())</span>
+<span class="nc" id="L107">                .isGzipContentEncodingEnabled(false)</span>
+<span class="nc" id="L108">                .build();</span>
+    }
+
+    /////////////
+    // GET APIs
+    /////////////
+
+    /**
+     * Gets a movie for a request by either its title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the movie
+     * @see Movie
+     * @see GetMovieByIdRequest
+     * @see GetMovieByTitleRequest
+     */
+<span class="fc" id="L124">    public Movie getMovie(@NonNull final GetMovieBasedRequest request) {</span>
+<span class="fc" id="L125">        return getResource(request, Movie.class);</span>
+    }
+
+    /**
+     * Gets a TV series for a request by either its title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the series
+     * @see Series
+     * @see GetSeriesByIdRequest
+     * @see GetSeriesByTitleRequest
+     */
+<span class="fc" id="L137">    public Series getSeries(@NonNull final GetSeriesBasedRequest request) {</span>
+<span class="fc" id="L138">        return getResource(request, Series.class);</span>
+    }
+
+    /**
+     * Gets a TV season for a request by either its title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the season
+     * @see Season
+     * @see GetSeasonByIdRequest
+     * @see GetSeasonByTitleRequest
+     */
+<span class="fc" id="L150">    public Season getSeason(@NonNull final GetSeasonBasedRequest request) {</span>
+<span class="fc" id="L151">        return getResource(request, Season.class);</span>
+    }
+
+    /**
+     * Gets a TV episode for a request by either its series title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the episode
+     * @see Episode
+     * @see GetEpisodeByIdRequest
+     * @see GetEpisodeByTitleRequest
+     */
+<span class="fc" id="L163">    public Episode getEpisode(@NonNull final GetEpisodeBasedRequest request) {</span>
+<span class="fc" id="L164">        return getResource(request, Episode.class);</span>
+    }
+
+    ////////////////
+    // Search APIs
+    ////////////////
+
+    /**
+     * Searches for movies.
+     *
+     * @param request the request
+     * @return the response containing the list of movies
+     */
+<span class="fc" id="L177">    public SearchResponse search(@NonNull final SearchMovieRequest request) {</span>
+<span class="fc" id="L178">        return getResource(request, SearchResponse.class);</span>
+    }
+
+    /**
+     * Searches for TV series.
+     *
+     * @param request the request
+     * @return the response containing the list of TV series.
+     */
+<span class="fc" id="L187">    public SearchResponse search(@NonNull final SearchSeriesRequest request) {</span>
+<span class="fc" id="L188">        return getResource(request, SearchResponse.class);</span>
+    }
+
+    private &lt;T&gt; T getResource(final QueryParameterBasedRequest request, final Class&lt;T&gt; returnType) {
+<span class="fc" id="L192">        final HttpUrl url = request.populateQueryParameters(newUrlBuilder()).build();</span>
+<span class="fc" id="L193">        final Request httpRequest = connection.newRequestBuilder().url(url).build();</span>
+
+<span class="fc" id="L195">        return connection.execute(httpRequest, new BasicParser&lt;&gt;(returnType));</span>
+    }
+
+    private HttpUrl.Builder newUrlBuilder() {
+<span class="fc" id="L199">        return HttpUrl.parse(connection.getBaseUrl())</span>
+<span class="fc" id="L200">                .newBuilder()</span>
+<span class="fc" id="L201">                .addQueryParameter(&quot;apikey&quot;, URLEncoder.encode(String.valueOf(apiKey), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L202">                .addQueryParameter(&quot;r&quot;, &quot;json&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ItemActionSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.activities</a> &gt; <span class="el_source">ItemActionSet.java</span></div><h1>ItemActionSet.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.activities;
+
+import com.amilesend.onedrive.resource.activities.action.CommentAction;
+import com.amilesend.onedrive.resource.activities.action.DeleteAction;
+import com.amilesend.onedrive.resource.activities.action.MentionAction;
+import com.amilesend.onedrive.resource.activities.action.MoveAction;
+import com.amilesend.onedrive.resource.activities.action.RenameAction;
+import com.amilesend.onedrive.resource.activities.action.ShareAction;
+import com.amilesend.onedrive.resource.activities.action.VersionAction;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
+
+import java.util.Objects;
+
+import static com.amilesend.onedrive.resource.ResourceHelper.objectDefinedEquals;
+
+/**
+ * Describes actions that compose an activity on an item.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/itemactionset&quot;&gt;
+ * API Documentation.&lt;/a&gt;
+ * @see com.amilesend.onedrive.resource.activities.ItemActivity
+ */
+@Builder
+@Getter
+@ToString
+public class ItemActionSet {
+    /** The comment that was added to the item. */
+    private final CommentAction comment;
+    /** An item was created. {@code create} is either an empty object or {@code null}. */
+    private final Object create;
+    /** An item was deleted. */
+    private final DeleteAction delete;
+    /** An item was edited.  {@code edit} is either an empty object or {@code null}. */
+    private final Object edit;
+    /** A user was mentioned in the item. */
+    private final MentionAction mention;
+    /** The item was moved. */
+    private final MoveAction move;
+    /** The item was renamed. */
+    private final RenameAction rename;
+    /** The item was restored. {@code restore} is either an empty object or {@code null}. */
+    private final Object restore;
+    /** The item was shared. */
+    private final ShareAction share;
+    /** The item was versioned. */
+    private final VersionAction version;
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L70">            return true;</span>
+        }
+
+<span class="pc bpc" id="L73" title="2 of 4 branches missed.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="nc" id="L74">            return false;</span>
+        }
+
+<span class="fc" id="L77">        final ItemActionSet that = (ItemActionSet) obj;</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        return Objects.equals(getComment(), that.getComment())</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">                &amp;&amp; objectDefinedEquals(getCreate(), that.getCreate())</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getDelete(), that.getDelete())</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                &amp;&amp; objectDefinedEquals(getEdit(), that.getEdit())</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getMention(), that.getMention())</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getMove(), that.getMove())</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getRename(), that.getRename())</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">                &amp;&amp; objectDefinedEquals(getRestore(), that.getRestore())</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getShare(), that.getShare())</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getVersion(), that.getVersion());</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L92">        return Objects.hash(</span>
+<span class="fc" id="L93">                getComment(),</span>
+<span class="fc" id="L94">                Objects.nonNull(getCreate()),</span>
+<span class="fc" id="L95">                getDelete(),</span>
+<span class="fc" id="L96">                Objects.nonNull(getEdit()),</span>
+<span class="fc" id="L97">                getMention(),</span>
+<span class="fc" id="L98">                getMove(),</span>
+<span class="fc" id="L99">                getRename(),</span>
+<span class="fc" id="L100">                Objects.nonNull(getRestore()),</span>
+<span class="fc" id="L101">                getShare(),</span>
+<span class="fc" id="L102">                getVersion());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

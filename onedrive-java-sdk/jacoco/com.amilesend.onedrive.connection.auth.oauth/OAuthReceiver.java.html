@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuthReceiver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.auth.oauth</a> &gt; <span class="el_source">OAuthReceiver.java</span></div><h1>OAuthReceiver.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.auth.oauth;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.sun.net.httpserver.HttpServer;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.awt.*;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+
+/**
+ * A customized OAuth receiver that handles the OAuth token exchange redirect by hosting a HTTP server
+ * to capture the auth and/or error code specific to Box.net OAuth flow.
+ *
+ * This is based on &lt;a href=&quot;https://t.ly/4YOIa&quot;&gt;LocalServerReceiver&lt;/a&gt; defined in the
+ * &lt;a href=&quot;https://t.ly/Ymraz&quot;&gt;google-oauth-java-client&lt;/a&gt; library.
+ */
+<span class="fc" id="L41">@Slf4j</span>
+public class OAuthReceiver implements AutoCloseable {
+    private static final int DEFAULT_SYSTEM_BACKLOG = 0;
+
+    /** Max allowed port range for listening for the OAuth redirect. */
+    @VisibleForTesting
+    static final int MAX_PORT_RANGE = 65535;
+
+    @VisibleForTesting
+    @Getter(value = AccessLevel.PACKAGE)
+    private final OAuthReceiverCallback callback;
+    /** The host of the receiver. */
+    @Getter
+    private final String host;
+    /** The path to listen for the redirect. */
+    @Getter
+    private final String callbackPath;
+    /** The port of the receiver to listen on. */
+    @Getter
+    private final int port;
+    private HttpServer server;
+
+    /**
+     * Builds a new {@code OAuthReceiver}.
+     *
+     * @param host host of the receiver (Default: {@literal localhost})
+     * @param port optional port of the receiver to listen on
+     * @param callbackPath the path to listen for the redirect (Default: {@literal /Callback})
+     * @param successLandingPageUrl optional URL for a custom successful landing page
+     * @param failureLandingPageUrl optional URL for a custom failure landing page
+     */
+    @Builder(builderMethodName = &quot;defaultOAuthReceiverBuilder&quot;)
+    protected OAuthReceiver(
+            final String host,
+            final int port,
+            final String callbackPath,
+            final String successLandingPageUrl,
+<span class="fc" id="L78">            final String failureLandingPageUrl) {</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        this.host = StringUtils.isNotBlank(host) ? host : &quot;localhost&quot;;</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        this.callbackPath = StringUtils.isNotBlank(callbackPath) ? callbackPath : &quot;/Callback&quot;;</span>
+<span class="fc" id="L81">        validatePort(port);</span>
+<span class="fc" id="L82">        this.port = port;</span>
+<span class="fc" id="L83">        callback = OAuthReceiverCallback.builder()</span>
+<span class="fc" id="L84">                .callbackPath(this.callbackPath)</span>
+<span class="fc" id="L85">                .successLandingPageUrl(successLandingPageUrl)</span>
+<span class="fc" id="L86">                .failureLandingPageUrl(failureLandingPageUrl)</span>
+<span class="fc" id="L87">                .build();</span>
+<span class="fc" id="L88">    }</span>
+
+    /**
+     * Open a browser at the given URL using {@link Desktop} if available, or alternatively output the
+     * URL to {@link System#out} for command-line applications.
+     *
+     * @param url URL to browse
+     */
+    public static void browse(final String url) {
+<span class="nc" id="L97">        Validate.notBlank(url, &quot;url must not be blank&quot;);</span>
+
+        // Ask user to open in their browser using copy-paste
+<span class="nc" id="L100">        System.out.println(&quot;Please open the following address in your browser: &quot; + url);</span>
+        try {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (!Desktop.isDesktopSupported()) {</span>
+<span class="nc" id="L103">                return;</span>
+            }
+
+<span class="nc" id="L106">            final Desktop desktop = Desktop.getDesktop();</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">            if (!desktop.isSupported(Desktop.Action.BROWSE)) {</span>
+<span class="nc" id="L108">                return;</span>
+            }
+
+<span class="nc" id="L111">            System.out.println(&quot;Attempting to open that address in the default browser now...&quot;);</span>
+<span class="nc" id="L112">            desktop.browse(URI.create(url));</span>
+<span class="nc" id="L113">        } catch (IOException | InternalError ex) {</span>
+<span class="nc" id="L114">            log.warn(&quot;Unable to open browser&quot;, ex);</span>
+<span class="nc" id="L115">        }</span>
+<span class="nc" id="L116">    }</span>
+
+    /**
+     * Starts the HTTP server to handle OAuth callbacks.
+     *
+     * @return this OAuthReceiver instance
+     * @throws OAuthReceiverException if an error occurred while starting the HTTP server
+     */
+    public &lt;T&gt; T start() throws OAuthReceiverException {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        if (server != null) {</span>
+<span class="fc" id="L126">            return (T) this;</span>
+        }
+
+        try {
+<span class="fc" id="L130">            server = HttpServer.create(new InetSocketAddress(port), DEFAULT_SYSTEM_BACKLOG);</span>
+<span class="fc" id="L131">            server.createContext(callbackPath, callback);</span>
+<span class="fc" id="L132">            server.setExecutor(null);</span>
+<span class="fc" id="L133">            server.start();</span>
+<span class="fc" id="L134">            return (T) this;</span>
+<span class="fc" id="L135">        } catch (final Exception ex) {</span>
+<span class="fc" id="L136">            throw new OAuthReceiverException(&quot;Error starting OAuthReceiver&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * Stops the running HTTP server.
+     *
+     * @throws OAuthReceiverException if an error occurred while stopping the server
+     */
+    public void stop() throws OAuthReceiverException {
+<span class="fc" id="L146">        callback.releaseLock();</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if (server != null) {</span>
+            try {
+<span class="fc" id="L149">                server.stop(0);</span>
+<span class="fc" id="L150">            } catch (final Exception ex) {</span>
+<span class="fc" id="L151">                throw new OAuthReceiverException(&quot;Error stopping OAuthReceiver&quot;, ex);</span>
+<span class="fc" id="L152">            }</span>
+<span class="fc" id="L153">            server = null;</span>
+        }
+<span class="fc" id="L155">    }</span>
+
+    /**
+     * Closes the HTTP server resource.
+     *
+     * @throws OAuthReceiverException if an error occurred while closing the HTTP server resource
+     */
+    @Override
+    public void close() throws OAuthReceiverException {
+<span class="fc" id="L164">        stop();</span>
+<span class="fc" id="L165">    }</span>
+
+    /**
+     * Gets the redirect URI based on the running HTTP server resource.
+     *
+     * @return the redirect URI
+     */
+    public String getRedirectUri() {
+<span class="fc" id="L173">        return new StringBuilder(&quot;http://&quot;)</span>
+<span class="fc" id="L174">                .append(getHost())</span>
+<span class="fc" id="L175">                .append(&quot;:&quot;)</span>
+<span class="fc" id="L176">                .append(port)</span>
+<span class="fc" id="L177">                .append(callbackPath)</span>
+<span class="fc" id="L178">                .toString();</span>
+    }
+
+    /**
+     * Blocks until the server receives a login result, or the server is stopped by {@link #stop()},
+     * to return an authorization code.
+     *
+     * @return authorization code if login succeeds; may return {@code null} if the server is stopped
+     *     by {@link #close()}
+     * @throws OAuthReceiverException if the server receives an error code (through an HTTP request parameter
+     *     {@code error})
+     */
+    public String waitForCode() throws OAuthReceiverException {
+<span class="fc" id="L191">        return callback.waitForCode();</span>
+    }
+
+    private static void validatePort(final int port) {
+<span class="pc bpc" id="L195" title="1 of 4 branches missed.">        Validate.isTrue(port &gt; 0 &amp;&amp; port &lt;= MAX_PORT_RANGE,</span>
+                &quot;Invalid port.  Must be between 0 and &quot; + MAX_PORT_RANGE);
+<span class="fc" id="L197">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

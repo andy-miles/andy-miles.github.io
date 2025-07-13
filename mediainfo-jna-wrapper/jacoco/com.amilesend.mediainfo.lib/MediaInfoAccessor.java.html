@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MediaInfoAccessor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mediainfo-jna-wrapper</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.mediainfo.lib</a> &gt; <span class="el_source">MediaInfoAccessor.java</span></div><h1>MediaInfoAccessor.java</h1><pre class="source lang-java linenums">/*
+ * The MIT License
+ * Copyright © 2024-2025 Andy Miles
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the &quot;Software&quot;), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package com.amilesend.mediainfo.lib;
+
+import com.amilesend.mediainfo.type.InfoType;
+import com.amilesend.mediainfo.type.Status;
+import com.amilesend.mediainfo.type.StreamType;
+import com.google.common.annotations.VisibleForTesting;
+import com.sun.jna.Pointer;
+import com.sun.jna.WString;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+import java.util.Objects;
+
+/** The object used by java applications to interact with the libMediaInfo library. */
+<span class="fc" id="L42">@Slf4j</span>
+public class MediaInfoAccessor implements AutoCloseable {
+<span class="fc" id="L44">    private final Object lock = new Object();</span>
+    private MediaInfoLibrary mediaInfoLibrary;
+    @Getter(AccessLevel.PACKAGE)
+    @Setter(AccessLevel.PACKAGE)
+    @VisibleForTesting
+    private Pointer mediaInfoLibPointer;
+
+    /**
+     * Creates a new {@code MediaInfo} object.
+     *
+     * @param mediaInfoLibrary the library instance
+     * @see MediaInfoLibrary
+     */
+<span class="fc" id="L57">    public MediaInfoAccessor(@NonNull final MediaInfoLibrary mediaInfoLibrary) {</span>
+<span class="fc" id="L58">        this.mediaInfoLibrary = mediaInfoLibrary;</span>
+<span class="fc" id="L59">        mediaInfoLibPointer = newPointer();</span>
+<span class="fc" id="L60">    }</span>
+
+    /** Closes the library instance. */
+    @Override
+    public void close() {
+<span class="fc" id="L65">        dispose();</span>
+<span class="fc" id="L66">    }</span>
+
+    /** Disposes of the library instance reference. */
+    public void dispose() {
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L71">            return;</span>
+        }
+
+<span class="fc" id="L74">        synchronized (lock) {</span>
+<span class="fc" id="L75">            mediaInfoLibrary.close(mediaInfoLibPointer);</span>
+<span class="fc" id="L76">            mediaInfoLibrary.deleteHandle(mediaInfoLibPointer);</span>
+<span class="fc" id="L77">            mediaInfoLibPointer = null;</span>
+<span class="fc" id="L78">        }</span>
+<span class="fc" id="L79">    }</span>
+
+    /**
+     * Opens a file to parse.
+     *
+     * @param fileName the full path and filename to open
+     * @return {@code true} if file was opened; else, {@code false}
+     */
+    public boolean open(final String fileName) {
+<span class="fc" id="L88">        Validate.notBlank(fileName, &quot;fileName must not be blank&quot;);</span>
+
+<span class="fc" id="L90">        synchronized (lock) {</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L92">                mediaInfoLibPointer = newPointer();</span>
+            }
+
+<span class="fc" id="L95">            int response = mediaInfoLibrary.open(mediaInfoLibPointer, new WString(fileName));</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            return response == Status.Accepted.getValue();</span>
+        }
+    }
+
+    /**
+     * Prepares a memory buffer for reading and parsing media information from a stream.
+     *
+     * @param length the length of the buffer
+     * @param offset the byte offset to start reading from
+     * @return {@code true} if the buffer was successfully initialized; else, {@code false}
+     */
+    public boolean openBufferInit(final long length, final long offset) {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        Validate.isTrue(length &gt; 0L, &quot;length must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        Validate.isTrue(offset &gt;= 0L, &quot;offset must be &gt;= 0&quot;);</span>
+
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L112">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking openBufferInit()&quot;);
+        }
+
+<span class="fc" id="L116">        synchronized (lock) {</span>
+<span class="fc" id="L117">            int response = mediaInfoLibrary.openBufferInit(mediaInfoLibPointer, length, offset);</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            return response == Status.Accepted.getValue();</span>
+        }
+    }
+
+    /**
+     * Reads from a memory buffer to parse media information and tags.
+     *
+     * @param buffer the buffer reference
+     * @param size the amount of data to read
+     * @return a bitfield with the following bits:
+     *         &lt;ul&gt;
+     *             &lt;li&gt;{@code 0} - Accepted (format is known)&lt;/li&gt;
+     *             &lt;li&gt;{@code 1} - Filled (data collected)&lt;/li&gt;
+     *             &lt;li&gt;{@code 2} - Buffer updated (further data required)&lt;/li&gt;
+     *             &lt;li&gt;{@code 3} - Buffer finalized (no further data required)&lt;/li&gt;
+     *             &lt;li&gt;{@code 4-15} - Reserved&lt;/li&gt;
+     *             &lt;li&gt;{@code 16-31} - User defined&lt;/li&gt;
+     *         &lt;/ul&gt;
+     */
+<span class="fc" id="L137">    public int openBufferContinue(@NonNull final byte[] buffer, final int size) {</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        Validate.isTrue(size &gt; 0, &quot;size must be &gt; 0&quot;);</span>
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L141">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking openBufferContinue()&quot;);
+        }
+
+<span class="fc" id="L145">        synchronized (lock) {</span>
+<span class="fc" id="L146">            return mediaInfoLibrary.openBufferContinue(mediaInfoLibPointer, buffer, size);</span>
+        }
+    }
+
+    /**
+     * Tests if there is request to seek to another position in the stream.
+     *
+     * @return {@code -1} if there is no more data to seek to; else, the seek position
+     */
+    public long openBufferContinueGotoGet() {
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L157">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking openBufferContinueGotoGet()&quot;);
+        }
+
+<span class="fc" id="L161">        synchronized (lock) {</span>
+<span class="fc" id="L162">            return mediaInfoLibrary.openBufferContinueGotoGet(mediaInfoLibPointer);</span>
+        }
+    }
+
+    /**
+     * Closes the buffer upon read completion.
+     *
+     * @return {@code 0} if the buffer has been read or null; else non-0 value if an error occurred.
+     */
+    public int openBufferFinalize() {
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L173">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking openBufferFinalize()&quot;);
+        }
+
+<span class="fc" id="L177">        synchronized (lock) {</span>
+<span class="fc" id="L178">            return mediaInfoLibrary.openBufferFinalize(mediaInfoLibPointer);</span>
+        }
+    }
+
+    /** Closes a file handle that was previously opened. */
+    public void closeHandle() {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L185">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking closeHandle()&quot;);
+        }
+
+<span class="fc" id="L189">        synchronized (lock) {</span>
+<span class="fc" id="L190">            mediaInfoLibrary.close(mediaInfoLibPointer);</span>
+<span class="fc" id="L191">        }</span>
+<span class="fc" id="L192">    }</span>
+
+    /**
+     * Get all details about a file.
+     *
+     * @return All details about a file in one string
+     */
+    public String inform() {
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L201">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking inform()&quot;);
+        }
+
+<span class="fc" id="L205">        synchronized (lock) {</span>
+<span class="fc" id="L206">            return mediaInfoLibrary.inform(mediaInfoLibPointer, 0).toString();</span>
+        }
+    }
+
+    /**
+     * Get a piece of information about a file (parameter is a string).
+     *
+     * @param streamType the stream type
+     * @param streamNumber the stream number
+     * @param parameter the parameter you are looking for in the stream (e.g., resolution, codec, bitrate, etc.)
+     * @return the query result, or empty if there is a problem or not found
+     * @see StreamType
+     */
+    public String get(final StreamType streamType, final int streamNumber, final String parameter) {
+<span class="fc" id="L220">        return get(streamType, streamNumber, parameter, InfoType.Text, InfoType.Name);</span>
+    }
+
+
+    /**
+     * Get a piece of information about a file (parameter is a string).
+     *
+     * @param streamType the stream type
+     * @param streamNumber the stream number
+     * @param parameter the parameter you are looking for in the stream (e.g., resolution, codec, bitrate, etc.)
+     * @param infoType the type of information about the parameter
+     * @see StreamType
+     * @see InfoType
+     */
+    public String get(
+            final StreamType streamType,
+            final int streamNumber,
+            final String parameter,
+            final InfoType infoType) {
+<span class="fc" id="L239">        return get(streamType, streamNumber, parameter, infoType, InfoType.Name);</span>
+    }
+
+    /**
+     * Get a piece of information about a file (parameter is a string). For a list of available parameters, please
+     * refer to &lt;a href=&quot;https://github.com/MediaArea/MediaInfoLib/blob/master/Source/Resource/Text/Stream/General.csv&quot;&gt;
+     * General.csv&lt;/a&gt;.
+     *
+     * @param streamType the stream type
+     * @param streamNumber the stream number
+     * @param parameter the parameter you are looking for in the stream (e.g., resolution, codec, bitrate, etc.)
+     * @param infoType the type of information about the parameter
+     * @param searchType describes where to look for the parameter
+     * @return the queries information; or an empty string if there was a problem
+     */
+    public String get(
+<span class="fc" id="L255">            @NonNull final StreamType streamType,</span>
+            final int streamNumber,
+            final String parameter,
+<span class="fc" id="L258">            @NonNull final InfoType infoType,</span>
+<span class="fc" id="L259">            @NonNull final InfoType searchType) {</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt;= 0&quot;);</span>
+<span class="fc" id="L261">        Validate.notBlank(parameter, &quot;parameter must not be blank&quot;);</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L263">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking get()&quot;);
+        }
+
+<span class="fc" id="L267">        synchronized (lock) {</span>
+<span class="fc" id="L268">            return mediaInfoLibrary.get(</span>
+                    mediaInfoLibPointer,
+<span class="fc" id="L270">                    streamType.ordinal(),</span>
+                    streamNumber,
+                    new WString(parameter),
+<span class="fc" id="L273">                    infoType.ordinal(),</span>
+<span class="fc" id="L274">                    searchType.ordinal()).toString();</span>
+        }
+    }
+
+    /**
+     * Get a piece of information about a file (parameter is an integer that represents the parameter index).
+     *
+     * @param streamType the stream type
+     * @param streamNumber the stream number
+     * @param parameterIndex the parameter index that you are looking for in the stream
+     * @return a string about information you search, an empty string if there is a problem
+     */
+    public String get(final StreamType streamType, final int streamNumber, final int parameterIndex) {
+<span class="fc" id="L287">        return get(streamType, streamNumber, parameterIndex, InfoType.Text);</span>
+    }
+
+    /**
+     * Get a piece of information about a file (parameter is an integer that represents the parameter index).
+     *
+     * @param streamType the stream type
+     * @param streamNumber the stream number
+     * @param parameterIndex the parameter index that you are looking for in the stream
+     * @param infoType the type of information you want about the parameter (the text, the measure, the help...)
+     * @return the information or an empty string if there is a problem
+     */
+    public String get(
+<span class="fc" id="L300">            @NonNull final StreamType streamType,</span>
+            final int streamNumber,
+            final int parameterIndex,
+<span class="fc" id="L303">            @NonNull final InfoType infoType) {</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        Validate.isTrue(parameterIndex &gt;= 0, &quot;parameterIndex must be &gt;= 0&quot;);</span>
+<span class="fc bfc" id="L306" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L307">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+                    &quot;been invoked prior to invoking get()&quot;);
+        }
+
+<span class="fc" id="L311">        synchronized (lock) {</span>
+<span class="fc" id="L312">            return mediaInfoLibrary.getI(</span>
+                    mediaInfoLibPointer,
+<span class="fc" id="L314">                    streamType.ordinal(),</span>
+                    streamNumber,
+                    parameterIndex,
+<span class="fc" id="L317">                    infoType.ordinal()).toString();</span>
+        }
+    }
+
+    /**
+     * Gets the number of streams for the given stream type.
+     *
+     * @param streamType the stream type
+     * @return number of streams of the given stream type
+     */
+<span class="fc" id="L327">    public int getStreamCount(@NonNull final StreamType streamType) {</span>
+<span class="fc" id="L328">        final String streamCount = get(streamType, 0, &quot;StreamCount&quot;);</span>
+<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (StringUtils.isEmpty(streamCount)) {</span>
+<span class="fc" id="L330">            return 0;</span>
+        }
+
+<span class="fc" id="L333">        return Integer.parseInt(streamCount);</span>
+    }
+
+
+    /**
+     * Gets the number of streams for the given stream type or the total count of information parameters for a stream.
+     *
+     * @param streamType the stream type
+     * @param streamNumber the stream number
+     * @return number of streams of the given stream type
+     */
+<span class="fc" id="L344">    public int getStreamOrParameterCount(@NonNull final StreamType streamType, final int streamNumber) {</span>
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt; 0&quot;);</span>
+
+<span class="fc" id="L347">        synchronized (lock) {</span>
+<span class="fc" id="L348">            return mediaInfoLibrary.countGet(mediaInfoLibPointer, streamType.ordinal(), streamNumber);</span>
+        }
+    }
+
+    /**
+     * Gets information about MediaInfo.
+     *
+     * @param option The name of option
+     * @return the option value
+     */
+    public String getOption(final String option) {
+<span class="fc" id="L359">        return setOption(option, StringUtils.EMPTY);</span>
+    }
+
+    /**
+     * Configures information about MediaInfo.
+     *
+     * @param option The name of option
+     * @param value The value of option
+     * @return {@code &quot;&quot;} means no; else, any other value means yes
+     */
+<span class="fc" id="L369">    public String setOption(final String option, @NonNull final String value) {</span>
+<span class="fc" id="L370">        Validate.notBlank(option, &quot;option must not be blank&quot;);</span>
+
+<span class="fc" id="L372">        synchronized (lock) {</span>
+<span class="fc" id="L373">            return mediaInfoLibrary.option(mediaInfoLibPointer, new WString(option), new WString(value)).toString();</span>
+        }
+    }
+
+    private Pointer newPointer() {
+        try {
+<span class="fc" id="L379">            return mediaInfoLibrary.newHandle();</span>
+<span class="fc" id="L380">        } catch(final LinkageError error) {</span>
+<span class="fc" id="L381">            throw new MediaInfoException(error);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

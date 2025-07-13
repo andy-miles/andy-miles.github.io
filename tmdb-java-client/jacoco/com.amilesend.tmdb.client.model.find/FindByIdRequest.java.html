@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FindByIdRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.model.find</a> &gt; <span class="el_source">FindByIdRequest.java</span></div><h1>FindByIdRequest.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.model.find;
+
+import com.amilesend.tmdb.client.model.PathParameter;
+import com.amilesend.tmdb.client.model.QueryParameter;
+import com.amilesend.tmdb.client.model.QueryParameterBasedRequest;
+import com.amilesend.tmdb.client.model.find.type.ExternalSource;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NonNull;
+import okhttp3.HttpUrl;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+import static com.amilesend.tmdb.client.model.QueryParameterBasedRequest.appendIfNotBlank;
+
+/**
+ * The request to find resources by an external identifier.
+ *
+ * @see QueryParameterBasedRequest
+ */
+@Builder
+@Data
+public class FindByIdRequest implements QueryParameterBasedRequest {
+    /** The external identifier (required). */
+    @PathParameter
+    private final String externalId;
+    /** The external identifier type (required). */
+    @QueryParameter
+    private final ExternalSource externalSource;
+    /** The language to filter on (optional). */
+    @QueryParameter
+    private final String language;
+
+    @Override
+<span class="fc" id="L54">    public HttpUrl.Builder populateQueryParameters(@NonNull final HttpUrl.Builder urlBuilder) {</span>
+<span class="fc" id="L55">        Validate.notBlank(externalId, &quot;externalId must not be blank&quot;);</span>
+<span class="fc" id="L56">        Validate.notNull(externalSource, &quot;externalSource must not be null&quot;);</span>
+
+<span class="fc" id="L58">        urlBuilder.addQueryParameter(</span>
+                &quot;external_source&quot;,
+<span class="fc" id="L60">                URLEncoder.encode(externalSource.getValue(), StandardCharsets.UTF_8));</span>
+<span class="fc" id="L61">        return appendIfNotBlank(urlBuilder, &quot;language&quot;, language);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

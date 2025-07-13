@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CryptoHelper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.crypto</a> &gt; <span class="el_source">CryptoHelper.java</span></div><h1>CryptoHelper.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.crypto;
+
+import com.google.common.annotations.VisibleForTesting;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Validate;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+
+/**
+ * Helper that encrypts and decrypts content for the configured cipher algorithm and key.
+ * &lt;p&gt;
+ * Note: See
+ * &lt;a href=&quot;https://docs.oracle.com/en/java/javase/11/docs/specs/security/standard-names.html&quot;&gt;
+ * Java Security Standard Algorithm Names&lt;/a&gt; for a list of available ciphers and be aware of which
+ * are applicable to comply with your local geographic laws and/or policies.
+ * @see EncryptedEnvelope
+ */
+<span class="fc" id="L42">@Slf4j</span>
+public class CryptoHelper {
+    private static final int IV_SIZE = 16;
+<span class="fc" id="L45">    private static final SecureRandom RANDOM = new SecureRandom();</span>
+
+    private final String cipherAlgorithm;
+    private final SecretKeySpec keySpec;
+
+    /**
+     * Creates a new {@code CryptoHelper} instance.
+     *
+     * @param cipherAlgorithm the cipher algorithm to use
+     * @param key the key used to encrypt/decrypt content
+     */
+<span class="fc bfc" id="L56" title="All 2 branches covered.">    public CryptoHelper(final String cipherAlgorithm, @NonNull final SecretKey key) {</span>
+<span class="fc" id="L57">        Validate.notBlank(cipherAlgorithm, &quot;cipherAlgorithm must not be blank&quot;);</span>
+<span class="fc" id="L58">        this.cipherAlgorithm = cipherAlgorithm;</span>
+<span class="fc" id="L59">        keySpec = new SecretKeySpec(key.getEncoded(), key.getAlgorithm());</span>
+<span class="fc" id="L60">    }</span>
+
+    /**
+     * Encrypts the given bytes and returns an {@link EncryptedEnvelope}.
+     *
+     * @param content the content to encrypt
+     * @param description a description of the content
+     * @return the {@link EncryptedEnvelope} containing the encrypted bytes
+     * @throws CryptoHelperException if an error occurred while encrypting the contents
+     */
+<span class="fc bfc" id="L70" title="All 2 branches covered.">    public EncryptedEnvelope encrypt(@NonNull final byte[] content, final String description)</span>
+            throws CryptoHelperException {
+<span class="fc" id="L72">        log.debug(&quot;Encrypting {}&quot;, description);</span>
+<span class="fc" id="L73">        final IvParameterSpec ivSpec = generativeIv();</span>
+        try {
+<span class="fc" id="L75">            final byte[] encryptedContent = invokeCipher(Cipher.ENCRYPT_MODE, content, ivSpec);</span>
+<span class="fc" id="L76">            return new EncryptedEnvelope(encryptedContent, ivSpec.getIV(), description);</span>
+<span class="fc" id="L77">        } catch (final GeneralSecurityException ex) {</span>
+<span class="fc" id="L78">            throw new CryptoHelperException(&quot;Unable to encrypt content: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    /**
+     * Decrypts the given {@link EncryptedEnvelope} and returns the contents as a byte array.
+     *
+     * @param envelope the envelope to decrypt
+     * @return the decrypted contents
+     * @throws CryptoHelperException if an error occurred while decrypting the envelope's contents
+     */
+    @SuppressFBWarnings(&quot;STATIC_IV&quot;)
+<span class="fc bfc" id="L90" title="All 2 branches covered.">    public byte[] decrypt(@NonNull final EncryptedEnvelope envelope) throws CryptoHelperException {</span>
+<span class="fc" id="L91">        log.debug(&quot;Decrypting {}&quot;, envelope.getDescription());</span>
+<span class="fc" id="L92">        final IvParameterSpec ivSpec = new IvParameterSpec(envelope.getIv());</span>
+        try {
+<span class="fc" id="L94">            return invokeCipher(Cipher.DECRYPT_MODE, envelope.getEncryptedContent(), ivSpec);</span>
+<span class="fc" id="L95">        } catch (final GeneralSecurityException ex) {</span>
+<span class="fc" id="L96">            throw new CryptoHelperException(&quot;Unable to decrypt contnet: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    @VisibleForTesting
+    byte[] invokeCipher(final int mode, final byte[] input, final IvParameterSpec ivSpec)
+            throws GeneralSecurityException {
+<span class="fc" id="L103">        final Cipher cipher = Cipher.getInstance(cipherAlgorithm);</span>
+<span class="fc" id="L104">        cipher.init(mode, keySpec, ivSpec);</span>
+<span class="fc" id="L105">        return cipher.doFinal(input);</span>
+    }
+
+    private IvParameterSpec generativeIv() {
+<span class="fc" id="L109">        final byte[] iv = new byte[IV_SIZE];</span>
+<span class="fc" id="L110">        RANDOM.nextBytes(iv);</span>
+<span class="fc" id="L111">        return new IvParameterSpec(iv);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

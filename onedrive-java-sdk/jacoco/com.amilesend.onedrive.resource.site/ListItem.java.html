@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.resource.site</a> &gt; <span class="el_source">ListItem.java</span></div><h1>ListItem.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.resource.site;
+
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.onedrive.connection.OneDriveConnection;
+import com.amilesend.onedrive.resource.item.BaseItem;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.type.SharePointIds;
+import com.amilesend.onedrive.resource.site.response.GetColumnValuesResponse;
+import com.amilesend.onedrive.resource.site.type.ContentType;
+import com.google.common.annotations.VisibleForTesting;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import okhttp3.RequestBody;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Map;
+
+import static com.amilesend.onedrive.connection.OneDriveConnection.JSON_MEDIA_TYPE;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.FIELD_VALUE_SET_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.GET_COLUMN_VALUES_RESPONSE_PARSER;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemParser;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemVersionListParser;
+import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemVersionParser;
+import static com.amilesend.onedrive.resource.site.List.LIST_BASE_URL_PATH;
+import static com.amilesend.onedrive.resource.site.ListItemVersion.LIST_ITEM_VERSIONS_URL_SUFFIX;
+import static com.amilesend.onedrive.resource.site.ListItemVersion.LIST_ITEM_VERSION_BASE_URL_PATH;
+import static com.amilesend.onedrive.resource.site.Site.SITE_BASE_URL_PATH;
+
+/**
+ * Represents an item in a list.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/listitem&quot;&gt;API Documentation.&lt;/a&gt;
+ * @see List
+ */
+@EqualsAndHashCode(callSuper=true)
+@Getter
+@SuperBuilder
+@ToString(callSuper = true)
+public class ListItem extends BaseItem {
+    public static final String LIST_ITEM_BASE_URL_PATH = &quot;/items/&quot;;
+    public static final String LIST_ITEM_URL_SUFFIX = &quot;/items&quot;;
+
+    private static final int MAX_COLUMN_LENGTH = 128;
+    private static final int MAX_SELECTED_COLUMNS = 12;
+
+    /** The key is the name of the column, the value is the associated value of the columns set on this list item. */
+    private final Map&lt;String, Object&gt; fields;
+    /** The Sharepoint identifiers. */
+    private final SharePointIds sharepointIds;
+    /** For document libraries, the list item as a drive item. */
+    private final DriveItem driveItem;
+    /** The associated site identifier. */
+    @GsonExclude
+    private final String siteId;
+    /** The associated list identifier. */
+    @GsonExclude
+    private final String listId;
+    /** The OneDrive API connection. */
+    @EqualsAndHashCode.Exclude
+    @GsonExclude
+    private final OneDriveConnection connection;
+    /** The content type of this list item. */
+    @Setter
+    private ContentType contentType;
+    /** Indicates if this item is deleted or not (read-only). */
+    @GsonExclude
+    private boolean deleted;
+
+    //////////////////
+    // Column values
+    //////////////////
+
+    /**
+     * Gets the associated columns and its values.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitem_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the response
+     * @see GetColumnValuesResponse
+     */
+    public GetColumnValuesResponse getColumnValues() {
+<span class="fc" id="L106">        return connection.execute(</span>
+<span class="fc" id="L107">                connection.newRequestBuilder()</span>
+<span class="fc" id="L108">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L109">                                .append(&quot;?expand=fields&quot;)</span>
+<span class="fc" id="L110">                                .toString())</span>
+<span class="fc" id="L111">                        .build(),</span>
+                GET_COLUMN_VALUES_RESPONSE_PARSER);
+    }
+
+    /**
+     * Gets the selected columns and its values for the given list of column names.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitem_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param columnsToSelect the list of column names (max 12)
+     * @return the response
+     * @see GetColumnValuesResponse
+     */
+    public GetColumnValuesResponse getColumnValues(final java.util.List&lt;String&gt; columnsToSelect) {
+<span class="fc" id="L126">        final String selectedColumns = validateAndJoinColumns(columnsToSelect);</span>
+<span class="fc" id="L127">        return connection.execute(</span>
+<span class="fc" id="L128">                connection.newRequestBuilder()</span>
+<span class="fc" id="L129">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L130">                                .append(&quot;?expand=fields(select=&quot;)</span>
+<span class="fc" id="L131">                                .append(selectedColumns)</span>
+<span class="fc" id="L132">                                .append(&quot;)&quot;)</span>
+<span class="fc" id="L133">                                .toString())</span>
+<span class="fc" id="L134">                        .build(),</span>
+                GET_COLUMN_VALUES_RESPONSE_PARSER);
+    }
+
+    /**
+     * Updates the defined columns and associated values for this list item.  All other values on the list item
+     * are left alone.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitem_update&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param fields the fields to update
+     * @return the field value set containing all the columns and values
+     */
+    public Map&lt;String, Object&gt; updateColumnValues(final Map&lt;String, Object&gt; fields) {
+<span class="fc" id="L149">        Validate.notEmpty(fields, &quot;fields must not be blank&quot;);</span>
+<span class="fc" id="L150">        return connection.execute(</span>
+<span class="fc" id="L151">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L152">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L153">                                .append(&quot;/fields&quot;)</span>
+<span class="fc" id="L154">                                .toString())</span>
+<span class="fc" id="L155">                        .patch(RequestBody.create(</span>
+<span class="fc" id="L156">                                connection.getGsonFactory().getInstance(connection).toJson(fields),</span>
+                                JSON_MEDIA_TYPE))
+<span class="fc" id="L158">                        .build(),</span>
+                FIELD_VALUE_SET_PARSER);
+    }
+
+    ////////////////////
+    // ListItemVersion
+    ////////////////////
+
+    /**
+     * Gets the list of versions for this list item.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitem_list_versions&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the list item versions
+     */
+    public java.util.List&lt;ListItemVersion&gt; getListItemVersions() {
+<span class="fc" id="L175">        final String siteId = getSiteId();</span>
+<span class="fc" id="L176">        final String listId = getListId();</span>
+<span class="fc" id="L177">        final String listItemId = getId();</span>
+
+<span class="fc" id="L179">        return connection.execute(</span>
+<span class="fc" id="L180">                connection.newRequestBuilder()</span>
+<span class="fc" id="L181">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L182">                                .append(LIST_ITEM_VERSIONS_URL_SUFFIX)</span>
+<span class="fc" id="L183">                                .toString())</span>
+<span class="fc" id="L184">                        .build(),</span>
+<span class="fc" id="L185">                newListItemVersionListParser(siteId, listId, listItemId));</span>
+    }
+
+    /**
+     * Gets the {@link ListItemVersion} for the given {@code versionId}.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitemversion_get&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param versionId the list item version identifier
+     * @return the list item version
+     */
+    public ListItemVersion getVersion(final String versionId) {
+<span class="fc" id="L198">        Validate.notBlank(versionId, &quot;versionId must not be blank&quot;);</span>
+
+<span class="fc" id="L200">        final String siteId = getSiteId();</span>
+<span class="fc" id="L201">        final String listId = getListId();</span>
+<span class="fc" id="L202">        final String listItemId = getId();</span>
+
+<span class="fc" id="L204">        return connection.execute(</span>
+<span class="fc" id="L205">                connection.newRequestBuilder()</span>
+<span class="fc" id="L206">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L207">                                .append(LIST_ITEM_VERSION_BASE_URL_PATH)</span>
+<span class="fc" id="L208">                                .append(versionId)</span>
+<span class="fc" id="L209">                                .toString())</span>
+<span class="fc" id="L210">                        .build(),</span>
+<span class="fc" id="L211">                newListItemVersionParser(siteId, listId, listItemId));</span>
+    }
+
+    //////////
+    // CRUD
+    //////////
+
+    /**
+     * Updates this list item (e.g., name, description, parentReference, content type).
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/listitem&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @return the updated list item
+     */
+    public ListItem update() {
+<span class="fc" id="L227">        final String siteId = getSiteId();</span>
+<span class="fc" id="L228">        final String listId = getListId();</span>
+<span class="fc" id="L229">        return connection.execute(</span>
+<span class="fc" id="L230">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L231">                        .url(newStringBuilderForListItemUrl().toString())</span>
+<span class="fc" id="L232">                        .patch(RequestBody.create(toJson(), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L233">                        .build(),</span>
+<span class="fc" id="L234">                newListItemParser(siteId, listId));</span>
+    }
+
+    /**
+     * Deletes this item from the list.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/resources/listitem&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     */
+    public void delete() {
+<span class="fc" id="L244">        connection.execute(</span>
+<span class="fc" id="L245">                connection.newRequestBuilder()</span>
+<span class="fc" id="L246">                        .url(newStringBuilderForListItemUrl().toString())</span>
+<span class="fc" id="L247">                        .delete()</span>
+<span class="fc" id="L248">                        .build());</span>
+        // Set the deleted state for this list item for consumers that still have reference to the object.
+<span class="fc" id="L250">        deleted = true;</span>
+<span class="fc" id="L251">    }</span>
+
+    /**
+     * Gets the JSON representation of this list item.
+     *
+     * @return the list item JSON value
+     */
+    @VisibleForTesting
+    String toJson() {
+<span class="fc" id="L260">        return connection.getGsonFactory().getInstance(connection).toJson(this);</span>
+    }
+
+    private String validateAndJoinColumns(final java.util.List&lt;String&gt; columns) {
+<span class="fc" id="L264">        Validate.notEmpty(columns, &quot;columns list must not be empty&quot;);</span>
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        Validate.isTrue(columns.size() &lt;= MAX_SELECTED_COLUMNS,</span>
+                &quot;cannot select more than &quot; + MAX_SELECTED_COLUMNS + &quot;columns&quot;);
+
+<span class="fc" id="L268">        final java.util.List&lt;String&gt; encodedColumns = new ArrayList&lt;&gt;(columns.size());</span>
+<span class="fc bfc" id="L269" title="All 2 branches covered.">        for (final String column : columns) {</span>
+<span class="fc" id="L270">            Validate.notNull(column, &quot;column name must not be null&quot;);</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            Validate.isTrue(column.length() &lt; MAX_COLUMN_LENGTH);</span>
+<span class="fc" id="L272">            encodedColumns.add(URLEncoder.encode(column, StandardCharsets.UTF_8));</span>
+<span class="fc" id="L273">        }</span>
+
+<span class="fc" id="L275">        return String.join(&quot;,&quot;, encodedColumns);</span>
+    }
+
+    private StringBuilder newStringBuilderForListItemUrl() {
+<span class="fc" id="L279">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L280">                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L281">                .append(getSiteId())</span>
+<span class="fc" id="L282">                .append(LIST_BASE_URL_PATH)</span>
+<span class="fc" id="L283">                .append(getListId())</span>
+<span class="fc" id="L284">                .append(LIST_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L285">                .append(getId());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

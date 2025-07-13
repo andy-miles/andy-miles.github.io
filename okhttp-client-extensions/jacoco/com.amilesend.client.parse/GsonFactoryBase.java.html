@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GsonFactoryBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.parse</a> &gt; <span class="el_source">GsonFactoryBase.java</span></div><h1>GsonFactoryBase.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.parse;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.parse.strategy.AnnotationBasedExclusionStrategy;
+import com.amilesend.client.parse.strategy.AnnotationBasedSerializationExclusionStrategy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Factory that vends new pre-configured {@link Gson} instances.
+ *
+ * @param &lt;T&gt; The connection type that this factory is for
+ */
+@NoArgsConstructor
+public abstract class GsonFactoryBase&lt;T extends Connection&gt; {
+    private static final int DEFAULT_NUM_CONNECTION_INSTANCES = 2;
+
+    private final ConcurrentHashMap&lt;Connection, Gson&gt; configuredInstances =
+            new ConcurrentHashMap&lt;&gt;(DEFAULT_NUM_CONNECTION_INSTANCES);
+    private final ConcurrentHashMap&lt;Connection, Gson&gt; configuredPrettyPrintedInstances =
+            new ConcurrentHashMap&lt;&gt;(DEFAULT_NUM_CONNECTION_INSTANCES);
+
+    /**
+     * Creates the configured {@link Gson} instance.
+     *
+     * @param connection the connection
+     * @return the Gson instance
+     */
+<span class="nc bnc" id="L51" title="All 2 branches missed.">    public Gson getInstance(@NonNull final T connection) {</span>
+<span class="nc" id="L52">        Gson instance = configuredInstances.get(connection);</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (Objects.nonNull(instance)) {</span>
+<span class="nc" id="L54">            return instance;</span>
+        }
+
+<span class="nc" id="L57">        instance = configure(newGsonBuilder(), connection).create();</span>
+<span class="nc" id="L58">        configuredInstances.put(connection, instance);</span>
+<span class="nc" id="L59">        return instance;</span>
+    }
+
+    /**
+     * Gets the configured {@link Gson} instance that provides pretty-printed formatted JSON
+     * (i.e., useful for testing and/or debugging).
+     *
+     * @param connection the connection
+     * @return the pre-configured Gson instance
+     */
+<span class="nc bnc" id="L69" title="All 2 branches missed.">    public Gson getInstanceForPrettyPrinting(@NonNull final T connection) {</span>
+<span class="nc" id="L70">        Gson instance = configuredPrettyPrintedInstances.get(connection);</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (Objects.nonNull(instance)) {</span>
+<span class="nc" id="L72">            return instance;</span>
+        }
+
+<span class="nc" id="L75">        instance = configure(newGsonBuilder().setPrettyPrinting(), connection).create();</span>
+<span class="nc" id="L76">        configuredPrettyPrintedInstances.put(connection, instance);</span>
+<span class="nc" id="L77">        return instance;</span>
+    }
+
+    /** Clears all cached instances. */
+    public void clearAll() {
+<span class="nc" id="L82">        configuredInstances.clear();;</span>
+<span class="nc" id="L83">        configuredPrettyPrintedInstances.clear();</span>
+<span class="nc" id="L84">    }</span>
+
+    /**
+     * Clears cached instances for the given connection.
+     *
+     * @param connection the connection
+     */
+<span class="nc bnc" id="L91" title="All 2 branches missed.">    public void clear(@NonNull final T connection) {</span>
+<span class="nc" id="L92">        configuredInstances.remove(connection);</span>
+<span class="nc" id="L93">        configuredPrettyPrintedInstances.remove(connection);</span>
+<span class="nc" id="L94">    }</span>
+
+    /**
+     * Configures a {@link GsonBuilder} for the client type.
+     *
+     * @param gsonBuilder the GSON builder instance
+     * @param connection the connection
+     */
+    protected abstract GsonBuilder configure(GsonBuilder gsonBuilder, T connection);
+
+    /**
+     * Create a new {@link GsonBuilder} instance with the default serialization strategies.
+     *
+     * @return the builder
+     * @see AnnotationBasedExclusionStrategy
+     * @see AnnotationBasedSerializationExclusionStrategy
+     */
+    protected GsonBuilder newGsonBuilder() {
+<span class="nc" id="L112">        return new GsonBuilder()</span>
+<span class="nc" id="L113">                .setExclusionStrategies(new AnnotationBasedExclusionStrategy())</span>
+<span class="nc" id="L114">                .addSerializationExclusionStrategy(new AnnotationBasedSerializationExclusionStrategy());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

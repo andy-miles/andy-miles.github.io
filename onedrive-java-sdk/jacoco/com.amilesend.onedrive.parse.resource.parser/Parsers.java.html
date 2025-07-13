@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Parsers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.parse.resource.parser</a> &gt; <span class="el_source">Parsers.java</span></div><h1>Parsers.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.parse.resource.parser;
+
+import com.amilesend.client.parse.parser.BasicParser;
+import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.client.parse.parser.MapParser;
+import com.amilesend.onedrive.resource.activities.ItemActivity;
+import com.amilesend.onedrive.resource.drive.Drive;
+import com.amilesend.onedrive.resource.item.DriveItem;
+import com.amilesend.onedrive.resource.item.DriveItemPage;
+import com.amilesend.onedrive.resource.item.DriveItemVersion;
+import com.amilesend.onedrive.resource.item.SpecialDriveItem;
+import com.amilesend.onedrive.resource.item.type.AsyncJobStatus;
+import com.amilesend.onedrive.resource.item.type.Permission;
+import com.amilesend.onedrive.resource.item.type.Preview;
+import com.amilesend.onedrive.resource.item.type.SpecialFolder;
+import com.amilesend.onedrive.resource.item.type.ThumbnailSet;
+import com.amilesend.onedrive.resource.site.ListItem;
+import com.amilesend.onedrive.resource.site.ListItemVersion;
+import com.amilesend.onedrive.resource.site.Site;
+import com.amilesend.onedrive.resource.site.response.GetColumnValuesResponse;
+import lombok.experimental.UtilityClass;
+
+import java.util.List;
+import java.util.Map;
+
+@UtilityClass
+public class Parsers {
+<span class="fc" id="L45">    public static final GsonParser&lt;AsyncJobStatus&gt; ASYNC_JOB_STATUS_PARSER = new BasicParser&lt;&gt;(AsyncJobStatus.class);</span>
+<span class="fc" id="L46">    public static final GsonParser&lt;List&lt;DriveItem&gt;&gt; DRIVE_ITEM_LIST_PARSER = new ListResponseBodyParser&lt;&gt;(DriveItem.class);</span>
+<span class="fc" id="L47">    public static final GsonParser&lt;DriveItem&gt; DRIVE_ITEM_PARSER = new BasicParser&lt;&gt;(DriveItem.class);</span>
+<span class="fc" id="L48">    public static final GsonParser&lt;DriveItemPage&gt; DRIVE_ITEM_PAGE_PARSER = new BasicParser&lt;&gt;(DriveItemPage.class);</span>
+<span class="fc" id="L49">    public static final GsonParser&lt;Drive&gt; DRIVE_PARSER = new BasicParser&lt;&gt;(Drive.class);</span>
+<span class="fc" id="L50">    public static final GsonParser&lt;List&lt;Drive&gt;&gt; DRIVE_LIST_PARSER = new ListResponseBodyParser&lt;&gt;(Drive.class);</span>
+<span class="fc" id="L51">    public static final GsonParser&lt;Map&lt;String, Object&gt;&gt; FIELD_VALUE_SET_PARSER = new MapParser&lt;&gt;(String.class, Object.class);</span>
+<span class="fc" id="L52">    public static final GsonParser&lt;GetColumnValuesResponse&gt; GET_COLUMN_VALUES_RESPONSE_PARSER = new BasicParser&lt;&gt;(GetColumnValuesResponse.class);</span>
+<span class="fc" id="L53">    public static final GsonParser&lt;List&lt;ItemActivity&gt;&gt; ITEM_ACTIVITY_LIST_PARSER = new ListResponseBodyParser&lt;&gt;(ItemActivity.class);</span>
+<span class="fc" id="L54">    public static final GsonParser&lt;Site&gt; SITE_PARSER = new BasicParser&lt;&gt;(Site.class);</span>
+<span class="fc" id="L55">    public static final GsonParser&lt;List&lt;Site&gt;&gt; SITE_LIST_PARSER = new ListResponseBodyParser&lt;&gt;(Site.class);</span>
+<span class="fc" id="L56">    public static final GsonParser&lt;List&lt;ThumbnailSet&gt;&gt; THUMBNAIL_SET_LIST_PARSER = new ListResponseBodyParser&lt;&gt;(ThumbnailSet.class);</span>
+
+    public static GsonParser&lt;List&lt;DriveItemVersion&gt;&gt; newDriveItemVersionListParser(
+            final String driveItemId,
+            final String name) {
+<span class="fc" id="L61">        return new DriveItemVersionListParser(driveItemId, name);</span>
+    }
+
+    public static GsonParser&lt;ListItem&gt; newListItemParser(final String siteId, final String listId) {
+<span class="fc" id="L65">        return new ListItemParser(siteId, listId);</span>
+    }
+
+    public static GsonParser&lt;ListItemVersion&gt; newListItemVersionParser(
+            final String siteId,
+            final String listId,
+            final String listItemId) {
+<span class="fc" id="L72">        return new ListItemVersionParser(siteId, listId, listItemId);</span>
+    }
+
+    public static GsonParser&lt;List&lt;ListItemVersion&gt;&gt; newListItemVersionListParser(
+            final String siteId,
+            final String listId,
+            final String listItemId) {
+<span class="fc" id="L79">        return new ListItemVersionListParser(siteId, listId, listItemId);</span>
+    }
+
+    public static GsonParser&lt;List&lt;com.amilesend.onedrive.resource.site.List&gt;&gt; newListListParser(final String siteId) {
+<span class="fc" id="L83">        return new ListListParser(siteId);</span>
+    }
+
+    public static GsonParser&lt;List&lt;Permission&gt;&gt; newPermissionListParser(final String driveItemId) {
+<span class="fc" id="L87">        return new PermissionListParser(driveItemId);</span>
+    }
+
+    public static GsonParser&lt;Permission&gt; newPermissionParser(final String driveItemId) {
+<span class="fc" id="L91">        return new PermissionParser(driveItemId);</span>
+    }
+
+    public static GsonParser&lt;Preview&gt; newPreviewParser(final String driveItemId) {
+<span class="fc" id="L95">        return new PreviewParser(driveItemId);</span>
+    }
+
+    public static GsonParser&lt;SpecialDriveItem&gt; newSpecialDriveItemParser(final SpecialFolder.Type specialFolderType) {
+<span class="fc" id="L99">        return new SpecialDriveItemParser(specialFolderType);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

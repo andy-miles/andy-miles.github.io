@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OMDb.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb</a> &gt; <span class="el_source">OMDb.java</span></div><h1>OMDb.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb;
+
+import com.amilesend.omdb.connection.Connection;
+import com.amilesend.omdb.model.QueryParameterBasedRequest;
+import com.amilesend.omdb.model.movie.GetMovieBasedRequest;
+import com.amilesend.omdb.model.movie.GetMovieByIdRequest;
+import com.amilesend.omdb.model.movie.GetMovieByTitleRequest;
+import com.amilesend.omdb.model.movie.SearchMovieRequest;
+import com.amilesend.omdb.model.movie.type.Movie;
+import com.amilesend.omdb.model.tv.GetEpisodeBasedRequest;
+import com.amilesend.omdb.model.tv.GetEpisodeByIdRequest;
+import com.amilesend.omdb.model.tv.GetEpisodeByTitleRequest;
+import com.amilesend.omdb.model.tv.GetSeasonBasedRequest;
+import com.amilesend.omdb.model.tv.GetSeasonByIdRequest;
+import com.amilesend.omdb.model.tv.GetSeasonByTitleRequest;
+import com.amilesend.omdb.model.tv.GetSeriesBasedRequest;
+import com.amilesend.omdb.model.tv.GetSeriesByIdRequest;
+import com.amilesend.omdb.model.tv.GetSeriesByTitleRequest;
+import com.amilesend.omdb.model.tv.SearchSeriesRequest;
+import com.amilesend.omdb.model.tv.type.Episode;
+import com.amilesend.omdb.model.tv.type.Season;
+import com.amilesend.omdb.model.tv.type.Series;
+import com.amilesend.omdb.model.type.SearchResponse;
+import com.amilesend.omdb.parse.parser.BasicParser;
+import lombok.NonNull;
+import okhttp3.HttpUrl;
+import okhttp3.Request;
+import org.apache.commons.lang3.Validate;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
+/** The Open Movie Database client. */
+public class OMDb {
+    /** The underlying connection. */
+    private final Connection connection;
+    /** The consumer-provided API key. */
+    private final String apiKey;
+
+    /**
+     * Creates a new {@code OMDb} with the provided API key.
+     *
+     * @param apiKey the API key
+     */
+    public OMDb(final String apiKey) {
+<span class="nc" id="L64">        this(apiKey, null);</span>
+<span class="nc" id="L65">    }</span>
+
+    /**
+     * Creates a new {@code OMDb} with the provided connection and API key.
+     *
+     * @param connection the underlying connection
+     * @param apiKey the API key
+     */
+<span class="fc" id="L73">    public OMDb(final String apiKey, final Connection connection) {</span>
+<span class="fc" id="L74">        Validate.notBlank(apiKey, &quot;apiKey must not be blank. You can obtain one via &quot; +</span>
+                &quot;https://www.omdbapi.com/apikey.aspx&quot;);
+
+<span class="fc" id="L77">        this.connection = Optional.ofNullable(connection).orElseGet(Connection::newDefaultInstance);</span>
+<span class="fc" id="L78">        this.apiKey = apiKey;</span>
+<span class="fc" id="L79">    }</span>
+
+    /////////////
+    // GET APIs
+    /////////////
+
+    /**
+     * Gets a movie for a request by either its title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the movie
+     * @see Movie
+     * @see GetMovieByIdRequest
+     * @see GetMovieByTitleRequest
+     */
+<span class="fc" id="L94">    public Movie getMovie(@NonNull final GetMovieBasedRequest request) {</span>
+<span class="fc" id="L95">        return getResource(request, Movie.class);</span>
+    }
+
+    /**
+     * Gets a TV series for a request by either its title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the series
+     * @see Series
+     * @see GetSeriesByIdRequest
+     * @see GetSeriesByTitleRequest
+     */
+<span class="fc" id="L107">    public Series getSeries(@NonNull final GetSeriesBasedRequest request) {</span>
+<span class="fc" id="L108">        return getResource(request, Series.class);</span>
+    }
+
+    /**
+     * Gets a TV season for a request by either its title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the season
+     * @see Season
+     * @see GetSeasonByIdRequest
+     * @see GetSeasonByTitleRequest
+     */
+<span class="fc" id="L120">    public Season getSeason(@NonNull final GetSeasonBasedRequest request) {</span>
+<span class="fc" id="L121">        return getResource(request, Season.class);</span>
+    }
+
+    /**
+     * Gets a TV episode for a request by either its series title or IMDB identifier.
+     *
+     * @param request the request
+     * @return the episode
+     * @see Episode
+     * @see GetEpisodeByIdRequest
+     * @see GetEpisodeByTitleRequest
+     */
+<span class="fc" id="L133">    public Episode getEpisode(@NonNull final GetEpisodeBasedRequest request) {</span>
+<span class="fc" id="L134">        return getResource(request, Episode.class);</span>
+    }
+
+    ////////////////
+    // Search APIs
+    ////////////////
+
+    /**
+     * Searches for movies.
+     *
+     * @param request the request
+     * @return the response containing the list of movies
+     */
+<span class="fc" id="L147">    public SearchResponse search(@NonNull final SearchMovieRequest request) {</span>
+<span class="fc" id="L148">        return getResource(request, SearchResponse.class);</span>
+    }
+
+    /**
+     * Searches for TV series.
+     *
+     * @param request the request
+     * @return the response containing the list of TV series.
+     */
+<span class="fc" id="L157">    public SearchResponse search(@NonNull final SearchSeriesRequest request) {</span>
+<span class="fc" id="L158">        return getResource(request, SearchResponse.class);</span>
+    }
+
+    private &lt;T&gt; T getResource(final QueryParameterBasedRequest request, final Class&lt;T&gt; returnType) {
+<span class="fc" id="L162">        final HttpUrl url = request.populateQueryParameters(newUrlBuilder()).build();</span>
+<span class="fc" id="L163">        final Request httpRequest = connection.newRequestBuilder().url(url).build();</span>
+
+<span class="fc" id="L165">        return connection.execute(httpRequest, new BasicParser&lt;&gt;(returnType));</span>
+    }
+
+    private HttpUrl.Builder newUrlBuilder() {
+<span class="fc" id="L169">        return HttpUrl.parse(connection.getBaseUrl())</span>
+<span class="fc" id="L170">                .newBuilder()</span>
+<span class="fc" id="L171">                .addQueryParameter(&quot;apikey&quot;, URLEncoder.encode(String.valueOf(apiKey), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L172">                .addQueryParameter(&quot;r&quot;, &quot;json&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CryptoHelperFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.crypto</a> &gt; <span class="el_source">CryptoHelperFactory.java</span></div><h1>CryptoHelperFactory.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.crypto;
+
+import lombok.Builder;
+import lombok.NonNull;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import java.security.NoSuchAlgorithmException;
+
+/**
+ * Factory used to vend a configured {@link CryptoHelper} instance.
+ * @see CryptoHelper
+ */
+@Builder
+public class CryptoHelperFactory {
+    private static final String ALIAS = &quot;onedrive-auth-crypto-key&quot;;
+    private static final String KEY_CIPHER_ALGORITHM = &quot;AES/CBC/PKCS5Padding&quot;;
+    private static final String KEY_ALGORITHM = &quot;AES&quot;;
+    private static final int KEY_SIZE = 128;
+
+    /** The key store helper used to store/retrieve keys. */
+    @NonNull
+    private final KeyStoreHelper keyStoreHelper;
+    /** The password for the keystore. */
+    @NonNull
+    private final char[] keyPassword;
+    /** The key alias that is stored in the keystore. */
+    @Builder.Default
+    @NonNull
+    private final String keyAlias = ALIAS;
+
+    /**
+     * Creates a new {@link CryptoHelper} instance.
+     *
+     * @return the crypto helper instance
+     * @throws CryptoHelperException if an error occurred while creating the instance
+     */
+    public CryptoHelper newInstance() throws CryptoHelperException {
+        try {
+<span class="fc" id="L57">            SecretKey cryptoKey = keyStoreHelper.getSecretKey(keyAlias, keyPassword);</span>
+            // Not using Optional#ofNullable() here so that exceptions are propagated
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (cryptoKey == null) {</span>
+<span class="fc" id="L60">                cryptoKey = generateNewCryptoKey();</span>
+<span class="fc" id="L61">                keyStoreHelper.saveSecretKey(keyAlias, cryptoKey, keyPassword);</span>
+            }
+
+<span class="fc" id="L64">            return new CryptoHelper(KEY_CIPHER_ALGORITHM, cryptoKey);</span>
+<span class="fc" id="L65">        } catch (final KeyStoreHelperException ex) {</span>
+<span class="fc" id="L66">            throw new CryptoHelperException(&quot;Unable to retrieve key from keystore: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L67">        } catch (final NoSuchAlgorithmException ex) {</span>
+<span class="fc" id="L68">            throw new CryptoHelperException(</span>
+<span class="fc" id="L69">                    &quot;Unable to generate a new crypto key (malformed algorithm): &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    private SecretKey generateNewCryptoKey() throws NoSuchAlgorithmException {
+<span class="fc" id="L74">        final KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM);</span>
+<span class="fc" id="L75">        keyGenerator.init(KEY_SIZE);</span>
+<span class="fc" id="L76">        return keyGenerator.generateKey();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

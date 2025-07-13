@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccountApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">AccountApi.java</span></div><h1>AccountApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.tmdb.client.model.acount.AddFavoriteRequest;
+import com.amilesend.tmdb.client.model.acount.AddFavoriteResponse;
+import com.amilesend.tmdb.client.model.acount.AddWatchlistRequest;
+import com.amilesend.tmdb.client.model.acount.AddWatchlistResponse;
+import com.amilesend.tmdb.client.model.acount.GetAccountDetailsForSessionRequest;
+import com.amilesend.tmdb.client.model.acount.GetAccountDetailsRequest;
+import com.amilesend.tmdb.client.model.acount.GetAccountDetailsResponse;
+import com.amilesend.tmdb.client.model.acount.GetFavoriteMoviesRequest;
+import com.amilesend.tmdb.client.model.acount.GetFavoriteMoviesResponse;
+import com.amilesend.tmdb.client.model.acount.GetFavoriteTvShowsRequest;
+import com.amilesend.tmdb.client.model.acount.GetFavoriteTvShowsResponse;
+import com.amilesend.tmdb.client.model.acount.GetListsRequest;
+import com.amilesend.tmdb.client.model.acount.GetListsResponse;
+import com.amilesend.tmdb.client.model.acount.GetRatedMoviesRequest;
+import com.amilesend.tmdb.client.model.acount.GetRatedMoviesResponse;
+import com.amilesend.tmdb.client.model.acount.GetRatedTvEpisodesRequest;
+import com.amilesend.tmdb.client.model.acount.GetRatedTvEpisodesResponse;
+import com.amilesend.tmdb.client.model.acount.GetRatedTvShowsRequest;
+import com.amilesend.tmdb.client.model.acount.GetRatedTvShowsResponse;
+import com.amilesend.tmdb.client.model.acount.GetWatchlistMoviesRequest;
+import com.amilesend.tmdb.client.model.acount.GetWatchlistMoviesResponse;
+import com.amilesend.tmdb.client.model.acount.GetWatchlistTvRequest;
+import com.amilesend.tmdb.client.model.acount.GetWatchlistTvResponse;
+import com.amilesend.tmdb.client.model.acount.type.AccountBasedRequest;
+import lombok.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * Defines APIs to access user account information.  Note: A valid session must be authenticated and obtained.  This
+ * can be done via the {@link com.amilesend.tmdb.client.connection.auth.SessionManager}.
+ *
+ * @see com.amilesend.tmdb.client.connection.auth.SessionManager
+ */
+public class AccountApi extends ApiBase {
+    private static final String API_PATH = &quot;/account&quot;;
+
+    /**
+     * Creates a new {@code AccountApi} object.
+     *
+     * @param connection the underlying client connection
+     */
+    public AccountApi(final Connection connection) {
+<span class="fc" id="L63">        super(connection);</span>
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Gets the account information.
+     *
+     * @param request the request
+     * @return the account details
+     * @see GetAccountDetailsRequest
+     * @see GetAccountDetailsResponse
+     */
+<span class="fc" id="L74">    public GetAccountDetailsResponse getAccountDetails(@NonNull final GetAccountDetailsRequest request) {</span>
+<span class="fc" id="L75">        return executeGetForAccount(StringUtils.EMPTY, request, GetAccountDetailsResponse.class);</span>
+    }
+
+    /**
+     * Gets the account information associated with a session.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetAccountDetailsForSessionRequest
+     * @see GetAccountDetailsResponse
+     */
+    public GetAccountDetailsResponse getAccountDetailsForSession(
+<span class="fc" id="L87">            @NonNull final GetAccountDetailsForSessionRequest request) {</span>
+<span class="fc" id="L88">        return executeGet(API_PATH, request, GetAccountDetailsResponse.class);</span>
+    }
+
+    /**
+     * Adds or removes a movie/TV show from an account's favorite list.
+     *
+     * @param request the request specifying the movie or tv show
+     * @return the response indicating the status of the request
+     * @see AddFavoriteRequest
+     * @see AddFavoriteResponse
+     */
+<span class="fc" id="L99">    public AddFavoriteResponse addFavorite(@NonNull final AddFavoriteRequest request) {</span>
+<span class="fc" id="L100">        return executePostForAccount(&quot;/favorite&quot;, request, AddFavoriteResponse.class);</span>
+    }
+
+    /**
+     * Adds or removes a movie/TV show from an account's watch list.
+     *
+     * @param request the request specifying the move or tv show
+     * @return the response indicating the status of the request
+     * @see AddWatchlistRequest
+     * @see AddWatchlistResponse
+     */
+<span class="fc" id="L111">    public AddWatchlistResponse addWatchlist(@NonNull final AddWatchlistRequest request) {</span>
+<span class="fc" id="L112">        return executePostForAccount(&quot;/watchlist&quot;, request, AddWatchlistResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of favorite movies for an account.
+     *
+     * @param request the request
+     * @return the list of movies
+     * @see GetFavoriteMoviesRequest
+     * @see GetFavoriteMoviesResponse
+     */
+<span class="fc" id="L123">    public GetFavoriteMoviesResponse getFavoriteMovies(@NonNull final GetFavoriteMoviesRequest request) {</span>
+<span class="fc" id="L124">        return executeGetForAccount(&quot;/favorite/movies&quot;, request, GetFavoriteMoviesResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of favorite TV shows for an account.
+     *
+     * @param request the request
+     * @return the list of favorite TV shows
+     * @see GetFavoriteTvShowsRequest
+     * @see GetFavoriteTvShowsResponse
+     */
+<span class="fc" id="L135">    public GetFavoriteTvShowsResponse getFavoriteTvShows(@NonNull final GetFavoriteTvShowsRequest request) {</span>
+<span class="fc" id="L136">        return executeGetForAccount(&quot;/favorite/tv&quot;, request, GetFavoriteTvShowsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of a user's configured lists.
+     *
+     * @param request the request
+     * @return the user's lists
+     * @see GetListsRequest
+     * @see GetListsResponse
+     */
+<span class="fc" id="L147">    public GetListsResponse getLists(@NonNull final GetListsRequest request) {</span>
+<span class="fc" id="L148">        return executeGetForAccount(&quot;/lists&quot;, request, GetListsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of movies that a user rated.
+     *
+     * @param request the request
+     * @return the list of rated movies
+     * @see GetRatedMoviesRequest
+     * @see GetRatedMoviesResponse
+     */
+<span class="fc" id="L159">    public GetRatedMoviesResponse getRatedMovies(@NonNull final GetRatedMoviesRequest request) {</span>
+<span class="fc" id="L160">        return executeGetForAccount(&quot;/rated/movies&quot;, request, GetRatedMoviesResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV shows that a user rated.
+     *
+     * @param request the request
+     * @return the list of rated TV shows
+     * @see GetRatedTvShowsRequest
+     * @see GetRatedTvShowsResponse
+     */
+<span class="fc" id="L171">    public GetRatedTvShowsResponse getRatedTvShows(@NonNull final GetRatedTvShowsRequest request) {</span>
+<span class="fc" id="L172">        return executeGetForAccount(&quot;/rated/tv&quot;, request, GetRatedTvShowsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV show episodes that a user rated.
+     *
+     * @param request the request
+     * @return the list of TV show episodes
+     * @see GetRatedTvEpisodesRequest
+     * @see GetRatedTvEpisodesResponse
+     */
+<span class="fc" id="L183">    public GetRatedTvEpisodesResponse getRatedTvEpisodes(@NonNull final GetRatedTvEpisodesRequest request) {</span>
+<span class="fc" id="L184">        return executeGetForAccount(&quot;/rated/tv/episodes&quot;, request, GetRatedTvEpisodesResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of movies on a user's watchlist.
+     *
+     * @param request the request
+     * @return the list of movies
+     * @see GetWatchlistMoviesRequest
+     * @see GetWatchlistMoviesResponse
+     */
+<span class="fc" id="L195">    public GetWatchlistMoviesResponse getWatchlistMovies(@NonNull final GetWatchlistMoviesRequest request) {</span>
+<span class="fc" id="L196">        return executeGetForAccount(&quot;/watchlist/movies&quot;, request, GetWatchlistMoviesResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of TV shows on a user's watchlist.
+     *
+     * @param request the request
+     * @return the list of TV shows
+     * @see GetWatchlistTvRequest
+     * @see GetWatchlistTvResponse
+     */
+<span class="fc" id="L207">    public GetWatchlistTvResponse getWatchlistTvShows(@NonNull final GetWatchlistTvRequest request) {</span>
+<span class="fc" id="L208">        return executeGetForAccount(&quot;/watchlist/tv&quot;, request, GetWatchlistTvResponse.class);</span>
+    }
+
+    private &lt;T&gt; T executeGetForAccount(
+            final String apiSubPath,
+            final AccountBasedRequest request,
+            final Class&lt;T&gt; responseType) {
+<span class="fc" id="L215">        final String fullApiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L216">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L217">                .append(request.getAccountId())</span>
+<span class="fc" id="L218">                .append(apiSubPath)</span>
+<span class="fc" id="L219">                .toString();</span>
+<span class="fc" id="L220">        return executeGet(fullApiPath, request, responseType);</span>
+    }
+
+    private &lt;T&gt; T executePostForAccount(
+            final String apiSubPath,
+            final AccountBasedRequest request,
+            final Class&lt;T&gt; responseType) {
+<span class="fc" id="L227">        final String fullApiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L228">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L229">                .append(request.getAccountId())</span>
+<span class="fc" id="L230">                .append(apiSubPath)</span>
+<span class="fc" id="L231">                .toString();</span>
+<span class="fc" id="L232">        return executePost(fullApiPath, request, responseType);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

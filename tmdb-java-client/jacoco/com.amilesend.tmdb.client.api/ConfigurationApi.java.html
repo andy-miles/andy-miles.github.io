@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConfigurationApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.api</a> &gt; <span class="el_source">ConfigurationApi.java</span></div><h1>ConfigurationApi.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.api;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.parse.parser.ListParser;
+import com.amilesend.tmdb.client.model.configuration.GetConfigurationDetailsResponse;
+import com.amilesend.tmdb.client.model.configuration.GetCountriesResponse;
+import com.amilesend.tmdb.client.model.configuration.GetJobsResponse;
+import com.amilesend.tmdb.client.model.configuration.GetLanguagesResponse;
+import com.amilesend.tmdb.client.model.configuration.GetPrimaryTranslationsResponse;
+import com.amilesend.tmdb.client.model.configuration.GetTimezonesResponse;
+import com.amilesend.tmdb.client.model.configuration.type.ConfigurationCountry;
+import com.amilesend.tmdb.client.model.configuration.type.ConfigurationLanguage;
+import com.amilesend.tmdb.client.model.configuration.type.ConfigurationTimezone;
+import com.amilesend.tmdb.client.model.configuration.type.Job;
+import com.amilesend.tmdb.client.parse.GsonFactory;
+import okhttp3.Request;
+
+import java.util.List;
+
+/** TMDB Configuration API. */
+public class ConfigurationApi extends ApiBase {
+    private static final String API_PATH = &quot;/configuration&quot;;
+
+    /**
+     * Creates a new {@code ConfigurationApi} object.
+     *
+     * @param connection the connection
+     */
+    public ConfigurationApi(final Connection connection) {
+<span class="fc" id="L47">        super(connection);</span>
+<span class="fc" id="L48">    }</span>
+
+    /**
+     * Gets the configuration details that provides context for API integration.
+     *
+     * @return the configuration details
+     * @see GetConfigurationDetailsResponse
+     */
+    public GetConfigurationDetailsResponse getConfigurationDetails() {
+<span class="fc" id="L57">        return executeGet(API_PATH, GetConfigurationDetailsResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of support countries.
+     *
+     * @return the list of countries
+     * @see GetCountriesResponse
+     */
+    public GetCountriesResponse getCountries() {
+<span class="fc" id="L67">        final String apiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L68">                .append(&quot;/countries&quot;)</span>
+<span class="fc" id="L69">                .toString();</span>
+<span class="fc" id="L70">        return new GetCountriesResponse(executeGetForList(apiPath, ConfigurationCountry.class));</span>
+    }
+
+    /**
+     * Gets the list of available jobs.
+     *
+     * @return the list of jobs
+     * @see GetJobsResponse
+     */
+    public GetJobsResponse getJobs() {
+<span class="fc" id="L80">        final String apiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L81">                .append(&quot;/jobs&quot;)</span>
+<span class="fc" id="L82">                .toString();</span>
+<span class="fc" id="L83">        return new GetJobsResponse(executeGetForList(apiPath, Job.class));</span>
+    }
+
+    /**
+     * Gets the list of supported languages.
+     *
+     * @return the list of languages
+     * @see GetLanguagesResponse
+     * @see ConfigurationLanguage
+     */
+    public GetLanguagesResponse getLanguages() {
+<span class="fc" id="L94">        final String apiPath =  new StringBuilder(API_PATH)</span>
+<span class="fc" id="L95">                .append(&quot;/languages&quot;)</span>
+<span class="fc" id="L96">                .toString();</span>
+<span class="fc" id="L97">        return new GetLanguagesResponse(executeGetForList(apiPath, ConfigurationLanguage.class));</span>
+    }
+
+    /**
+     * Gets the list of supported translations.
+     *
+     * @return the list of translations (as locales, e.g., &quot;en-US&quot;)
+     * @see GetPrimaryTranslationsResponse
+     */
+    public GetPrimaryTranslationsResponse getPrimaryTranslations() {
+<span class="fc" id="L107">        final String apiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L108">                .append(&quot;/primary_translations&quot;)</span>
+<span class="fc" id="L109">                .toString();</span>
+<span class="fc" id="L110">        return new GetPrimaryTranslationsResponse(executeGetForList(apiPath, String.class));</span>
+    }
+
+    /**
+     * Gets the list of supported timezones.
+     *
+     * @return the list of timezones
+     * @see ConfigurationTimezone
+     */
+    public GetTimezonesResponse getTimezones() {
+<span class="fc" id="L120">        final String apiPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L121">                .append(&quot;/timezones&quot;)</span>
+<span class="fc" id="L122">                .toString();</span>
+<span class="fc" id="L123">        return new GetTimezonesResponse(executeGetForList(apiPath, ConfigurationTimezone.class));</span>
+    }
+
+    private &lt;T&gt; List&lt;T&gt; executeGetForList(final String apiPath, final Class&lt;T&gt; responseType) {
+<span class="fc" id="L127">        final Connection&lt;GsonFactory&gt; connection = getConnection();</span>
+<span class="fc" id="L128">        final String url = new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L129">                .append(apiPath)</span>
+<span class="fc" id="L130">                .toString();</span>
+<span class="fc" id="L131">        final Request request = connection.newRequestBuilder().url(url).build();</span>
+<span class="fc" id="L132">        return connection.execute(request, new ListParser&lt;&gt;(responseType));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

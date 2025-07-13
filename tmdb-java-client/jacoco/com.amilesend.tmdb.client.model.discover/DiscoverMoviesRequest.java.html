@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiscoverMoviesRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.model.discover</a> &gt; <span class="el_source">DiscoverMoviesRequest.java</span></div><h1>DiscoverMoviesRequest.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.model.discover;
+
+import com.amilesend.tmdb.client.model.QueryParameter;
+import com.amilesend.tmdb.client.model.QueryParameterBasedRequest;
+import com.amilesend.tmdb.client.model.discover.filter.RegionFilter;
+import com.amilesend.tmdb.client.model.discover.type.DiscoverRequestBase;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+import okhttp3.HttpUrl;
+
+import java.time.LocalDate;
+import java.util.Objects;
+
+import static com.amilesend.tmdb.client.model.QueryParameterBasedRequest.appendIfNotBlank;
+import static com.amilesend.tmdb.client.model.QueryParameterBasedRequest.appendIfNotNull;
+
+/**
+ * The request to filter and discover movies.
+ *
+ * @see DiscoverRequestBase
+ * @see QueryParameterBasedRequest
+ */
+@SuperBuilder
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
+public class DiscoverMoviesRequest extends DiscoverRequestBase {
+    /** Defines the region and associated certification filters. */
+    @QueryParameter
+    private final RegionFilter regionFilter;
+    /** Filter on video content. */
+    @QueryParameter
+    private final Boolean includeVideo;
+    /** Filter on the primary release year. */
+    @QueryParameter
+    private final Integer primaryReleaseYear;
+    /** Filter by the content primary release date comparison {@code (&gt;=)}. */
+    @QueryParameter
+    private final LocalDate primaryReleaseDateGte;
+    /** Filter by the content primary release date comparison {@code (&lt;=)}. */
+    @QueryParameter
+    private final LocalDate primaryReleaseDateLte;
+    /** Filter by the release date comparison {@code (&gt;=)}. */
+    @QueryParameter
+    private final LocalDate releaseDateGte;
+    /** Filter by the release date comparison {@code (&lt;=)}. */
+    @QueryParameter
+    private final LocalDate releaseDateLte;
+    /** Filter on a delimited list of cast members. */
+    @QueryParameter
+    private final String withCast;
+    /** Filter on a delimited list of crew members. */
+    @QueryParameter
+    private final String withCrew;
+    /** Filter on a delimited list of people. */
+    @QueryParameter
+    private final String withPeople;
+    /** Filter on release type. */
+    @QueryParameter
+    private final String withReleaseType;
+    /** Filter on year. */
+    @QueryParameter
+    private final Integer year;
+
+    @Override
+<span class="fc" id="L86">    public HttpUrl.Builder populateQueryParameters(@NonNull HttpUrl.Builder urlBuilder) {</span>
+<span class="fc" id="L87">        urlBuilder = super.populateQueryParameters(urlBuilder);</span>
+
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (Objects.nonNull(regionFilter)) {</span>
+<span class="fc" id="L90">            urlBuilder = regionFilter.populateQueryParameters(urlBuilder);</span>
+        }
+
+<span class="fc" id="L93">        appendIfNotNull(urlBuilder, &quot;include_video&quot;, includeVideo);</span>
+<span class="fc" id="L94">        appendIfNotNull(urlBuilder, &quot;primary_release_year&quot;, primaryReleaseYear);</span>
+<span class="fc" id="L95">        appendIfNotNull(urlBuilder, &quot;primary_release_date.gte&quot;, primaryReleaseDateGte);</span>
+<span class="fc" id="L96">        appendIfNotNull(urlBuilder, &quot;primary_release_date.lte&quot;, primaryReleaseDateLte);</span>
+<span class="fc" id="L97">        appendIfNotNull(urlBuilder, &quot;release_date.gte&quot;, releaseDateGte);</span>
+<span class="fc" id="L98">        appendIfNotNull(urlBuilder, &quot;release_date.lte&quot;, releaseDateLte);</span>
+<span class="fc" id="L99">        appendIfNotBlank(urlBuilder, &quot;with_cast&quot;, withCast);</span>
+<span class="fc" id="L100">        appendIfNotBlank(urlBuilder, &quot;with_crew&quot;, withCrew);</span>
+<span class="fc" id="L101">        appendIfNotBlank(urlBuilder, &quot;with_people&quot;, withPeople);</span>
+<span class="fc" id="L102">        appendIfNotBlank(urlBuilder, &quot;with_release_type&quot;, withReleaseType);</span>
+<span class="fc" id="L103">        appendIfNotNull(urlBuilder, &quot;year&quot;, year);</span>
+
+<span class="fc" id="L105">        return urlBuilder;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

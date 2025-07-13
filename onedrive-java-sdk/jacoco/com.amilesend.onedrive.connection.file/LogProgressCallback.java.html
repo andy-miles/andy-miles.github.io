@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LogProgressCallback.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.connection.file</a> &gt; <span class="el_source">LogProgressCallback.java</span></div><h1>LogProgressCallback.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.connection.file;
+
+import com.google.common.annotations.VisibleForTesting;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
+/**
+ * A log-based implementation of {@link TransferProgressCallback} that logs transfer progress.
+ * @see TransferProgressCallback
+ */
+public class LogProgressCallback implements TransferProgressCallback {
+<span class="fc" id="L42">    private static final Duration DEFAULT_UPDATE_FREQUENCY = Duration.ofMillis(100L);</span>
+
+    /**
+     * The Transfer type. Default is {@link TransferType#UNDEFINED}.
+     * @see TransferType
+     */
+    private final TransferType transferType;
+    /** The logging level to record progress updates. Default is {@link Level#INFO} */
+    private final Level loggingLevel;
+    /** Duration between logging updates. */
+    private final Duration updateFrequency;
+    /** The logger instance. */
+    private final Logger log;
+    /** Prefix to include in every logging statement. */
+    private final String prefix;
+    /** Used to chain multiple callbacks. */
+    private final Optional&lt;TransferProgressCallback&gt; chainedCallback;
+    // Used to limit unnecessarily entries to the log.
+<span class="fc" id="L60">    @VisibleForTesting</span>
+    @Getter(AccessLevel.PACKAGE)
+    private final AtomicInteger lastUpdateProgressValue = new AtomicInteger();
+<span class="fc" id="L63">    @VisibleForTesting</span>
+    @Getter(AccessLevel.PACKAGE)
+<span class="fc" id="L65">    private final AtomicReference&lt;Instant&gt; lastUpdateTimestamp = new AtomicReference&lt;&gt;(Instant.now());</span>
+
+    @Builder
+    private LogProgressCallback(
+            final TransferType transferType,
+            final Level loggingLevel,
+            final Duration updateFrequency,
+            final String prefix,
+<span class="fc" id="L73">            final TransferProgressCallback chainedCallback) {</span>
+<span class="fc" id="L74">        log = LoggerFactory.getLogger(LogProgressCallback.class);</span>
+<span class="fc" id="L75">        this.transferType = Optional.ofNullable(transferType).orElse(TransferType.UNDEFINED);</span>
+<span class="fc" id="L76">        this.loggingLevel = Optional.ofNullable(loggingLevel).orElse(Level.INFO);</span>
+<span class="fc" id="L77">        this.updateFrequency = Optional.ofNullable(updateFrequency).orElse(DEFAULT_UPDATE_FREQUENCY);</span>
+<span class="fc" id="L78">        this.prefix = Optional.ofNullable(prefix).orElse(StringUtils.EMPTY);</span>
+<span class="fc" id="L79">        this.chainedCallback = Optional.ofNullable(chainedCallback);</span>
+<span class="fc" id="L80">    }</span>
+
+    /**
+     * Helper method to format the logging prefix to use.
+     *
+     * @param source the source
+     * @param destination the destination
+     * @return the logging prefix
+     */
+    public static String formatPrefix(final String source, final String destination) {
+<span class="fc" id="L90">        Validate.notBlank(source, &quot;source must not be blank&quot;);</span>
+<span class="fc" id="L91">        Validate.notBlank(destination, &quot;destination must not be blank&quot;);</span>
+
+<span class="fc" id="L93">        return new StringBuilder(&quot;[&quot;)</span>
+<span class="fc" id="L94">                .append(source)</span>
+<span class="fc" id="L95">                .append(&quot; -&gt; &quot;)</span>
+<span class="fc" id="L96">                .append(destination)</span>
+<span class="fc" id="L97">                .append(&quot;] &quot;)</span>
+<span class="fc" id="L98">                .toString();</span>
+    }
+
+    @Override
+    public void onUpdate(final long currentBytes, final long totalBytes) {
+        try {
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if (Duration.between(lastUpdateTimestamp.get(), Instant.now()).compareTo(updateFrequency) &lt; 0) {</span>
+<span class="fc" id="L105">                return;</span>
+            }
+
+<span class="fc" id="L108">            final int currentProgressPercent = (int) Math.floor(((double) currentBytes / (double) totalBytes) * 100D);</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">            if (currentProgressPercent == lastUpdateProgressValue.get()) {</span>
+<span class="fc" id="L110">                return;</span>
+            }
+
+<span class="fc" id="L113">            log.atLevel(loggingLevel)</span>
+<span class="fc" id="L114">                    .log(&quot;{}{} Status: {}% ({} of {} bytes)&quot;,</span>
+                            prefix,
+<span class="fc" id="L116">                            transferType.getLogPrefix(),</span>
+<span class="fc" id="L117">                            currentProgressPercent,</span>
+<span class="fc" id="L118">                            currentBytes,</span>
+<span class="fc" id="L119">                            totalBytes);</span>
+<span class="fc" id="L120">            lastUpdateTimestamp.set(Instant.now());</span>
+<span class="fc" id="L121">            lastUpdateProgressValue.set(currentProgressPercent);</span>
+        } finally {
+<span class="fc" id="L123">            chainedCallback.ifPresent(c -&gt; c.onUpdate(currentBytes, totalBytes));</span>
+        }
+<span class="fc" id="L125">    }</span>
+
+    @Override
+    public void onFailure(final Throwable cause) {
+        try {
+<span class="fc" id="L130">            log.error(&quot;{}An error occurred during {}: {}&quot;, prefix, transferType.getLogPrefix(), cause.getMessage(), cause);</span>
+        } finally {
+<span class="fc" id="L132">            chainedCallback.ifPresent(c -&gt; c.onFailure(cause));</span>
+        }
+<span class="fc" id="L134">    }</span>
+
+    @Override
+    public void onComplete(final long bytesTransferred) {
+        try {
+<span class="fc" id="L139">            log.atLevel(loggingLevel).log(</span>
+                    &quot;{}{} complete with {} bytes transferred&quot;,
+                    prefix,
+<span class="fc" id="L142">                    transferType.getLogPrefix(),</span>
+<span class="fc" id="L143">                    bytesTransferred);</span>
+        } finally {
+<span class="fc" id="L145">            chainedCallback.ifPresent(c -&gt; c.onComplete(bytesTransferred));</span>
+        }
+<span class="fc" id="L147">    }</span>
+
+    /** Describes that transfer type used for logging progress. */
+<span class="fc" id="L150">    @RequiredArgsConstructor</span>
+    public enum TransferType {
+        /** Indicates that the transfer is for a file upload. */
+<span class="fc" id="L153">        UPLOAD(&quot;Upload&quot;),</span>
+        /** Indicates that the transfer is for a file download.  */
+<span class="fc" id="L155">        DOWNLOAD(&quot;Download&quot;),</span>
+        /** Used when the type is not defined and defaults to a generic &quot;Transfer&quot;.*/
+<span class="fc" id="L157">        UNDEFINED(&quot;Transfer&quot;);</span>
+
+        /** The type formatted for log records. */
+        @Getter
+        private final String logPrefix;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,8 @@
+com.amilesend.client.connection
+com.amilesend.client.connection.auth
+com.amilesend.client.connection.file
+com.amilesend.client.connection.http
+com.amilesend.client.crypto
+com.amilesend.client.parse
+com.amilesend.client.parse.parser
+com.amilesend.client.parse.strategy

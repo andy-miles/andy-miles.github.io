@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PersonSearchResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tmdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tmdb.client.model.search.type</a> &gt; <span class="el_source">PersonSearchResult.java</span></div><h1>PersonSearchResult.java</h1><pre class="source lang-java linenums">/*
+ * tmdb-java-client - A client to access the TMDB API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tmdb.client.model.search.type;
+
+import com.amilesend.tmdb.client.model.type.Person;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * Defines a person search result.
+ *
+ * @see Person
+ * @see SearchResult
+ */
+@SuperBuilder
+@Getter
+@ToString(callSuper = true)
+public class PersonSearchResult extends Person implements SearchResult {
+    /**
+     * The list of credits that the person is known for.
+     *
+     * @see PersonCredit
+     * @see MovieCastCredit
+     * @see TvCastCredit
+     */
+    private final List&lt;PersonCredit&gt; knowFor;
+    /** The media type for the movie. */
+    private final MediaType mediaType;
+
+    /**
+     * Helper method to return the list of TV cast credits for a person.
+     *
+     * @return the list of TV cast credits
+     */
+    public List&lt;TvCastCredit&gt; getKnownForTv() {
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        if (knowFor == null) {</span>
+<span class="nc" id="L57">            return Collections.emptyList();</span>
+        }
+
+<span class="nc" id="L60">        return knowFor.stream()</span>
+<span class="nc" id="L61">                .filter(c -&gt; TvCastCredit.class.isInstance(c))</span>
+<span class="nc" id="L62">                .map(c -&gt; TvCastCredit.class.cast(c))</span>
+<span class="nc" id="L63">                .collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Helper method to return the list of movie cast credits for a person.
+     *
+     * @return the list of movie cast credits
+     */
+    public List&lt;MovieCastCredit&gt; getKnownForMovies() {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (knowFor == null) {</span>
+<span class="nc" id="L73">            return Collections.emptyList();</span>
+        }
+
+<span class="nc" id="L76">        return knowFor.stream()</span>
+<span class="nc" id="L77">                .filter(c -&gt; MovieCastCredit.class.isInstance(c))</span>
+<span class="nc" id="L78">                .map(c -&gt; MovieCastCredit.class.cast(c))</span>
+<span class="nc" id="L79">                .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DriveItemVersionListParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.parse.resource.parser</a> &gt; <span class="el_source">DriveItemVersionListParser.java</span></div><h1>DriveItemVersionListParser.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.parse.resource.parser;
+
+import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.onedrive.resource.item.DriveItemVersion;
+import com.google.gson.Gson;
+import lombok.AccessLevel;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * Parses a response body that contains a list of {@link DriveItemVersion}s.
+ * &lt;p&gt;
+ * Example response body:
+ * &lt;pre&gt;
+ * {
+ *   &quot;value&quot;:
+ *   [
+ *     {
+ *       &quot;id&quot;: &quot;3.0&quot;,
+ *       &quot;lastModifiedBy&quot;: {
+ *         &quot;user&quot;: {
+ *           &quot;id&quot;: &quot;CE251278-EF9E-4FE5-833C-1D89EEAE68E0&quot;,
+ *           &quot;displayName&quot;: &quot;Ryan Gregg&quot;
+ *         }
+ *       },
+ *       &quot;lastModifiedDateTime&quot;: &quot;2017-09-14T12:34:53.912Z&quot;,
+ *       &quot;size&quot;: 123
+ *     },
+ *     {
+ *       &quot;id&quot;: &quot;2.0&quot;,
+ *       &quot;lastModifiedBy&quot;: {
+ *         &quot;user&quot;: {
+ *           &quot;id&quot;: &quot;CE251278-EF9E-4FE5-833C-1D89EEAE68E0&quot;,
+ *           &quot;displayName&quot;: &quot;Ryan Gregg&quot;
+ *         }
+ *       },
+ *       &quot;lastModifiedDateTime&quot;: &quot;2017-09-11T10:21:03.000Z&quot;,
+ *       &quot;size&quot;: 62
+ *     },
+ *     {
+ *       &quot;id&quot;: &quot;1.0&quot;,
+ *       &quot;lastModifiedBy&quot;: {
+ *         &quot;user&quot;: {
+ *           &quot;id&quot;: &quot;CE251278-EF9E-4FE5-833C-1D89EEAE68E0&quot;,
+ *           &quot;displayName&quot;: &quot;Ryan Gregg&quot;
+ *         }
+ *       },
+ *       &quot;lastModifiedDateTime&quot;: &quot;2017-09-10T15:20:01.125Z&quot;,
+ *       &quot;size&quot;: 16
+ *     }
+ *   ]
+ * }
+ * &lt;/pre&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/driveitem_list_versions&quot;&gt;
+ * API Documentation&lt;/a&gt;
+ * @see DriveItemVersion
+ */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public class DriveItemVersionListParser implements GsonParser&lt;List&lt;DriveItemVersion&gt;&gt; {
+<span class="fc" id="L82">    private static final ListResponseBodyParser&lt;DriveItemVersion&gt; RESPONSE_BODY_PARSER =</span>
+            new ListResponseBodyParser&lt;&gt;(DriveItemVersion.class);
+
+    /** The drive item identifier associated with the version to parse. */
+    private final String driveItemId;
+    /** The drive item name associated with the version to parse. */
+    private final String name;
+
+    @Override
+<span class="fc bfc" id="L91" title="All 4 branches covered.">    public List&lt;DriveItemVersion&gt; parse(@NonNull final Gson gson, @NonNull final InputStream jsonStream) {</span>
+<span class="fc" id="L92">        return RESPONSE_BODY_PARSER.parse(gson, jsonStream)</span>
+<span class="fc" id="L93">                .stream()</span>
+<span class="fc" id="L94">                .filter(Objects::nonNull)</span>
+<span class="fc" id="L95">                .map(div -&gt; {</span>
+                    // Copy and inject the associated drive item id and name
+<span class="fc" id="L97">                    return DriveItemVersion.builder()</span>
+<span class="fc" id="L98">                            .connection(div.getConnection())</span>
+<span class="fc" id="L99">                            .driveItemId(driveItemId)</span>
+<span class="fc" id="L100">                            .id(div.getId())</span>
+<span class="fc" id="L101">                            .lastModifiedBy(div.getLastModifiedBy())</span>
+<span class="fc" id="L102">                            .lastModifiedDateTime(div.getLastModifiedDateTime())</span>
+<span class="fc" id="L103">                            .name(name)</span>
+<span class="fc" id="L104">                            .publication(div.getPublication())</span>
+<span class="fc" id="L105">                            .size(div.getSize())</span>
+<span class="fc" id="L106">                            .build();</span>
+                })
+<span class="fc" id="L108">                .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

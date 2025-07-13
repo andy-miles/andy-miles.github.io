@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GsonFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">omdb-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.omdb.parse</a> &gt; <span class="el_source">GsonFactory.java</span></div><h1>GsonFactory.java</h1><pre class="source lang-java linenums">/*
+ * omdb-java-client - A client to access the OMDB API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.omdb.parse;
+
+import com.amilesend.omdb.connection.Connection;
+import com.amilesend.omdb.model.type.MediaType;
+import com.amilesend.omdb.parse.adapters.LocalDateTypeAdapter;
+import com.amilesend.omdb.parse.adapters.MediaTypeTypeAdapter;
+import com.amilesend.omdb.parse.adapters.StringTypeAdaptor;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import io.gsonfire.GsonFireBuilder;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+
+/** Factory that vends new pre-configured {@link Gson} instances. */
+@NoArgsConstructor(access = AccessLevel.PACKAGE)
+public class GsonFactory {
+<span class="fc" id="L37">    private static final GsonFactory INSTANCE = new GsonFactory();</span>
+
+    /**
+     * Gets the singleton {@code GsonFactory} instance.
+     *
+     * @return the factory instance
+     */
+    public static GsonFactory getInstance() {
+<span class="fc" id="L45">        return INSTANCE;</span>
+    }
+
+    /**
+     * Gets a new {@link Gson} instance that is configured for use by {@link Connection}.
+     *
+     * @return the pre-configured Gson instance
+     */
+    public Gson newInstanceForConnection() {
+<span class="fc" id="L54">        return newGsonBuilder().create();</span>
+    }
+
+    /**
+     * Gets a new {@link Gson} instance that is configured for use by {@link Connection} that provides pretty-printed
+     * formatted JSON (i.e., useful for testing and/or debugging).
+     *
+     * @return the pre-configured Gson instance
+     */
+    public Gson newInstanceForPrettyPrinting() {
+<span class="nc" id="L64">        return newGsonBuilder()</span>
+<span class="nc" id="L65">                .setPrettyPrinting()</span>
+<span class="nc" id="L66">                .create();</span>
+    }
+
+    private GsonBuilder newGsonBuilder() {
+<span class="fc" id="L70">        return new GsonFireBuilder()</span>
+<span class="fc" id="L71">                .createGsonBuilder()</span>
+<span class="fc" id="L72">                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)</span>
+<span class="fc" id="L73">                .registerTypeAdapter(String.class, new StringTypeAdaptor())</span>
+<span class="fc" id="L74">                .registerTypeAdapter(LocalDate.class, new LocalDateTypeAdapter())</span>
+<span class="fc" id="L75">                .registerTypeAdapter(MediaType.class, new MediaTypeTypeAdapter());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

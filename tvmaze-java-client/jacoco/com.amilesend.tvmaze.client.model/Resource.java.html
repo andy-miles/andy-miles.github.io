@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Resource.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client.model</a> &gt; <span class="el_source">Resource.java</span></div><h1>Resource.java</h1><pre class="source lang-java linenums">/*
+ * tvmaze-java-client - A client to access the TVMaze API
+ * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.tvmaze.client.model;
+
+import com.google.gson.annotations.SerializedName;
+import lombok.Getter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
+
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * Base class for a resource that can be uniquely identified.
+ *
+ * @param &lt;T&gt; the resource type
+ * @param &lt;L&gt; the link value type
+ */
+@SuperBuilder
+@Getter
+@ToString
+public abstract class Resource&lt;T extends Resource, L&gt; {
+    /** The resource link type that references this resource. */
+    public static final String SELF_RESOURCE_LINK_TYPE = &quot;self&quot;;
+
+    /** The resource identifier. */
+    private final int id;
+
+    /** The links associated with the resource. */
+    @SerializedName(&quot;_links&quot;)
+    private final Map&lt;String, L&gt; links;
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L51">            return true;</span>
+        }
+
+<span class="pc bpc" id="L54" title="2 of 4 branches missed.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="nc" id="L55">            return false;</span>
+        }
+
+<span class="fc" id="L58">        final T that = (T) obj;</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">        return id == that.getId();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L64">        return Objects.hash(id);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

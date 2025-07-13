@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListItemVersionListParser.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">onedrive-java-sdk</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.onedrive.parse.resource.parser</a> &gt; <span class="el_source">ListItemVersionListParser.java</span></div><h1>ListItemVersionListParser.java</h1><pre class="source lang-java linenums">/*
+ * onedrive-java-sdk - A Java SDK to access OneDrive drives and files.
+ * Copyright © 2023-2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.onedrive.parse.resource.parser;
+
+import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.onedrive.resource.site.ListItemVersion;
+import com.google.gson.Gson;
+import lombok.AccessLevel;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+import java.io.InputStream;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+/**
+ * Parses a response body that contains a list of {@link ListItemVersion}s.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://learn.microsoft.com/en-us/onedrive/developer/rest-api/api/listitem_list_versions&quot;&gt;
+ * API Documentation&lt;/a&gt;
+ * @see ListItemVersion
+ */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public class ListItemVersionListParser implements GsonParser&lt;List&lt;ListItemVersion&gt;&gt; {
+<span class="fc" id="L41">    private static final ListResponseBodyParser&lt;ListItemVersion&gt; RESPONSE_BODY_PARSER =</span>
+            new ListResponseBodyParser&lt;&gt;(ListItemVersion.class);
+
+    /** The associated site identifier. */
+    private final String siteId;
+    /** The associated list identifier. */
+    private final String listId;
+    /** The associated list item identifier. */
+    private final String listItemId;
+
+    @Override
+<span class="fc bfc" id="L52" title="All 4 branches covered.">    public List&lt;ListItemVersion&gt; parse(@NonNull final Gson gson, @NonNull final InputStream jsonStream) {</span>
+<span class="fc" id="L53">        return RESPONSE_BODY_PARSER.parse(gson, jsonStream)</span>
+<span class="fc" id="L54">                .stream()</span>
+<span class="fc" id="L55">                .filter(Objects::nonNull)</span>
+<span class="fc" id="L56">                .map(liv -&gt; {</span>
+                    // Copy and inject the associated identifiers
+<span class="fc" id="L58">                    return ListItemVersion.builder()</span>
+<span class="fc" id="L59">                            .connection(liv.getConnection())</span>
+<span class="fc" id="L60">                            .fields(liv.getFields())</span>
+<span class="fc" id="L61">                            .id(liv.getId())</span>
+<span class="fc" id="L62">                            .lastModifiedBy(liv.getLastModifiedBy())</span>
+<span class="fc" id="L63">                            .lastModifiedDateTime(liv.getLastModifiedDateTime())</span>
+<span class="fc" id="L64">                            .listId(listId)</span>
+<span class="fc" id="L65">                            .listItemId(listItemId)</span>
+<span class="fc" id="L66">                            .published(liv.getPublished())</span>
+<span class="fc" id="L67">                            .siteId(siteId)</span>
+<span class="fc" id="L68">                            .build();</span>
+                })
+<span class="fc" id="L70">                .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
