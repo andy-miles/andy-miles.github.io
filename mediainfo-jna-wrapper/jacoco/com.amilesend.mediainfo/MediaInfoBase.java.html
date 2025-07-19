@@ -44,6 +44,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
@@ -79,19 +80,19 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  *
  * @param &lt;T&gt; the concrete media info implementation type
  */
-<span class="fc" id="L82">@Slf4j</span>
+<span class="fc" id="L83">@Slf4j</span>
 @RequiredArgsConstructor
 public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements AutoCloseable {
     private static final int BUFFER_SIZE_4_MB = 4194304;
     private static final int MIN_FILE_SIZE = 65536;
     private static final int MAX_FILENAME_LENGTH_WIN = 250;
     private static final String LIST_DELIMITER = &quot;/&quot;;
-<span class="fc" id="L89">    private static final DateTimeFormatter DATE_TIME_FORMATTER =</span>
-<span class="fc" id="L90">            DateTimeFormatter.ofPattern(&quot;zzz uuuu-MM-dd HH:mm:ss&quot;);</span>
-<span class="fc" id="L91">    private static final DateTimeFormatter DATE_TIME_FORMATTER_ALT =</span>
-<span class="fc" id="L92">            DateTimeFormatter.ofPattern(&quot;uuuu-MM-dd HH:mm:ss zzz&quot;);</span>
+<span class="fc" id="L90">    private static final DateTimeFormatter DATE_TIME_FORMATTER =</span>
+<span class="fc" id="L91">            DateTimeFormatter.ofPattern(&quot;zzz uuuu-MM-dd HH:mm:ss&quot;);</span>
+<span class="fc" id="L92">    private static final DateTimeFormatter DATE_TIME_FORMATTER_ALT =</span>
+<span class="fc" id="L93">            DateTimeFormatter.ofPattern(&quot;uuuu-MM-dd HH:mm:ss zzz&quot;);</span>
 
-    private final Object lock = new Object();
+    private final ReentrantLock lock = new ReentrantLock();
     @Getter(AccessLevel.PROTECTED)
     private final MediaInfoAccessor accessor;
 
@@ -102,79 +103,85 @@ public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements Au
      * @return the analyzer to retrieve information
      * @throws IOException if an error occurred while opening the media file
      */
-<span class="fc" id="L105">    public T open(@NonNull final File file) throws IOException {</span>
-<span class="fc" id="L106">        Validate.isTrue(file.isFile(), &quot;File must be a file&quot;);</span>
-<span class="fc bfc" id="L107" title="All 2 branches covered.">        Validate.isTrue(file.length() &gt;= MIN_FILE_SIZE, &quot;File size must be &gt;= &quot; + MIN_FILE_SIZE);</span>
+<span class="fc" id="L106">    public T open(@NonNull final File file) throws IOException {</span>
+<span class="fc" id="L107">        Validate.isTrue(file.isFile(), &quot;File must be a file&quot;);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        Validate.isTrue(file.length() &gt;= MIN_FILE_SIZE, &quot;File size must be &gt;= &quot; + MIN_FILE_SIZE);</span>
 
-<span class="fc" id="L109">        synchronized (lock) {</span>
-<span class="fc" id="L110">            final String filePath = file.getCanonicalPath();</span>
-<span class="fc bfc" id="L111" title="All 2 branches covered.">            if (preferOpenViaBuffer(filePath)) {</span>
-<span class="fc" id="L112">                return readViaBuffer(file);</span>
+<span class="fc" id="L110">        lock.lock();</span>
+        try {
+<span class="fc" id="L112">            final String filePath = file.getCanonicalPath();</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (preferOpenViaBuffer(filePath)) {</span>
+<span class="fc" id="L114">                return readViaBuffer(file);</span>
             }
 
-<span class="fc bfc" id="L115" title="All 2 branches covered.">            if (accessor.open(filePath) == true) {</span>
-<span class="fc" id="L116">                return (T) this;</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (accessor.open(filePath) == true) {</span>
+<span class="fc" id="L118">                return (T) this;</span>
             }
 
-<span class="fc" id="L119">            throw new IOException(&quot;Failed to open media file: &quot; + filePath);</span>
+<span class="fc" id="L121">            throw new IOException(&quot;Failed to open media file: &quot; + filePath);</span>
+        } finally {
+<span class="fc" id="L123">            lock.unlock();</span>
         }
     }
 
     @Override
     public void close() {
-<span class="fc" id="L125">        synchronized (lock) {</span>
-<span class="fc" id="L126">            accessor.close();</span>
-<span class="fc" id="L127">        }</span>
-<span class="fc" id="L128">    }</span>
+<span class="fc" id="L129">        lock.lock();</span>
+        try {
+<span class="fc" id="L131">            accessor.close();</span>
+        } finally {
+<span class="fc" id="L133">            lock.unlock();</span>
+        }
+<span class="fc" id="L135">    }</span>
 
     @VisibleForTesting
     T readViaBuffer(final File file) throws IOException {
-<span class="fc" id="L132">        try (RandomAccessFile raf = new RandomAccessFile(file, &quot;r&quot;)) {</span>
-<span class="fc bfc" id="L133" title="All 2 branches covered.">            if (openViaBuffer(raf)) {</span>
-<span class="fc" id="L134">                return (T) this;</span>
+<span class="fc" id="L139">        try (RandomAccessFile raf = new RandomAccessFile(file, &quot;r&quot;)) {</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if (openViaBuffer(raf)) {</span>
+<span class="fc" id="L141">                return (T) this;</span>
             }
 
-<span class="fc" id="L137">            throw new IOException(&quot;Failed to open media file buffer: &quot; + file.getCanonicalPath());</span>
+<span class="fc" id="L144">            throw new IOException(&quot;Failed to open media file buffer: &quot; + file.getCanonicalPath());</span>
         }
     }
 
     @VisibleForTesting
     boolean openViaBuffer(final RandomAccessFile file) throws IOException {
-<span class="fc" id="L143">        final byte[] buffer = new byte[BUFFER_SIZE_4_MB]; // Use 4MB buffer to reduce JNA calls</span>
-<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (accessor.openBufferInit(file.length(), 0) == false) {</span>
-<span class="fc" id="L145">            return false;</span>
+<span class="fc" id="L150">        final byte[] buffer = new byte[BUFFER_SIZE_4_MB]; // Use 4MB buffer to reduce JNA calls</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (accessor.openBufferInit(file.length(), 0) == false) {</span>
+<span class="fc" id="L152">            return false;</span>
         }
 
-<span class="fc" id="L148">        int read = -1;</span>
+<span class="fc" id="L155">        int read = -1;</span>
         do {
-<span class="fc" id="L150">            read = file.read(buffer);</span>
-<span class="fc" id="L151">            final int result = accessor.openBufferContinue(buffer, read);</span>
-<span class="fc bfc" id="L152" title="All 2 branches covered.">            if ((result &amp; 8) == Status.Finalized.getValue()) {</span>
-<span class="fc" id="L153">                break;</span>
+<span class="fc" id="L157">            read = file.read(buffer);</span>
+<span class="fc" id="L158">            final int result = accessor.openBufferContinue(buffer, read);</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if ((result &amp; 8) == Status.Finalized.getValue()) {</span>
+<span class="fc" id="L160">                break;</span>
             }
 
-<span class="fc" id="L156">            final long gotoPos = accessor.openBufferContinueGotoGet();</span>
-<span class="fc bfc" id="L157" title="All 2 branches covered.">            if (gotoPos &gt;= Status.None.getValue()) {</span>
-<span class="fc" id="L158">                file.seek(gotoPos);</span>
-<span class="fc" id="L159">                accessor.openBufferInit(file.length(), gotoPos);</span>
+<span class="fc" id="L163">            final long gotoPos = accessor.openBufferContinueGotoGet();</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (gotoPos &gt;= Status.None.getValue()) {</span>
+<span class="fc" id="L165">                file.seek(gotoPos);</span>
+<span class="fc" id="L166">                accessor.openBufferInit(file.length(), gotoPos);</span>
             }
-<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        } while (read &gt; 0);</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        } while (read &gt; 0);</span>
 
-<span class="fc" id="L163">        accessor.openBufferFinalize();</span>
-<span class="fc" id="L164">        return true;</span>
+<span class="fc" id="L170">        accessor.openBufferFinalize();</span>
+<span class="fc" id="L171">        return true;</span>
     }
 
     @VisibleForTesting
     boolean preferOpenViaBuffer(final String path) {
-<span class="fc bfc" id="L169" title="All 4 branches covered.">        if (Platform.isWindows() &amp;&amp; path.length() &gt; MAX_FILENAME_LENGTH_WIN) {</span>
-<span class="fc" id="L170">            return true;</span>
+<span class="fc bfc" id="L176" title="All 4 branches covered.">        if (Platform.isWindows() &amp;&amp; path.length() &gt; MAX_FILENAME_LENGTH_WIN) {</span>
+<span class="fc" id="L177">            return true;</span>
         }
 
-<span class="fc bfc" id="L173" title="All 4 branches covered.">        if (Platform.isMac() &amp;&amp; !US_ASCII.newEncoder().canEncode(path)) {</span>
-<span class="fc" id="L174">            return true;</span>
+<span class="fc bfc" id="L180" title="All 4 branches covered.">        if (Platform.isMac() &amp;&amp; !US_ASCII.newEncoder().canEncode(path)) {</span>
+<span class="fc" id="L181">            return true;</span>
         }
 
-<span class="fc" id="L177">        return false;</span>
+<span class="fc" id="L184">        return false;</span>
     }
 
     /**
@@ -184,17 +191,17 @@ public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements Au
      * @return the parsed Instant, or {@code null} if the time value is blank
      */
     public static Instant parseTime(final String time) {
-<span class="fc bfc" id="L187" title="All 2 branches covered.">        if (StringUtils.isBlank(time)) {</span>
-<span class="fc" id="L188">            return null;</span>
+<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (StringUtils.isBlank(time)) {</span>
+<span class="fc" id="L195">            return null;</span>
         }
 
         try {
-<span class="fc" id="L192">            return ZonedDateTime.parse(time, DATE_TIME_FORMATTER).toInstant();</span>
-<span class="fc" id="L193">        } catch (final DateTimeParseException ex) {</span>
-<span class="fc" id="L194">            log.debug(&quot;Timestamp does not match pattern: \&quot;zzz uuuu-MM-dd HH:mm:ss\&quot;&quot;);</span>
+<span class="fc" id="L199">            return ZonedDateTime.parse(time, DATE_TIME_FORMATTER).toInstant();</span>
+<span class="fc" id="L200">        } catch (final DateTimeParseException ex) {</span>
+<span class="fc" id="L201">            log.debug(&quot;Timestamp does not match pattern: \&quot;zzz uuuu-MM-dd HH:mm:ss\&quot;&quot;);</span>
         }
 
-<span class="fc" id="L197">        return ZonedDateTime.parse(time, DATE_TIME_FORMATTER_ALT).toInstant();</span>
+<span class="fc" id="L204">        return ZonedDateTime.parse(time, DATE_TIME_FORMATTER_ALT).toInstant();</span>
     }
 
     /**
@@ -204,14 +211,14 @@ public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements Au
      * @return the list of values
      */
     public static List&lt;String&gt; parseList(final String listValue) {
-<span class="fc bfc" id="L207" title="All 2 branches covered.">        if (StringUtils.isBlank(listValue)) {</span>
-<span class="fc" id="L208">            return Collections.emptyList();</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (StringUtils.isBlank(listValue)) {</span>
+<span class="fc" id="L215">            return Collections.emptyList();</span>
         }
 
-<span class="fc" id="L211">        return Arrays.stream(listValue.split(LIST_DELIMITER))</span>
-<span class="fc" id="L212">                .filter(StringUtils::isNotBlank)</span>
-<span class="fc" id="L213">                .map(String::trim)</span>
-<span class="fc" id="L214">                .collect(Collectors.toList());</span>
+<span class="fc" id="L218">        return Arrays.stream(listValue.split(LIST_DELIMITER))</span>
+<span class="fc" id="L219">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L220">                .map(String::trim)</span>
+<span class="fc" id="L221">                .collect(Collectors.toList());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

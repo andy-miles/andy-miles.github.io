@@ -37,11 +37,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 /** The object used by java applications to interact with the libMediaInfo library. */
-<span class="fc" id="L42">@Slf4j</span>
+<span class="fc" id="L43">@Slf4j</span>
 public class MediaInfoAccessor implements AutoCloseable {
-<span class="fc" id="L44">    private final Object lock = new Object();</span>
+<span class="fc" id="L45">    private final ReentrantLock lock = new ReentrantLock();</span>
     private MediaInfoLibrary mediaInfoLibrary;
     @Getter(AccessLevel.PACKAGE)
     @Setter(AccessLevel.PACKAGE)
@@ -54,29 +55,32 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @param mediaInfoLibrary the library instance
      * @see MediaInfoLibrary
      */
-<span class="fc" id="L57">    public MediaInfoAccessor(@NonNull final MediaInfoLibrary mediaInfoLibrary) {</span>
-<span class="fc" id="L58">        this.mediaInfoLibrary = mediaInfoLibrary;</span>
-<span class="fc" id="L59">        mediaInfoLibPointer = newPointer();</span>
-<span class="fc" id="L60">    }</span>
+<span class="fc" id="L58">    public MediaInfoAccessor(@NonNull final MediaInfoLibrary mediaInfoLibrary) {</span>
+<span class="fc" id="L59">        this.mediaInfoLibrary = mediaInfoLibrary;</span>
+<span class="fc" id="L60">        mediaInfoLibPointer = newPointer();</span>
+<span class="fc" id="L61">    }</span>
 
     /** Closes the library instance. */
     @Override
     public void close() {
-<span class="fc" id="L65">        dispose();</span>
-<span class="fc" id="L66">    }</span>
+<span class="fc" id="L66">        dispose();</span>
+<span class="fc" id="L67">    }</span>
 
     /** Disposes of the library instance reference. */
     public void dispose() {
-<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L71">            return;</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L72">            return;</span>
         }
 
-<span class="fc" id="L74">        synchronized (lock) {</span>
-<span class="fc" id="L75">            mediaInfoLibrary.close(mediaInfoLibPointer);</span>
-<span class="fc" id="L76">            mediaInfoLibrary.deleteHandle(mediaInfoLibPointer);</span>
-<span class="fc" id="L77">            mediaInfoLibPointer = null;</span>
-<span class="fc" id="L78">        }</span>
-<span class="fc" id="L79">    }</span>
+<span class="fc" id="L75">        lock.lock();</span>
+        try {
+<span class="fc" id="L77">            mediaInfoLibrary.close(mediaInfoLibPointer);</span>
+<span class="fc" id="L78">            mediaInfoLibrary.deleteHandle(mediaInfoLibPointer);</span>
+<span class="fc" id="L79">            mediaInfoLibPointer = null;</span>
+        } finally {
+<span class="fc" id="L81">            lock.unlock();</span>
+        }
+<span class="fc" id="L83">    }</span>
 
     /**
      * Opens a file to parse.
@@ -85,15 +89,18 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return {@code true} if file was opened; else, {@code false}
      */
     public boolean open(final String fileName) {
-<span class="fc" id="L88">        Validate.notBlank(fileName, &quot;fileName must not be blank&quot;);</span>
+<span class="fc" id="L92">        Validate.notBlank(fileName, &quot;fileName must not be blank&quot;);</span>
 
-<span class="fc" id="L90">        synchronized (lock) {</span>
-<span class="fc bfc" id="L91" title="All 2 branches covered.">            if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L92">                mediaInfoLibPointer = newPointer();</span>
+<span class="fc" id="L94">        lock.lock();</span>
+        try {
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L97">                mediaInfoLibPointer = newPointer();</span>
             }
 
-<span class="fc" id="L95">            int response = mediaInfoLibrary.open(mediaInfoLibPointer, new WString(fileName));</span>
-<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            return response == Status.Accepted.getValue();</span>
+<span class="fc" id="L100">            int response = mediaInfoLibrary.open(mediaInfoLibPointer, new WString(fileName));</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            return response == Status.Accepted.getValue();</span>
+        } finally {
+<span class="fc" id="L103">            lock.unlock();</span>
         }
     }
 
@@ -105,17 +112,20 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return {@code true} if the buffer was successfully initialized; else, {@code false}
      */
     public boolean openBufferInit(final long length, final long offset) {
-<span class="fc bfc" id="L108" title="All 2 branches covered.">        Validate.isTrue(length &gt; 0L, &quot;length must be &gt; 0&quot;);</span>
-<span class="fc bfc" id="L109" title="All 2 branches covered.">        Validate.isTrue(offset &gt;= 0L, &quot;offset must be &gt;= 0&quot;);</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        Validate.isTrue(length &gt; 0L, &quot;length must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        Validate.isTrue(offset &gt;= 0L, &quot;offset must be &gt;= 0&quot;);</span>
 
-<span class="fc bfc" id="L111" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L112">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L119">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking openBufferInit()&quot;);
         }
 
-<span class="fc" id="L116">        synchronized (lock) {</span>
-<span class="fc" id="L117">            int response = mediaInfoLibrary.openBufferInit(mediaInfoLibPointer, length, offset);</span>
-<span class="pc bpc" id="L118" title="1 of 2 branches missed.">            return response == Status.Accepted.getValue();</span>
+<span class="fc" id="L123">        lock.lock();</span>
+        try {
+<span class="fc" id="L125">            int response = mediaInfoLibrary.openBufferInit(mediaInfoLibPointer, length, offset);</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">            return response == Status.Accepted.getValue();</span>
+        } finally {
+<span class="fc" id="L128">            lock.unlock();</span>
         }
     }
 
@@ -134,16 +144,19 @@ public class MediaInfoAccessor implements AutoCloseable {
      *             &lt;li&gt;{@code 16-31} - User defined&lt;/li&gt;
      *         &lt;/ul&gt;
      */
-<span class="fc" id="L137">    public int openBufferContinue(@NonNull final byte[] buffer, final int size) {</span>
-<span class="fc bfc" id="L138" title="All 2 branches covered.">        Validate.isTrue(size &gt; 0, &quot;size must be &gt; 0&quot;);</span>
+<span class="fc" id="L147">    public int openBufferContinue(@NonNull final byte[] buffer, final int size) {</span>
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        Validate.isTrue(size &gt; 0, &quot;size must be &gt; 0&quot;);</span>
 
-<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L141">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L151">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking openBufferContinue()&quot;);
         }
 
-<span class="fc" id="L145">        synchronized (lock) {</span>
-<span class="fc" id="L146">            return mediaInfoLibrary.openBufferContinue(mediaInfoLibPointer, buffer, size);</span>
+<span class="fc" id="L155">        lock.lock();</span>
+        try {
+<span class="fc" id="L157">            return mediaInfoLibrary.openBufferContinue(mediaInfoLibPointer, buffer, size);</span>
+        } finally {
+<span class="fc" id="L159">            lock.unlock();</span>
         }
     }
 
@@ -153,13 +166,16 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return {@code -1} if there is no more data to seek to; else, the seek position
      */
     public long openBufferContinueGotoGet() {
-<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L157">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L170">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking openBufferContinueGotoGet()&quot;);
         }
 
-<span class="fc" id="L161">        synchronized (lock) {</span>
-<span class="fc" id="L162">            return mediaInfoLibrary.openBufferContinueGotoGet(mediaInfoLibPointer);</span>
+<span class="fc" id="L174">        lock.lock();</span>
+        try {
+<span class="fc" id="L176">            return mediaInfoLibrary.openBufferContinueGotoGet(mediaInfoLibPointer);</span>
+        } finally {
+<span class="fc" id="L178">            lock.unlock();</span>
         }
     }
 
@@ -169,27 +185,33 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return {@code 0} if the buffer has been read or null; else non-0 value if an error occurred.
      */
     public int openBufferFinalize() {
-<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L173">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L189">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking openBufferFinalize()&quot;);
         }
 
-<span class="fc" id="L177">        synchronized (lock) {</span>
-<span class="fc" id="L178">            return mediaInfoLibrary.openBufferFinalize(mediaInfoLibPointer);</span>
+<span class="fc" id="L193">        lock.lock();</span>
+        try {
+<span class="fc" id="L195">            return mediaInfoLibrary.openBufferFinalize(mediaInfoLibPointer);</span>
+        } finally {
+<span class="fc" id="L197">            lock.unlock();</span>
         }
     }
 
     /** Closes a file handle that was previously opened. */
     public void closeHandle() {
-<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L185">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L204">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking closeHandle()&quot;);
         }
 
-<span class="fc" id="L189">        synchronized (lock) {</span>
-<span class="fc" id="L190">            mediaInfoLibrary.close(mediaInfoLibPointer);</span>
-<span class="fc" id="L191">        }</span>
-<span class="fc" id="L192">    }</span>
+<span class="fc" id="L208">        lock.lock();</span>
+        try {
+<span class="fc" id="L210">            mediaInfoLibrary.close(mediaInfoLibPointer);</span>
+        } finally {
+<span class="fc" id="L212">            lock.unlock();</span>
+        }
+<span class="fc" id="L214">    }</span>
 
     /**
      * Get all details about a file.
@@ -197,13 +219,16 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return All details about a file in one string
      */
     public String inform() {
-<span class="fc bfc" id="L200" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L201">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc bfc" id="L222" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L223">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking inform()&quot;);
         }
 
-<span class="fc" id="L205">        synchronized (lock) {</span>
-<span class="fc" id="L206">            return mediaInfoLibrary.inform(mediaInfoLibPointer, 0).toString();</span>
+<span class="fc" id="L227">        lock.lock();</span>
+        try {
+<span class="fc" id="L229">            return mediaInfoLibrary.inform(mediaInfoLibPointer, 0).toString();</span>
+        } finally {
+<span class="fc" id="L231">            lock.unlock();</span>
         }
     }
 
@@ -217,7 +242,7 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @see StreamType
      */
     public String get(final StreamType streamType, final int streamNumber, final String parameter) {
-<span class="fc" id="L220">        return get(streamType, streamNumber, parameter, InfoType.Text, InfoType.Name);</span>
+<span class="fc" id="L245">        return get(streamType, streamNumber, parameter, InfoType.Text, InfoType.Name);</span>
     }
 
 
@@ -236,7 +261,7 @@ public class MediaInfoAccessor implements AutoCloseable {
             final int streamNumber,
             final String parameter,
             final InfoType infoType) {
-<span class="fc" id="L239">        return get(streamType, streamNumber, parameter, infoType, InfoType.Name);</span>
+<span class="fc" id="L264">        return get(streamType, streamNumber, parameter, infoType, InfoType.Name);</span>
     }
 
     /**
@@ -252,26 +277,29 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return the queries information; or an empty string if there was a problem
      */
     public String get(
-<span class="fc" id="L255">            @NonNull final StreamType streamType,</span>
+<span class="fc" id="L280">            @NonNull final StreamType streamType,</span>
             final int streamNumber,
             final String parameter,
-<span class="fc" id="L258">            @NonNull final InfoType infoType,</span>
-<span class="fc" id="L259">            @NonNull final InfoType searchType) {</span>
-<span class="fc bfc" id="L260" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt;= 0&quot;);</span>
-<span class="fc" id="L261">        Validate.notBlank(parameter, &quot;parameter must not be blank&quot;);</span>
-<span class="fc bfc" id="L262" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L263">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc" id="L283">            @NonNull final InfoType infoType,</span>
+<span class="fc" id="L284">            @NonNull final InfoType searchType) {</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt;= 0&quot;);</span>
+<span class="fc" id="L286">        Validate.notBlank(parameter, &quot;parameter must not be blank&quot;);</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L288">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking get()&quot;);
         }
 
-<span class="fc" id="L267">        synchronized (lock) {</span>
-<span class="fc" id="L268">            return mediaInfoLibrary.get(</span>
+<span class="fc" id="L292">        lock.lock();</span>
+        try {
+<span class="fc" id="L294">            return mediaInfoLibrary.get(</span>
                     mediaInfoLibPointer,
-<span class="fc" id="L270">                    streamType.ordinal(),</span>
+<span class="fc" id="L296">                    streamType.ordinal(),</span>
                     streamNumber,
                     new WString(parameter),
-<span class="fc" id="L273">                    infoType.ordinal(),</span>
-<span class="fc" id="L274">                    searchType.ordinal()).toString();</span>
+<span class="fc" id="L299">                    infoType.ordinal(),</span>
+<span class="fc" id="L300">                    searchType.ordinal()).toString();</span>
+        } finally {
+<span class="fc" id="L302">            lock.unlock();</span>
         }
     }
 
@@ -284,7 +312,7 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return a string about information you search, an empty string if there is a problem
      */
     public String get(final StreamType streamType, final int streamNumber, final int parameterIndex) {
-<span class="fc" id="L287">        return get(streamType, streamNumber, parameterIndex, InfoType.Text);</span>
+<span class="fc" id="L315">        return get(streamType, streamNumber, parameterIndex, InfoType.Text);</span>
     }
 
     /**
@@ -297,24 +325,27 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return the information or an empty string if there is a problem
      */
     public String get(
-<span class="fc" id="L300">            @NonNull final StreamType streamType,</span>
+<span class="fc" id="L328">            @NonNull final StreamType streamType,</span>
             final int streamNumber,
             final int parameterIndex,
-<span class="fc" id="L303">            @NonNull final InfoType infoType) {</span>
-<span class="fc bfc" id="L304" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt; 0&quot;);</span>
-<span class="fc bfc" id="L305" title="All 2 branches covered.">        Validate.isTrue(parameterIndex &gt;= 0, &quot;parameterIndex must be &gt;= 0&quot;);</span>
-<span class="fc bfc" id="L306" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
-<span class="fc" id="L307">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
+<span class="fc" id="L331">            @NonNull final InfoType infoType) {</span>
+<span class="fc bfc" id="L332" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt; 0&quot;);</span>
+<span class="fc bfc" id="L333" title="All 2 branches covered.">        Validate.isTrue(parameterIndex &gt;= 0, &quot;parameterIndex must be &gt;= 0&quot;);</span>
+<span class="fc bfc" id="L334" title="All 2 branches covered.">        if (Objects.isNull(mediaInfoLibPointer)) {</span>
+<span class="fc" id="L335">            throw new IllegalStateException(&quot;MediaInfoLib Pointer is null. This happens when close()/dispose() has &quot; +</span>
                     &quot;been invoked prior to invoking get()&quot;);
         }
 
-<span class="fc" id="L311">        synchronized (lock) {</span>
-<span class="fc" id="L312">            return mediaInfoLibrary.getI(</span>
+<span class="fc" id="L339">        lock.lock();</span>
+        try {
+<span class="fc" id="L341">            return mediaInfoLibrary.getI(</span>
                     mediaInfoLibPointer,
-<span class="fc" id="L314">                    streamType.ordinal(),</span>
+<span class="fc" id="L343">                    streamType.ordinal(),</span>
                     streamNumber,
                     parameterIndex,
-<span class="fc" id="L317">                    infoType.ordinal()).toString();</span>
+<span class="fc" id="L346">                    infoType.ordinal()).toString();</span>
+        } finally {
+<span class="fc" id="L348">            lock.unlock();</span>
         }
     }
 
@@ -324,13 +355,13 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @param streamType the stream type
      * @return number of streams of the given stream type
      */
-<span class="fc" id="L327">    public int getStreamCount(@NonNull final StreamType streamType) {</span>
-<span class="fc" id="L328">        final String streamCount = get(streamType, 0, &quot;StreamCount&quot;);</span>
-<span class="fc bfc" id="L329" title="All 2 branches covered.">        if (StringUtils.isEmpty(streamCount)) {</span>
-<span class="fc" id="L330">            return 0;</span>
+<span class="fc" id="L358">    public int getStreamCount(@NonNull final StreamType streamType) {</span>
+<span class="fc" id="L359">        final String streamCount = get(streamType, 0, &quot;StreamCount&quot;);</span>
+<span class="fc bfc" id="L360" title="All 2 branches covered.">        if (StringUtils.isEmpty(streamCount)) {</span>
+<span class="fc" id="L361">            return 0;</span>
         }
 
-<span class="fc" id="L333">        return Integer.parseInt(streamCount);</span>
+<span class="fc" id="L364">        return Integer.parseInt(streamCount);</span>
     }
 
 
@@ -341,11 +372,14 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @param streamNumber the stream number
      * @return number of streams of the given stream type
      */
-<span class="fc" id="L344">    public int getStreamOrParameterCount(@NonNull final StreamType streamType, final int streamNumber) {</span>
-<span class="fc bfc" id="L345" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt; 0&quot;);</span>
+<span class="fc" id="L375">    public int getStreamOrParameterCount(@NonNull final StreamType streamType, final int streamNumber) {</span>
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        Validate.isTrue(streamNumber &gt;= 0, &quot;streamNumber must be &gt; 0&quot;);</span>
 
-<span class="fc" id="L347">        synchronized (lock) {</span>
-<span class="fc" id="L348">            return mediaInfoLibrary.countGet(mediaInfoLibPointer, streamType.ordinal(), streamNumber);</span>
+<span class="fc" id="L378">        lock.lock();</span>
+        try {
+<span class="fc" id="L380">            return mediaInfoLibrary.countGet(mediaInfoLibPointer, streamType.ordinal(), streamNumber);</span>
+        } finally {
+<span class="fc" id="L382">            lock.unlock();</span>
         }
     }
 
@@ -356,7 +390,7 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @return the option value
      */
     public String getOption(final String option) {
-<span class="fc" id="L359">        return setOption(option, StringUtils.EMPTY);</span>
+<span class="fc" id="L393">        return setOption(option, StringUtils.EMPTY);</span>
     }
 
     /**
@@ -366,19 +400,22 @@ public class MediaInfoAccessor implements AutoCloseable {
      * @param value The value of option
      * @return {@code &quot;&quot;} means no; else, any other value means yes
      */
-<span class="fc" id="L369">    public String setOption(final String option, @NonNull final String value) {</span>
-<span class="fc" id="L370">        Validate.notBlank(option, &quot;option must not be blank&quot;);</span>
+<span class="fc" id="L403">    public String setOption(final String option, @NonNull final String value) {</span>
+<span class="fc" id="L404">        Validate.notBlank(option, &quot;option must not be blank&quot;);</span>
 
-<span class="fc" id="L372">        synchronized (lock) {</span>
-<span class="fc" id="L373">            return mediaInfoLibrary.option(mediaInfoLibPointer, new WString(option), new WString(value)).toString();</span>
+<span class="fc" id="L406">        lock.lock();</span>
+        try {
+<span class="fc" id="L408">            return mediaInfoLibrary.option(mediaInfoLibPointer, new WString(option), new WString(value)).toString();</span>
+        } finally {
+<span class="fc" id="L410">            lock.unlock();</span>
         }
     }
 
     private Pointer newPointer() {
         try {
-<span class="fc" id="L379">            return mediaInfoLibrary.newHandle();</span>
-<span class="fc" id="L380">        } catch(final LinkageError error) {</span>
-<span class="fc" id="L381">            throw new MediaInfoException(error);</span>
+<span class="fc" id="L416">            return mediaInfoLibrary.newHandle();</span>
+<span class="fc" id="L417">        } catch(final LinkageError error) {</span>
+<span class="fc" id="L418">            throw new MediaInfoException(error);</span>
         }
     }
 }
