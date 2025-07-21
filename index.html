@@ -79,25 +79,14 @@
 			</tr>
 		</table>
   	</center>
-  	<script type="text/javascript">
-        (function(l) {
-            if (l.search[1] === '/' ) {
-                var decoded = l.search.slice(1).split('&').map(function(s) {
-                    return s.replace(/~and~/g, '&')
-                }).join('?');
-                window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
-
-            }
-        }(window.location))
-    </script>
   	<script src='https://storage.ko-fi.com/cdn/scripts/overlay-widget.js'></script>
-    <script async>
-        kofiWidgetOverlay.draw('andymilesdev', {
-            'type': 'floating-chat',
-            'floating-chat.donateButton.text': 'Support me',
-            'floating-chat.donateButton.background-color': '#ffffff',
-            'floating-chat.donateButton.text-color': '#323842'
-        });
-    </script>
+<script async>
+  kofiWidgetOverlay.draw('andymilesdev', {
+    'type': 'floating-chat',
+    'floating-chat.donateButton.text': 'Support me',
+    'floating-chat.donateButton.background-color': '#ffffff',
+    'floating-chat.donateButton.text-color': '#323842'
+  });
+</script>
 </body>
 </html>
