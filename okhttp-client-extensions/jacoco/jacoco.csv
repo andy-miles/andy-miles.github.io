@@ -9,8 +9,9 @@ okhttp-client-extensions,com.amilesend.client.parse.parser,BasicParser,23,0,4,0,
 okhttp-client-extensions,com.amilesend.client.parse.parser,MapParser,56,0,8,0,5,0,6,0,2,0
 okhttp-client-extensions,com.amilesend.client.parse.parser,ListParser,45,0,6,0,5,0,5,0,2,0
 okhttp-client-extensions,com.amilesend.client.parse.parser,GsonParser,26,0,4,0,3,0,3,0,1,0
-okhttp-client-extensions,com.amilesend.client.connection.http,OkHttpClientBuilder,7,206,1,15,2,59,2,21,1,14
+okhttp-client-extensions,com.amilesend.client.connection.http,OkHttpClientBuilder,7,214,1,15,2,61,2,21,1,14
 okhttp-client-extensions,com.amilesend.client.connection.http,OkHttpClientBuilder.CredentialAuthenticator,5,16,1,1,0,6,1,1,0,1
+okhttp-client-extensions,com.amilesend.client.connection.http,HttpJsonLoggingInterceptor,23,395,7,47,3,93,10,26,3,6
 okhttp-client-extensions,com.amilesend.client.connection,ResponseParseException,0,5,0,0,0,2,0,1,0,1
 okhttp-client-extensions,com.amilesend.client.connection,ConnectionException,0,9,0,0,0,4,0,2,0,2
 okhttp-client-extensions,com.amilesend.client.connection,ThrottledException,0,7,0,0,0,3,0,1,0,1

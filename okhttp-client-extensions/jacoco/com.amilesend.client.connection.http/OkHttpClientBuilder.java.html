@@ -194,60 +194,62 @@ import java.util.List;
      * @return the configured HTTP client
      */
     public OkHttpClient build() {
-<span class="fc" id="L197">        return configureProxy(</span>
-<span class="fc" id="L198">                configureSsl(new OkHttpClient.Builder()</span>
-<span class="fc" id="L199">                        .followSslRedirects(isRedirectsAllowed)</span>
-<span class="fc" id="L200">                        .followRedirects(isRedirectsAllowed)</span>
-<span class="fc" id="L201">                        .connectTimeout(connectTimeout)</span>
-<span class="fc" id="L202">                        .readTimeout(readTimeout)</span>
-<span class="fc" id="L203">                        .writeTimeout(writeTimeout)</span>
-<span class="fc" id="L204">                        .connectionSpecs(getConnectionSpecs())))</span>
-<span class="fc" id="L205">                .build();</span>
+<span class="fc" id="L197">        final OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()</span>
+<span class="fc" id="L198">                .followSslRedirects(isRedirectsAllowed)</span>
+<span class="fc" id="L199">                .followRedirects(isRedirectsAllowed)</span>
+<span class="fc" id="L200">                .connectTimeout(connectTimeout)</span>
+<span class="fc" id="L201">                .readTimeout(readTimeout)</span>
+<span class="fc" id="L202">                .writeTimeout(writeTimeout)</span>
+<span class="fc" id="L203">                .connectionSpecs(getConnectionSpecs());</span>
+<span class="fc" id="L204">        clientBuilder.interceptors().addAll(interceptors);</span>
+<span class="fc" id="L205">        return configureProxy(</span>
+<span class="fc" id="L206">                configureSsl(clientBuilder))</span>
+<span class="fc" id="L207">                .build();</span>
     }
 
     private List&lt;ConnectionSpec&gt; getConnectionSpecs() {
-<span class="fc bfc" id="L209" title="All 2 branches covered.">        return isForTest</span>
-<span class="fc" id="L210">                ? List.of(ConnectionSpec.CLEARTEXT, ConnectionSpec.MODERN_TLS)</span>
-<span class="fc" id="L211">                : List.of(ConnectionSpec.MODERN_TLS);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        return isForTest</span>
+<span class="fc" id="L212">                ? List.of(ConnectionSpec.CLEARTEXT, ConnectionSpec.MODERN_TLS)</span>
+<span class="fc" id="L213">                : List.of(ConnectionSpec.MODERN_TLS);</span>
     }
 
     private OkHttpClient.Builder configureSsl(OkHttpClient.Builder builder) {
-<span class="fc bfc" id="L215" title="All 2 branches covered.">        if (trustManager == null) {</span>
-<span class="fc" id="L216">            return builder;</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (trustManager == null) {</span>
+<span class="fc" id="L218">            return builder;</span>
         }
 
         try {
-<span class="fc" id="L220">            final SSLContext sslContext = SSLContext.getInstance(&quot;TLS&quot;);</span>
-<span class="fc" id="L221">            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());</span>
-<span class="fc" id="L222">            builder = builder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);</span>
-<span class="fc" id="L223">        } catch (final KeyManagementException | NoSuchAlgorithmException ex) {</span>
-<span class="fc" id="L224">            throw new ConnectionException(&quot;Unable to create HttpClient: &quot; + ex.getMessage(), ex);</span>
-<span class="fc" id="L225">        }</span>
+<span class="fc" id="L222">            final SSLContext sslContext = SSLContext.getInstance(&quot;TLS&quot;);</span>
+<span class="fc" id="L223">            sslContext.init(null, new TrustManager[]{trustManager}, new SecureRandom());</span>
+<span class="fc" id="L224">            builder = builder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);</span>
+<span class="fc" id="L225">        } catch (final KeyManagementException | NoSuchAlgorithmException ex) {</span>
+<span class="fc" id="L226">            throw new ConnectionException(&quot;Unable to create HttpClient: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L227">        }</span>
 
-<span class="fc bfc" id="L227" title="All 2 branches covered.">        if (hostnameVerifier == null) {</span>
-<span class="fc" id="L228">            return builder;</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        if (hostnameVerifier == null) {</span>
+<span class="fc" id="L230">            return builder;</span>
         }
 
-<span class="fc" id="L231">        return builder.hostnameVerifier(hostnameVerifier);</span>
+<span class="fc" id="L233">        return builder.hostnameVerifier(hostnameVerifier);</span>
     }
 
     private OkHttpClient.Builder configureProxy(OkHttpClient.Builder builder) {
-<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (proxy == null) {</span>
-<span class="fc" id="L236">            return builder;</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        if (proxy == null) {</span>
+<span class="fc" id="L238">            return builder;</span>
         }
 
-<span class="fc" id="L239">        builder = builder.proxy(proxy);</span>
+<span class="fc" id="L241">        builder = builder.proxy(proxy);</span>
 
         final Authenticator authenticatorToSet;
-<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (proxyAuthenticator != null) {</span>
-<span class="fc" id="L243">            authenticatorToSet = proxyAuthenticator;</span>
-<span class="pc bpc" id="L244" title="1 of 4 branches missed.">        } else if (StringUtils.isNotBlank(proxyUsername) || StringUtils.isNotBlank(proxyPassword)) {</span>
-<span class="fc" id="L245">            authenticatorToSet = new CredentialAuthenticator(proxyUsername, proxyPassword);</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        if (proxyAuthenticator != null) {</span>
+<span class="fc" id="L245">            authenticatorToSet = proxyAuthenticator;</span>
+<span class="pc bpc" id="L246" title="1 of 4 branches missed.">        } else if (StringUtils.isNotBlank(proxyUsername) || StringUtils.isNotBlank(proxyPassword)) {</span>
+<span class="fc" id="L247">            authenticatorToSet = new CredentialAuthenticator(proxyUsername, proxyPassword);</span>
         } else {
-<span class="fc" id="L247">            authenticatorToSet = null;</span>
+<span class="fc" id="L249">            authenticatorToSet = null;</span>
         }
 
-<span class="fc bfc" id="L250" title="All 2 branches covered.">        return authenticatorToSet != null ? builder.proxyAuthenticator(authenticatorToSet) : builder;</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        return authenticatorToSet != null ? builder.proxyAuthenticator(authenticatorToSet) : builder;</span>
     }
 
     @RequiredArgsConstructor
@@ -257,12 +259,12 @@ import java.util.List;
 
         @Nullable
         @Override
-<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        public Request authenticate(final Route route, @NonNull final Response response) {</span>
-<span class="fc" id="L261">            final String credential = Credentials.basic(username, password);</span>
-<span class="fc" id="L262">            return response.request()</span>
-<span class="fc" id="L263">                    .newBuilder()</span>
-<span class="fc" id="L264">                    .header(&quot;Proxy-Authorization&quot;, credential)</span>
-<span class="fc" id="L265">                    .build();</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        public Request authenticate(final Route route, @NonNull final Response response) {</span>
+<span class="fc" id="L263">            final String credential = Credentials.basic(username, password);</span>
+<span class="fc" id="L264">            return response.request()</span>
+<span class="fc" id="L265">                    .newBuilder()</span>
+<span class="fc" id="L266">                    .header(&quot;Proxy-Authorization&quot;, credential)</span>
+<span class="fc" id="L267">                    .build();</span>
         }
     }
 }
