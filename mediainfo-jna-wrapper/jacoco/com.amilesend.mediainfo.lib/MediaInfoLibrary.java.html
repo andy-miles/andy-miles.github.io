@@ -22,7 +22,6 @@
  */
 package com.amilesend.mediainfo.lib;
 
-import com.google.common.collect.ImmutableMap;
 import com.sun.jna.FunctionMapper;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -38,21 +37,20 @@ public interface MediaInfoLibrary extends Library {
     String MEDIA_INFO_LIB_PATH = &quot;MediaInfo&quot;;
 
     /** Defines the java methods to library method mapping. */
-<span class="fc" id="L41">    Map&lt;String, String&gt; METHOD_TO_FUNCTION_NAME_MAP = ImmutableMap.&lt;String, String&gt;builder()</span>
-<span class="fc" id="L42">            .put(&quot;newHandle&quot;, &quot;MediaInfo_New&quot;)</span>
-<span class="fc" id="L43">            .put(&quot;deleteHandle&quot;, &quot;MediaInfo_Delete&quot;)</span>
-<span class="fc" id="L44">            .put(&quot;open&quot;, &quot;MediaInfo_Open&quot;)</span>
-<span class="fc" id="L45">            .put(&quot;openBufferInit&quot;, &quot;MediaInfo_Open_Buffer_Init&quot;)</span>
-<span class="fc" id="L46">            .put(&quot;openBufferContinue&quot;, &quot;MediaInfo_Open_Buffer_Continue&quot;)</span>
-<span class="fc" id="L47">            .put(&quot;openBufferContinueGotoGet&quot;, &quot;MediaInfo_Open_Buffer_Continue_GoTo_Get&quot;)</span>
-<span class="fc" id="L48">            .put(&quot;openBufferFinalize&quot;, &quot;MediaInfo_Open_Buffer_Finalize&quot;)</span>
-<span class="fc" id="L49">            .put(&quot;close&quot;, &quot;MediaInfo_Close&quot;)</span>
-<span class="fc" id="L50">            .put(&quot;inform&quot;, &quot;MediaInfo_Inform&quot;)</span>
-<span class="fc" id="L51">            .put(&quot;get&quot;, &quot;MediaInfo_Get&quot;)</span>
-<span class="fc" id="L52">            .put(&quot;getI&quot;, &quot;MediaInfo_GetI&quot;)</span>
-<span class="fc" id="L53">            .put(&quot;countGet&quot;, &quot;MediaInfo_Count_Get&quot;)</span>
-<span class="fc" id="L54">            .put(&quot;option&quot;, &quot;MediaInfo_Option&quot;)</span>
-<span class="fc" id="L55">            .build();</span>
+<span class="fc" id="L40">    Map&lt;String, String&gt; METHOD_TO_FUNCTION_NAME_MAP = Map.ofEntries(</span>
+<span class="fc" id="L41">            Map.entry(&quot;newHandle&quot;, &quot;MediaInfo_New&quot;),</span>
+<span class="fc" id="L42">            Map.entry(&quot;deleteHandle&quot;, &quot;MediaInfo_Delete&quot;),</span>
+<span class="fc" id="L43">            Map.entry(&quot;open&quot;, &quot;MediaInfo_Open&quot;),</span>
+<span class="fc" id="L44">            Map.entry(&quot;openBufferInit&quot;, &quot;MediaInfo_Open_Buffer_Init&quot;),</span>
+<span class="fc" id="L45">            Map.entry(&quot;openBufferContinue&quot;, &quot;MediaInfo_Open_Buffer_Continue&quot;),</span>
+<span class="fc" id="L46">            Map.entry(&quot;openBufferContinueGotoGet&quot;, &quot;MediaInfo_Open_Buffer_Continue_GoTo_Get&quot;),</span>
+<span class="fc" id="L47">            Map.entry(&quot;openBufferFinalize&quot;, &quot;MediaInfo_Open_Buffer_Finalize&quot;),</span>
+<span class="fc" id="L48">            Map.entry(&quot;close&quot;, &quot;MediaInfo_Close&quot;),</span>
+<span class="fc" id="L49">            Map.entry(&quot;inform&quot;, &quot;MediaInfo_Inform&quot;),</span>
+<span class="fc" id="L50">            Map.entry(&quot;get&quot;, &quot;MediaInfo_Get&quot;),</span>
+<span class="fc" id="L51">            Map.entry(&quot;getI&quot;, &quot;MediaInfo_GetI&quot;),</span>
+<span class="fc" id="L52">            Map.entry(&quot;countGet&quot;, &quot;MediaInfo_Count_Get&quot;),</span>
+<span class="fc" id="L53">            Map.entry(&quot;option&quot;, &quot;MediaInfo_Option&quot;));</span>
 
     /**
      * Creates a new {@link MediaInfoLibrary} instance.
@@ -60,13 +58,13 @@ public interface MediaInfoLibrary extends Library {
      * @return the media info library instance
      */
      static MediaInfoLibrary newInstance() {
-<span class="pc bpc" id="L63" title="1 of 2 branches missed.">         final String mediaInfoLibPath = Platform.isWindows() ? MEDIA_INFO_LIB_PATH : MEDIA_INFO_LIB_PATH.toLowerCase();</span>
-<span class="fc" id="L64">         return Native.load(</span>
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">         final String mediaInfoLibPath = Platform.isWindows() ? MEDIA_INFO_LIB_PATH : MEDIA_INFO_LIB_PATH.toLowerCase();</span>
+<span class="fc" id="L62">         return Native.load(</span>
                  mediaInfoLibPath,
                  MediaInfoLibrary.class,
-<span class="fc" id="L67">                 Collections.singletonMap(</span>
+<span class="fc" id="L65">                 Collections.singletonMap(</span>
                          OPTION_FUNCTION_MAPPER,
-<span class="fc" id="L69">                         (FunctionMapper) (lib, method) -&gt; METHOD_TO_FUNCTION_NAME_MAP.get(method.getName())));</span>
+<span class="fc" id="L67">                         (FunctionMapper) (lib, method) -&gt; METHOD_TO_FUNCTION_NAME_MAP.get(method.getName())));</span>
     }
 
     /////////
