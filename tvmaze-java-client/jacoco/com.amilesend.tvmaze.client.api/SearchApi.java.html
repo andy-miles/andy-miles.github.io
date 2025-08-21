@@ -20,6 +20,7 @@ package com.amilesend.tvmaze.client.api;
 import com.amilesend.client.connection.Connection;
 import com.amilesend.client.parse.parser.BasicParser;
 import com.amilesend.client.parse.parser.ListParser;
+import com.amilesend.client.util.Validate;
 import com.amilesend.tvmaze.client.model.Person;
 import com.amilesend.tvmaze.client.model.Show;
 import com.amilesend.tvmaze.client.model.type.PersonResult;
@@ -29,7 +30,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
-import org.apache.commons.lang3.Validate;
 
 import java.util.List;
 
@@ -122,13 +122,10 @@ public class SearchApi extends ApiBase {
 
 <span class="pc bpc" id="L123" title="1 of 2 branches missed.">    private HttpUrl validateAndFormatLookupShowUrl(@NonNull final ShowLookupIdType type, final String externalId) {</span>
 <span class="fc" id="L124">        final String formattedId = validateId(externalId);</span>
-<span class="fc" id="L125">        return HttpUrl.parse(</span>
-<span class="fc" id="L126">                        new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L127">                                .append(LOOKUP_SHOWS_API_PATH)</span>
-<span class="fc" id="L128">                                .toString())</span>
-<span class="fc" id="L129">                .newBuilder()</span>
-<span class="fc" id="L130">                .addQueryParameter(type.getQueryParameter(), formattedId)</span>
-<span class="fc" id="L131">                .build();</span>
+<span class="fc" id="L125">        return HttpUrl.parse(connection.getBaseUrl() + LOOKUP_SHOWS_API_PATH)</span>
+<span class="fc" id="L126">                .newBuilder()</span>
+<span class="fc" id="L127">                .addQueryParameter(type.getQueryParameter(), formattedId)</span>
+<span class="fc" id="L128">                .build();</span>
     }
 
     /////////////////
@@ -144,11 +141,11 @@ public class SearchApi extends ApiBase {
      * @see PersonResult
      */
     public List&lt;PersonResult&gt; searchPeople(final String query) {
-<span class="fc" id="L147">        final HttpUrl url = validateAndFormatSearchUrl(SEARCH_PEOPLE_API_PATH, query);</span>
-<span class="fc" id="L148">        return connection.execute(</span>
-<span class="fc" id="L149">                connection.newRequestBuilder()</span>
-<span class="fc" id="L150">                        .url(url)</span>
-<span class="fc" id="L151">                        .build(),</span>
+<span class="fc" id="L144">        final HttpUrl url = validateAndFormatSearchUrl(SEARCH_PEOPLE_API_PATH, query);</span>
+<span class="fc" id="L145">        return connection.execute(</span>
+<span class="fc" id="L146">                connection.newRequestBuilder()</span>
+<span class="fc" id="L147">                        .url(url)</span>
+<span class="fc" id="L148">                        .build(),</span>
                 new ListParser&lt;&gt;(PersonResult.class));
     }
 
@@ -156,36 +153,33 @@ public class SearchApi extends ApiBase {
             final String apiPath,
             final String query,
             final Show.EmbeddedType... includeEmbeddedTypes) {
-<span class="fc" id="L159">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
+<span class="fc" id="L156">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
 
-<span class="fc" id="L161">        final String formattedQuery = validateQuery(query);</span>
-<span class="fc" id="L162">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(</span>
-<span class="fc" id="L163">                        new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L164">                                .append(apiPath)</span>
-<span class="fc" id="L165">                                .toString())</span>
-<span class="fc" id="L166">                .newBuilder()</span>
-<span class="fc" id="L167">                .addQueryParameter(&quot;q&quot;, formattedQuery);</span>
-<span class="fc" id="L168">        final HttpUrl url = formatEmbeddedTypes(urlBuilder, includeEmbeddedTypes).build();</span>
-<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
-<span class="nc" id="L170">            log.debug(&quot;Search URL: {}&quot;, url);</span>
+<span class="fc" id="L158">        final String formattedQuery = validateQuery(query);</span>
+<span class="fc" id="L159">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(connection.getBaseUrl() + apiPath)</span>
+<span class="fc" id="L160">                .newBuilder()</span>
+<span class="fc" id="L161">                .addQueryParameter(&quot;q&quot;, formattedQuery);</span>
+<span class="fc" id="L162">        final HttpUrl url = formatEmbeddedTypes(urlBuilder, includeEmbeddedTypes).build();</span>
+<span class="pc bpc" id="L163" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L164">            log.debug(&quot;Search URL: {}&quot;, url);</span>
         }
-<span class="fc" id="L172">        return url;</span>
+<span class="fc" id="L166">        return url;</span>
     }
 
     protected static String validateQuery(final String query) {
-<span class="fc" id="L176">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
-<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        Validate.isTrue(query.length() &lt;= MAX_QUERY_LENGTH,</span>
+<span class="fc" id="L170">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        Validate.isTrue(query.length() &lt;= MAX_QUERY_LENGTH,</span>
                 &quot;query length must be &lt;= &quot; + MAX_QUERY_LENGTH);
 
-<span class="fc" id="L180">        return query;</span>
+<span class="fc" id="L174">        return query;</span>
     }
 
     /** The type of alternative identifier type. */
-<span class="fc" id="L184">    @RequiredArgsConstructor</span>
+<span class="fc" id="L178">    @RequiredArgsConstructor</span>
     public enum ShowLookupIdType {
-<span class="fc" id="L186">        IMDB(&quot;imdb&quot;),</span>
-<span class="fc" id="L187">        TV_RAGE(&quot;tvrage&quot;),</span>
-<span class="fc" id="L188">        TVDB(&quot;thetvdb&quot;);</span>
+<span class="fc" id="L180">        IMDB(&quot;imdb&quot;),</span>
+<span class="fc" id="L181">        TV_RAGE(&quot;tvrage&quot;),</span>
+<span class="fc" id="L182">        TVDB(&quot;thetvdb&quot;);</span>
 
         @Getter
         private final String queryParameter;

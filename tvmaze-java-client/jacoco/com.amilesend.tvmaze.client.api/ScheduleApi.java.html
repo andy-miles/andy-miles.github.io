@@ -19,11 +19,11 @@ package com.amilesend.tvmaze.client.api;
 
 import com.amilesend.client.connection.Connection;
 import com.amilesend.client.parse.parser.ListParser;
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.client.util.Validate;
 import com.amilesend.tvmaze.client.model.Episode;
 import com.amilesend.tvmaze.client.parse.adapters.LocalDateTypeAdapter;
 import okhttp3.HttpUrl;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -112,37 +112,32 @@ public class ScheduleApi extends ApiBase {
     }
 
     private HttpUrl getFullScheduleUrl() {
-<span class="fc" id="L115">        return HttpUrl.parse(</span>
-<span class="fc" id="L116">                new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L117">                        .append(&quot;/schedule/full&quot;)</span>
-<span class="fc" id="L118">                        .toString());</span>
+<span class="fc" id="L115">        return HttpUrl.parse(connection.getBaseUrl() + &quot;/schedule/full&quot;);</span>
     }
 
     private HttpUrl formatScheduleUrl(final String apiPath, final String countryCode, final LocalDate date) {
-<span class="fc" id="L122">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
+<span class="fc" id="L119">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
 
-<span class="fc" id="L124">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(</span>
-<span class="fc" id="L125">                new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L126">                        .append(apiPath)</span>
-<span class="fc" id="L127">                        .toString())</span>
-<span class="fc" id="L128">                .newBuilder();</span>
-<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (StringUtils.isNotBlank(countryCode)) {</span>
-<span class="fc" id="L130">            urlBuilder.addQueryParameter(&quot;country&quot;, validateAndFormatCountryCode(countryCode));</span>
+<span class="fc" id="L121">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(connection.getBaseUrl() + apiPath).newBuilder();</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (StringUtils.isNotBlank(countryCode)) {</span>
+<span class="fc" id="L123">            urlBuilder.addQueryParameter(&quot;country&quot;, validateAndFormatCountryCode(countryCode));</span>
         }
-<span class="fc" id="L132">        Optional.ofNullable(date)</span>
-<span class="fc" id="L133">                .ifPresent(d -&gt; urlBuilder.addQueryParameter(&quot;date&quot;, d.format(LocalDateTypeAdapter.FORMATTER)));</span>
+<span class="fc" id="L125">        Optional.ofNullable(date)</span>
+<span class="fc" id="L126">                .ifPresent(d -&gt; urlBuilder.addQueryParameter(</span>
+                        &quot;date&quot;,
+<span class="fc" id="L128">                        d.format(LocalDateTypeAdapter.FORMATTER)));</span>
 
-<span class="fc" id="L135">        return urlBuilder.build();</span>
+<span class="fc" id="L130">        return urlBuilder.build();</span>
     }
 
     private static String validateAndFormatCountryCode(final String countryCode) {
-<span class="fc" id="L139">        Validate.notBlank(countryCode, &quot;countryCode must not be blank&quot;);</span>
-<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        Validate.isTrue(countryCode.length() &lt;= MAX_COUNTRY_CODE_LENGTH,</span>
+<span class="fc" id="L134">        Validate.notBlank(countryCode, &quot;countryCode must not be blank&quot;);</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        Validate.isTrue(countryCode.length() &lt;= MAX_COUNTRY_CODE_LENGTH,</span>
                 &quot;countryCode length must be &lt;= &quot; + MAX_COUNTRY_CODE_LENGTH);
-<span class="fc" id="L142">        Validate.isTrue(ISO_COUNTRY_CODES.contains(countryCode),</span>
+<span class="fc" id="L137">        Validate.isTrue(ISO_COUNTRY_CODES.contains(countryCode),</span>
                 &quot;countryCode must be a valid ISO 3166-1 country code&quot;);
 
-<span class="fc" id="L145">        return URLEncoder.encode(countryCode, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L140">        return URLEncoder.encode(countryCode, StandardCharsets.UTF_8);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -35,7 +35,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.MapUtils;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -48,7 +47,7 @@ import java.util.stream.Collectors;
 @SuperBuilder
 @Getter
 @ToString(callSuper = true)
-<span class="fc" id="L51">@Slf4j</span>
+<span class="fc" id="L50">@Slf4j</span>
 public class Show extends Resource&lt;Show, ResourceLink&gt; {
     /** The URL for the show. */
     private final String url;
@@ -106,9 +105,9 @@ public class Show extends Resource&lt;Show, ResourceLink&gt; {
      * @see Episode
      */
     public List&lt;Episode&gt; getEpisodes() {
-<span class="fc" id="L109">        return Optional.ofNullable(embeddedResource)</span>
-<span class="fc" id="L110">                .map(EmbeddedResource::getEpisodes)</span>
-<span class="fc" id="L111">                .orElse(null);</span>
+<span class="fc" id="L108">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L109">                .map(EmbeddedResource::getEpisodes)</span>
+<span class="fc" id="L110">                .orElse(null);</span>
     }
 
     /**
@@ -118,9 +117,9 @@ public class Show extends Resource&lt;Show, ResourceLink&gt; {
      * @see CastMember
      */
     public List&lt;CastMember&gt; getCast() {
-<span class="fc" id="L121">        return Optional.ofNullable(embeddedResource)</span>
-<span class="fc" id="L122">                .map(EmbeddedResource::getCast)</span>
-<span class="fc" id="L123">                .orElse(null);</span>
+<span class="fc" id="L120">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L121">                .map(EmbeddedResource::getCast)</span>
+<span class="fc" id="L122">                .orElse(null);</span>
     }
 
     /**
@@ -130,9 +129,9 @@ public class Show extends Resource&lt;Show, ResourceLink&gt; {
      * @see Episode
      */
     public Episode getNextEpisode() {
-<span class="fc" id="L133">        return Optional.ofNullable(embeddedResource)</span>
-<span class="fc" id="L134">                .map(EmbeddedResource::getNextEpisode)</span>
-<span class="fc" id="L135">                .orElse(null);</span>
+<span class="fc" id="L132">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L133">                .map(EmbeddedResource::getNextEpisode)</span>
+<span class="fc" id="L134">                .orElse(null);</span>
     }
 
     /**
@@ -142,9 +141,9 @@ public class Show extends Resource&lt;Show, ResourceLink&gt; {
      * @see Episode
      */
     public Episode getPreviousEpisode() {
-<span class="fc" id="L145">        return Optional.ofNullable(embeddedResource)</span>
-<span class="fc" id="L146">                .map(EmbeddedResource::getPreviousEpisode)</span>
-<span class="fc" id="L147">                .orElse(null);</span>
+<span class="fc" id="L144">        return Optional.ofNullable(embeddedResource)</span>
+<span class="fc" id="L145">                .map(EmbeddedResource::getPreviousEpisode)</span>
+<span class="fc" id="L146">                .orElse(null);</span>
     }
 
     /**
@@ -154,33 +153,33 @@ public class Show extends Resource&lt;Show, ResourceLink&gt; {
      * @return the map of external identifiers
      */
     public Map&lt;String, String&gt; getExternals() {
-<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (MapUtils.isEmpty(externals)) {</span>
-<span class="nc" id="L158">            return null;</span>
+<span class="pc bpc" id="L156" title="2 of 4 branches missed.">        if (Objects.isNull(externals) || externals.isEmpty()) {</span>
+<span class="nc" id="L157">            return null;</span>
         }
 
-<span class="fc" id="L161">        return externals.entrySet().stream()</span>
-<span class="fc" id="L162">                .filter(e -&gt; Objects.nonNull(e.getValue()))</span>
-<span class="fc" id="L163">                .collect(Collectors.toMap(e -&gt; e.getKey(), e -&gt; convertExternalIdToString(e.getValue())));</span>
+<span class="fc" id="L160">        return externals.entrySet().stream()</span>
+<span class="fc" id="L161">                .filter(e -&gt; Objects.nonNull(e.getValue()))</span>
+<span class="fc" id="L162">                .collect(Collectors.toMap(e -&gt; e.getKey(), e -&gt; convertExternalIdToString(e.getValue())));</span>
     }
 
     private static String convertExternalIdToString(final Object val) {
-<span class="fc bfc" id="L167" title="All 2 branches covered.">        if (String.class.isInstance(val)) {</span>
-<span class="fc" id="L168">            return (String) val;</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (String.class.isInstance(val)) {</span>
+<span class="fc" id="L167">            return (String) val;</span>
         }
 
-<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (Double.class.isInstance(val)) {</span>
-<span class="fc" id="L172">            final Double doubleVal = (Double) val;</span>
-<span class="fc" id="L173">            final int castedVal = doubleVal.intValue();</span>
-<span class="fc" id="L174">            return String.valueOf(castedVal);</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (Double.class.isInstance(val)) {</span>
+<span class="fc" id="L171">            final Double doubleVal = (Double) val;</span>
+<span class="fc" id="L172">            final int castedVal = doubleVal.intValue();</span>
+<span class="fc" id="L173">            return String.valueOf(castedVal);</span>
         }
 
-<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (Integer.class.isInstance(val)) {</span>
-<span class="fc" id="L178">            final Integer integerVal = (Integer) val;</span>
-<span class="fc" id="L179">            return String.valueOf(integerVal);</span>
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (Integer.class.isInstance(val)) {</span>
+<span class="fc" id="L177">            final Integer integerVal = (Integer) val;</span>
+<span class="fc" id="L178">            return String.valueOf(integerVal);</span>
         }
 
-<span class="nc" id="L182">        log.warn(&quot;Unsupported external Id [{}] of type [{}]&quot;, val, val.getClass());</span>
-<span class="nc" id="L183">        return null;</span>
+<span class="nc" id="L181">        log.warn(&quot;Unsupported external Id [{}] of type [{}]&quot;, val, val.getClass());</span>
+<span class="nc" id="L182">        return null;</span>
     }
 
     /** Describes the supported resource links for a {@link Show}. */
@@ -207,13 +206,13 @@ public class Show extends Resource&lt;Show, ResourceLink&gt; {
     @Data
     public static class EmbeddedType implements EmbeddedQueryParameter {
         /** Include a list of cast members. */
-<span class="fc" id="L210">        public static final EmbeddedType CAST = new EmbeddedType(&quot;cast&quot;);</span>
+<span class="fc" id="L209">        public static final EmbeddedType CAST = new EmbeddedType(&quot;cast&quot;);</span>
         /** Include a list of episodes. */
-<span class="fc" id="L212">        public static final EmbeddedType EPISODES = new EmbeddedType(&quot;episodes&quot;);</span>
+<span class="fc" id="L211">        public static final EmbeddedType EPISODES = new EmbeddedType(&quot;episodes&quot;);</span>
         /** Include the next airing episode, if available. */
-<span class="fc" id="L214">        public static final EmbeddedType NEXT_EPISODE = new EmbeddedType(&quot;nextepisode&quot;);</span>
+<span class="fc" id="L213">        public static final EmbeddedType NEXT_EPISODE = new EmbeddedType(&quot;nextepisode&quot;);</span>
         /** Include the previous airing episode. */
-<span class="fc" id="L216">        public static final EmbeddedType PREVIOUS_EPISODE = new EmbeddedType(&quot;previousepisode&quot;);</span>
+<span class="fc" id="L215">        public static final EmbeddedType PREVIOUS_EPISODE = new EmbeddedType(&quot;previousepisode&quot;);</span>
 
         private final String queryParameterValue;
     }

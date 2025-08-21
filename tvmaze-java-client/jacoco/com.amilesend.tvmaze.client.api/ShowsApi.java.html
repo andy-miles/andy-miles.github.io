@@ -21,6 +21,7 @@ import com.amilesend.client.connection.Connection;
 import com.amilesend.client.connection.RequestException;
 import com.amilesend.client.parse.parser.BasicParser;
 import com.amilesend.client.parse.parser.ListParser;
+import com.amilesend.client.util.StringUtils;
 import com.amilesend.tvmaze.client.model.AlternateEpisode;
 import com.amilesend.tvmaze.client.model.AlternateList;
 import com.amilesend.tvmaze.client.model.Episode;
@@ -33,7 +34,6 @@ import com.amilesend.tvmaze.client.model.type.CrewMember;
 import com.amilesend.tvmaze.client.parse.adapters.LocalDateTypeAdapter;
 import lombok.NonNull;
 import okhttp3.HttpUrl;
-import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -112,18 +112,14 @@ public class ShowsApi extends ApiBase {
 
     private HttpUrl validateAndFormatEpisodesUrl(final int showId, final boolean isSpecialsIncluded) {
 <span class="fc" id="L114">        final String formattedId = validateId(showId);</span>
-<span class="fc" id="L115">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(</span>
-<span class="fc" id="L116">                        new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L117">                                .append(SHOWS_API_PATH)</span>
-<span class="fc" id="L118">                                .append(formattedId)</span>
-<span class="fc" id="L119">                                .append(&quot;/episodes&quot;)</span>
-<span class="fc" id="L120">                                .toString())</span>
-<span class="fc" id="L121">                .newBuilder();</span>
-<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (isSpecialsIncluded) {</span>
-<span class="fc" id="L123">            urlBuilder.addQueryParameter(&quot;specials&quot;, &quot;1&quot;);</span>
+<span class="fc" id="L115">        final HttpUrl.Builder urlBuilder =</span>
+<span class="fc" id="L116">                HttpUrl.parse(connection.getBaseUrl() + SHOWS_API_PATH + formattedId + &quot;/episodes&quot;)</span>
+<span class="fc" id="L117">                        .newBuilder();</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        if (isSpecialsIncluded) {</span>
+<span class="fc" id="L119">            urlBuilder.addQueryParameter(&quot;specials&quot;, &quot;1&quot;);</span>
         }
 
-<span class="fc" id="L126">        return urlBuilder.build();</span>
+<span class="fc" id="L122">        return urlBuilder.build();</span>
     }
 
     //////////////////////
@@ -138,11 +134,11 @@ public class ShowsApi extends ApiBase {
      * @see AlternateList
      */
     public List&lt;AlternateList&gt; getAlternateLists(final int showId) {
-<span class="fc" id="L141">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, ALTERNATE_LISTS_SUB_API_PATH);</span>
-<span class="fc" id="L142">        return connection.execute(</span>
-<span class="fc" id="L143">                connection.newRequestBuilder()</span>
-<span class="fc" id="L144">                        .url(url)</span>
-<span class="fc" id="L145">                        .build(),</span>
+<span class="fc" id="L137">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, ALTERNATE_LISTS_SUB_API_PATH);</span>
+<span class="fc" id="L138">        return connection.execute(</span>
+<span class="fc" id="L139">                connection.newRequestBuilder()</span>
+<span class="fc" id="L140">                        .url(url)</span>
+<span class="fc" id="L141">                        .build(),</span>
                 new ListParser&lt;&gt;(AlternateList.class));
     }
 
@@ -160,24 +156,24 @@ public class ShowsApi extends ApiBase {
      * @see AlternateList
      */
     public AlternateList getAlternateList(final int alternateListId, final boolean isAlternateEpisodesIncluded) {
-<span class="fc" id="L163">        final HttpUrl url = validateAndFormatAlternateListsUrl(alternateListId, isAlternateEpisodesIncluded);</span>
-<span class="fc" id="L164">        return connection.execute(</span>
-<span class="fc" id="L165">                connection.newRequestBuilder()</span>
-<span class="fc" id="L166">                        .url(url)</span>
-<span class="fc" id="L167">                        .build(),</span>
+<span class="fc" id="L159">        final HttpUrl url = validateAndFormatAlternateListsUrl(alternateListId, isAlternateEpisodesIncluded);</span>
+<span class="fc" id="L160">        return connection.execute(</span>
+<span class="fc" id="L161">                connection.newRequestBuilder()</span>
+<span class="fc" id="L162">                        .url(url)</span>
+<span class="fc" id="L163">                        .build(),</span>
                 new BasicParser&lt;&gt;(AlternateList.class));
     }
 
     private HttpUrl validateAndFormatAlternateListsUrl(
             final int alternateListId,
             final boolean isAlternateEpisodesIncluded) {
-<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        return isAlternateEpisodesIncluded</span>
-<span class="fc" id="L175">                ? validateAndFormatUrl(</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        return isAlternateEpisodesIncluded</span>
+<span class="fc" id="L171">                ? validateAndFormatUrl(</span>
                         ALTERNATE_LISTS_API_PATH,
                         alternateListId,
                         StringUtils.EMPTY,
                         AlternateList.EmbeddedType.ALTERNATE_EPISODES)
-<span class="nc" id="L180">                : validateAndFormatUrl(ALTERNATE_LISTS_API_PATH, alternateListId, StringUtils.EMPTY);</span>
+<span class="nc" id="L176">                : validateAndFormatUrl(ALTERNATE_LISTS_API_PATH, alternateListId, StringUtils.EMPTY);</span>
     }
 
     /////////////////////////
@@ -193,24 +189,24 @@ public class ShowsApi extends ApiBase {
      * @see AlternateEpisode
      */
     public List&lt;AlternateEpisode&gt; getAlternateEpisodes(final int alternateListId, final boolean isEpisodesIncluded) {
-<span class="fc" id="L196">        final HttpUrl url = validateAndFormatAlternateEpisodesUrl(alternateListId, isEpisodesIncluded);</span>
-<span class="fc" id="L197">        return connection.execute(</span>
-<span class="fc" id="L198">                connection.newRequestBuilder()</span>
-<span class="fc" id="L199">                        .url(url)</span>
-<span class="fc" id="L200">                        .build(),</span>
+<span class="fc" id="L192">        final HttpUrl url = validateAndFormatAlternateEpisodesUrl(alternateListId, isEpisodesIncluded);</span>
+<span class="fc" id="L193">        return connection.execute(</span>
+<span class="fc" id="L194">                connection.newRequestBuilder()</span>
+<span class="fc" id="L195">                        .url(url)</span>
+<span class="fc" id="L196">                        .build(),</span>
                 new ListParser&lt;&gt;(AlternateEpisode.class));
     }
 
     private HttpUrl validateAndFormatAlternateEpisodesUrl(
             final int alternateListId,
             final boolean isEpisodesIncluded) {
-<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        return isEpisodesIncluded</span>
-<span class="fc" id="L208">                ? validateAndFormatUrl(</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        return isEpisodesIncluded</span>
+<span class="fc" id="L204">                ? validateAndFormatUrl(</span>
                         ALTERNATE_LISTS_API_PATH,
                         alternateListId,
                         ALTERNATE_EPISODES_SUB_API_PATH,
                         AlternateList.EmbeddedType.EPISODES)
-<span class="nc" id="L213">                : validateAndFormatUrl(ALTERNATE_LISTS_API_PATH, alternateListId, ALTERNATE_EPISODES_SUB_API_PATH);</span>
+<span class="nc" id="L209">                : validateAndFormatUrl(ALTERNATE_LISTS_API_PATH, alternateListId, ALTERNATE_EPISODES_SUB_API_PATH);</span>
     }
 
     ///////////////
@@ -227,11 +223,11 @@ public class ShowsApi extends ApiBase {
      * @see Episode
      */
     public Episode getEpisode(final int showId, final int seasonNum, final int episodeNum) {
-<span class="fc" id="L230">        final HttpUrl url = validateAndFormatEpisodeUrl(showId, seasonNum, episodeNum);</span>
-<span class="fc" id="L231">        return connection.execute(</span>
-<span class="fc" id="L232">                connection.newRequestBuilder()</span>
-<span class="fc" id="L233">                        .url(url)</span>
-<span class="fc" id="L234">                        .build(),</span>
+<span class="fc" id="L226">        final HttpUrl url = validateAndFormatEpisodeUrl(showId, seasonNum, episodeNum);</span>
+<span class="fc" id="L227">        return connection.execute(</span>
+<span class="fc" id="L228">                connection.newRequestBuilder()</span>
+<span class="fc" id="L229">                        .url(url)</span>
+<span class="fc" id="L230">                        .build(),</span>
                 new BasicParser&lt;&gt;(Episode.class));
     }
 
@@ -239,19 +235,14 @@ public class ShowsApi extends ApiBase {
             final int showId,
             final int seasonNum,
             final int episodeNum) {
-<span class="fc" id="L242">        final String formattedShowId = validateId(showId);</span>
-<span class="fc" id="L243">        final String formattedSeasonNum = validateId(seasonNum);</span>
-<span class="fc" id="L244">        final String formattedEpisodeNum = validateId(episodeNum);</span>
-<span class="fc" id="L245">        return HttpUrl.parse(</span>
-<span class="fc" id="L246">                        new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L247">                                .append(SHOWS_API_PATH)</span>
-<span class="fc" id="L248">                                .append(formattedShowId)</span>
-<span class="fc" id="L249">                                .append(&quot;/episodebynumber&quot;)</span>
-<span class="fc" id="L250">                                .toString())</span>
-<span class="fc" id="L251">                .newBuilder()</span>
-<span class="fc" id="L252">                .addQueryParameter(&quot;season&quot;, formattedSeasonNum)</span>
-<span class="fc" id="L253">                .addQueryParameter(&quot;number&quot;, formattedEpisodeNum)</span>
-<span class="fc" id="L254">                .build();</span>
+<span class="fc" id="L238">        final String formattedShowId = validateId(showId);</span>
+<span class="fc" id="L239">        final String formattedSeasonNum = validateId(seasonNum);</span>
+<span class="fc" id="L240">        final String formattedEpisodeNum = validateId(episodeNum);</span>
+<span class="fc" id="L241">        return HttpUrl.parse(connection.getBaseUrl() + SHOWS_API_PATH + formattedShowId + &quot;/episodebynumber&quot;)</span>
+<span class="fc" id="L242">                .newBuilder()</span>
+<span class="fc" id="L243">                .addQueryParameter(&quot;season&quot;, formattedSeasonNum)</span>
+<span class="fc" id="L244">                .addQueryParameter(&quot;number&quot;, formattedEpisodeNum)</span>
+<span class="fc" id="L245">                .build();</span>
     }
 
     ////////////////
@@ -267,26 +258,21 @@ public class ShowsApi extends ApiBase {
      * @see Episode
      */
     public List&lt;Episode&gt; getEpisodes(final int showId, final LocalDate date) {
-<span class="fc" id="L270">        final HttpUrl url = validateAndFormatEpisodesUrl(showId, date);</span>
-<span class="fc" id="L271">        return connection.execute(</span>
-<span class="fc" id="L272">                connection.newRequestBuilder()</span>
-<span class="fc" id="L273">                        .url(url)</span>
-<span class="fc" id="L274">                        .build(),</span>
+<span class="fc" id="L261">        final HttpUrl url = validateAndFormatEpisodesUrl(showId, date);</span>
+<span class="fc" id="L262">        return connection.execute(</span>
+<span class="fc" id="L263">                connection.newRequestBuilder()</span>
+<span class="fc" id="L264">                        .url(url)</span>
+<span class="fc" id="L265">                        .build(),</span>
                 new ListParser&lt;&gt;(Episode.class));
     }
 
     private HttpUrl validateAndFormatEpisodesUrl(final int showId, final LocalDate date) {
-<span class="fc" id="L279">        final String formattedShowId = validateId(showId);</span>
-<span class="fc" id="L280">        final String formattedDate = validateAndFormatDate(date);</span>
-<span class="fc" id="L281">        return HttpUrl.parse(</span>
-<span class="fc" id="L282">                        new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L283">                                .append(&quot;/shows/&quot;)</span>
-<span class="fc" id="L284">                                .append(formattedShowId)</span>
-<span class="fc" id="L285">                                .append(&quot;/episodesbydate&quot;)</span>
-<span class="fc" id="L286">                                .toString())</span>
-<span class="fc" id="L287">                .newBuilder()</span>
-<span class="fc" id="L288">                .addQueryParameter(&quot;date&quot;, formattedDate)</span>
-<span class="fc" id="L289">                .build();</span>
+<span class="fc" id="L270">        final String formattedShowId = validateId(showId);</span>
+<span class="fc" id="L271">        final String formattedDate = validateAndFormatDate(date);</span>
+<span class="fc" id="L272">        return HttpUrl.parse(connection.getBaseUrl() + &quot;/shows/&quot; + formattedShowId + &quot;/episodesbydate&quot;)</span>
+<span class="fc" id="L273">                .newBuilder()</span>
+<span class="fc" id="L274">                .addQueryParameter(&quot;date&quot;, formattedDate)</span>
+<span class="fc" id="L275">                .build();</span>
     }
 
     ///////////////
@@ -301,11 +287,11 @@ public class ShowsApi extends ApiBase {
      * @see Season
      */
     public List&lt;Season&gt; getSeasons(final int showId) {
-<span class="fc" id="L304">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, SEASONS_SUB_API_PATH);</span>
-<span class="fc" id="L305">        return connection.execute(</span>
-<span class="fc" id="L306">                connection.newRequestBuilder()</span>
-<span class="fc" id="L307">                        .url(url)</span>
-<span class="fc" id="L308">                        .build(),</span>
+<span class="fc" id="L290">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, SEASONS_SUB_API_PATH);</span>
+<span class="fc" id="L291">        return connection.execute(</span>
+<span class="fc" id="L292">                connection.newRequestBuilder()</span>
+<span class="fc" id="L293">                        .url(url)</span>
+<span class="fc" id="L294">                        .build(),</span>
                 new ListParser&lt;&gt;(Season.class));
     }
 
@@ -322,22 +308,22 @@ public class ShowsApi extends ApiBase {
      * @see Episode
      */
     public List&lt;Episode&gt; getSeasonEpisodes(final int seasonId, final boolean isGuestCastIncluded) {
-<span class="fc" id="L325">        final HttpUrl url = validateAndFormatSeasonEpisodesUrl(seasonId, isGuestCastIncluded);</span>
-<span class="fc" id="L326">        return connection.execute(</span>
-<span class="fc" id="L327">                connection.newRequestBuilder()</span>
-<span class="fc" id="L328">                        .url(url)</span>
-<span class="fc" id="L329">                        .build(),</span>
+<span class="fc" id="L311">        final HttpUrl url = validateAndFormatSeasonEpisodesUrl(seasonId, isGuestCastIncluded);</span>
+<span class="fc" id="L312">        return connection.execute(</span>
+<span class="fc" id="L313">                connection.newRequestBuilder()</span>
+<span class="fc" id="L314">                        .url(url)</span>
+<span class="fc" id="L315">                        .build(),</span>
                 new ListParser&lt;&gt;(Episode.class));
     }
 
     private HttpUrl validateAndFormatSeasonEpisodesUrl(final int seasonId, final boolean isGuestCastIncluded) {
-<span class="pc bpc" id="L334" title="1 of 2 branches missed.">        return isGuestCastIncluded</span>
-<span class="fc" id="L335">                ? validateAndFormatUrl(</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        return isGuestCastIncluded</span>
+<span class="fc" id="L321">                ? validateAndFormatUrl(</span>
                         SEASONS_API_PATH,
                         seasonId,
                         EPISODES_SUB_API_PATH,
                         Episode.EmbeddedType.GUEST_CAST)
-<span class="nc" id="L340">                : validateAndFormatUrl(SEASONS_API_PATH, seasonId, EPISODES_SUB_API_PATH);</span>
+<span class="nc" id="L326">                : validateAndFormatUrl(SEASONS_API_PATH, seasonId, EPISODES_SUB_API_PATH);</span>
     }
 
     ////////////
@@ -352,11 +338,11 @@ public class ShowsApi extends ApiBase {
      * @see CastMember
      */
     public List&lt;CastMember&gt; getCast(final int showId) {
-<span class="fc" id="L355">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, CAST_SUB_API_PATH);</span>
-<span class="fc" id="L356">        return connection.execute(</span>
-<span class="fc" id="L357">                connection.newRequestBuilder()</span>
-<span class="fc" id="L358">                        .url(url)</span>
-<span class="fc" id="L359">                        .build(),</span>
+<span class="fc" id="L341">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, CAST_SUB_API_PATH);</span>
+<span class="fc" id="L342">        return connection.execute(</span>
+<span class="fc" id="L343">                connection.newRequestBuilder()</span>
+<span class="fc" id="L344">                        .url(url)</span>
+<span class="fc" id="L345">                        .build(),</span>
                 new ListParser&lt;&gt;(CastMember.class));
     }
 
@@ -372,11 +358,11 @@ public class ShowsApi extends ApiBase {
      * @see CrewMember
      */
     public List&lt;CrewMember&gt; getCrew(final int showId) {
-<span class="fc" id="L375">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, CREW_SUB_API_PATH);</span>
-<span class="fc" id="L376">        return connection.execute(</span>
-<span class="fc" id="L377">                connection.newRequestBuilder()</span>
-<span class="fc" id="L378">                        .url(url)</span>
-<span class="fc" id="L379">                        .build(),</span>
+<span class="fc" id="L361">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, CREW_SUB_API_PATH);</span>
+<span class="fc" id="L362">        return connection.execute(</span>
+<span class="fc" id="L363">                connection.newRequestBuilder()</span>
+<span class="fc" id="L364">                        .url(url)</span>
+<span class="fc" id="L365">                        .build(),</span>
                 new ListParser&lt;&gt;(CrewMember.class));
     }
 
@@ -392,11 +378,11 @@ public class ShowsApi extends ApiBase {
      * @see Alias
      */
     public List&lt;Alias&gt; getAliases(final int showId) {
-<span class="fc" id="L395">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, ALIASES_SUB_API_PATH);</span>
-<span class="fc" id="L396">        return connection.execute(</span>
-<span class="fc" id="L397">                connection.newRequestBuilder()</span>
-<span class="fc" id="L398">                        .url(url)</span>
-<span class="fc" id="L399">                        .build(),</span>
+<span class="fc" id="L381">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, ALIASES_SUB_API_PATH);</span>
+<span class="fc" id="L382">        return connection.execute(</span>
+<span class="fc" id="L383">                connection.newRequestBuilder()</span>
+<span class="fc" id="L384">                        .url(url)</span>
+<span class="fc" id="L385">                        .build(),</span>
                 new ListParser&lt;&gt;(Alias.class));
     }
 
@@ -412,11 +398,11 @@ public class ShowsApi extends ApiBase {
      * @see Image
      */
     public List&lt;Image&gt; getImages(final int showId) {
-<span class="fc" id="L415">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, IMAGES_SUB_API_PATH);</span>
-<span class="fc" id="L416">        return connection.execute(</span>
-<span class="fc" id="L417">                connection.newRequestBuilder()</span>
-<span class="fc" id="L418">                        .url(url)</span>
-<span class="fc" id="L419">                        .build(),</span>
+<span class="fc" id="L401">        final HttpUrl url = validateAndFormatUrl(SHOWS_API_PATH, showId, IMAGES_SUB_API_PATH);</span>
+<span class="fc" id="L402">        return connection.execute(</span>
+<span class="fc" id="L403">                connection.newRequestBuilder()</span>
+<span class="fc" id="L404">                        .url(url)</span>
+<span class="fc" id="L405">                        .build(),</span>
                 new ListParser&lt;&gt;(Image.class));
     }
 
@@ -434,16 +420,16 @@ public class ShowsApi extends ApiBase {
      * @throws RequestException if there are no more shows to return
      */
     public List&lt;Show&gt; getIndex(final int pageNum) {
-<span class="fc" id="L437">        final HttpUrl url = validateAndFormatIndexUrl(SHOWS_INDEX_API_PATH, pageNum);</span>
-<span class="fc" id="L438">        return connection.execute(</span>
-<span class="fc" id="L439">                connection.newRequestBuilder()</span>
-<span class="fc" id="L440">                        .url(url)</span>
-<span class="fc" id="L441">                        .build(),</span>
+<span class="fc" id="L423">        final HttpUrl url = validateAndFormatIndexUrl(SHOWS_INDEX_API_PATH, pageNum);</span>
+<span class="fc" id="L424">        return connection.execute(</span>
+<span class="fc" id="L425">                connection.newRequestBuilder()</span>
+<span class="fc" id="L426">                        .url(url)</span>
+<span class="fc" id="L427">                        .build(),</span>
                 new ListParser&lt;&gt;(Show.class));
     }
 
-<span class="pc bpc" id="L445" title="1 of 2 branches missed.">    private static String validateAndFormatDate(@NonNull final LocalDate date) {</span>
-<span class="fc" id="L446">        return URLEncoder.encode(date.format(LocalDateTypeAdapter.FORMATTER), StandardCharsets.UTF_8);</span>
+<span class="pc bpc" id="L431" title="1 of 2 branches missed.">    private static String validateAndFormatDate(@NonNull final LocalDate date) {</span>
+<span class="fc" id="L432">        return URLEncoder.encode(date.format(LocalDateTypeAdapter.FORMATTER), StandardCharsets.UTF_8);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

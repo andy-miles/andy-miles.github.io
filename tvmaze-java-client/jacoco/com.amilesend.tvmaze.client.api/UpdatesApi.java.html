@@ -19,10 +19,10 @@ package com.amilesend.tvmaze.client.api;
 
 import com.amilesend.client.connection.Connection;
 import com.amilesend.client.parse.parser.MapParser;
+import com.amilesend.client.util.Validate;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import okhttp3.HttpUrl;
-import org.apache.commons.lang3.Validate;
 
 import java.util.Map;
 import java.util.Objects;
@@ -88,24 +88,20 @@ public class UpdatesApi extends ApiBase {
     private HttpUrl validateAndFormatUpdatesUrl(final String apiPath, final Since since) {
 <span class="fc" id="L89">        Validate.notBlank(apiPath, &quot;apiPath must not be blank&quot;);</span>
 
-<span class="fc" id="L91">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(</span>
-<span class="fc" id="L92">                        new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L93">                                .append(apiPath)</span>
-<span class="fc" id="L94">                                .toString())</span>
-<span class="fc" id="L95">                .newBuilder();</span>
-<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (Objects.nonNull(since)) {</span>
-<span class="fc" id="L97">            urlBuilder.addQueryParameter(&quot;since&quot;, since.getQueryParameter());</span>
+<span class="fc" id="L91">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(connection.getBaseUrl() + apiPath).newBuilder();</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        if (Objects.nonNull(since)) {</span>
+<span class="fc" id="L93">            urlBuilder.addQueryParameter(&quot;since&quot;, since.getQueryParameter());</span>
         }
 
-<span class="fc" id="L100">        return urlBuilder.build();</span>
+<span class="fc" id="L96">        return urlBuilder.build();</span>
     }
 
     /** The time range limiting specifier. */
-<span class="fc" id="L104">    @RequiredArgsConstructor</span>
+<span class="fc" id="L100">    @RequiredArgsConstructor</span>
     public enum Since {
-<span class="fc" id="L106">        DAY(&quot;day&quot;),</span>
-<span class="fc" id="L107">        WEEK(&quot;week&quot;),</span>
-<span class="fc" id="L108">        MONTH(&quot;month&quot;);</span>
+<span class="fc" id="L102">        DAY(&quot;day&quot;),</span>
+<span class="fc" id="L103">        WEEK(&quot;week&quot;),</span>
+<span class="fc" id="L104">        MONTH(&quot;month&quot;);</span>
 
         @Getter
         private final String queryParameter;
