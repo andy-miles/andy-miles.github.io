@@ -17,11 +17,11 @@
  */
 package com.amilesend.client.crypto;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Validate;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -67,7 +67,7 @@ public class CryptoHelper {
      * @return the {@link EncryptedEnvelope} containing the encrypted bytes
      * @throws CryptoHelperException if an error occurred while encrypting the contents
      */
-<span class="fc bfc" id="L70" title="All 2 branches covered.">    public EncryptedEnvelope encrypt(@NonNull final byte[] content, final String description)</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">    public EncryptedEnvelope encrypt(final byte @NonNull [] content, final String description)</span>
             throws CryptoHelperException {
 <span class="fc" id="L72">        log.debug(&quot;Encrypting {}&quot;, description);</span>
 <span class="fc" id="L73">        final IvParameterSpec ivSpec = generativeIv();</span>

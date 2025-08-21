@@ -17,8 +17,8 @@
  */
 package com.amilesend.client.connection.http;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Stopwatch;
+import com.amilesend.client.util.Pair;
+import com.amilesend.client.util.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import lombok.Builder;
@@ -36,19 +36,19 @@ import okio.Buffer;
 import okio.BufferedSource;
 import okio.GzipSource;
 import okio.Okio;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.concurrent.TimeUnit;
 
-import static com.google.common.net.HttpHeaders.CONTENT_ENCODING;
+import static com.amilesend.client.connection.Connection.Headers.CONTENT_ENCODING;
 
 /**
  * A logging interceptor to aid in debugging.
@@ -85,7 +85,7 @@ public class HttpJsonLoggingInterceptor implements Interceptor {
 
     @Override
 <span class="fc bfc" id="L87" title="All 2 branches covered.">    public Response intercept(@NonNull final Chain chain) throws IOException {</span>
-<span class="fc" id="L88">        final Stopwatch watch = Stopwatch.createStarted();</span>
+<span class="fc" id="L88">        final long startTime = System.currentTimeMillis();</span>
 <span class="fc" id="L89">        final Request request = chain.request();</span>
 <span class="fc bfc" id="L90" title="All 2 branches covered.">        if (isRequestLogged) {</span>
 <span class="fc" id="L91">            log.atLevel(loggingLevel)</span>
@@ -96,147 +96,146 @@ public class HttpJsonLoggingInterceptor implements Interceptor {
         }
 <span class="fc" id="L97">        final Response response = chain.proceed(request);</span>
 
-<span class="fc" id="L99">        watch.stop();</span>
+<span class="fc" id="L99">        final long responseTimeMs = System.currentTimeMillis() - startTime;</span>
 <span class="fc bfc" id="L100" title="All 2 branches covered.">        if (isResponseLogged) {</span>
-<span class="fc" id="L101">            final long responseTimeMs = watch.elapsed(TimeUnit.MILLISECONDS);</span>
-<span class="fc" id="L102">            final Pair&lt;String, Response&gt; bodyResponsePair = extractResponseBodyAsString(response);</span>
-<span class="fc" id="L103">            final String responseCode = new StringBuilder(&quot;\nHTTP Response (&quot;)</span>
-<span class="fc" id="L104">                    .append(response.protocol()</span>
-<span class="fc" id="L105">                            .name()</span>
-<span class="fc" id="L106">                            .replaceFirst(&quot;_&quot;, &quot;/&quot;)</span>
-<span class="fc" id="L107">                            .replace('_', '.'))</span>
-<span class="fc" id="L108">                    .append(&quot; &quot;)</span>
-<span class="fc" id="L109">                    .append(response.code())</span>
-<span class="fc" id="L110">                    .append(&quot;) in &quot;)</span>
-<span class="fc" id="L111">                    .append(responseTimeMs)</span>
-<span class="fc" id="L112">                    .append(&quot; ms&quot;)</span>
-<span class="fc" id="L113">                    .toString();</span>
-<span class="fc" id="L114">            log.atLevel(loggingLevel)</span>
-<span class="fc" id="L115">                    .log(&quot;{}\n HEADERS:{}\n BODY:\n{}&quot;,</span>
+<span class="fc" id="L101">            final Pair&lt;String, Response&gt; bodyResponsePair = extractResponseBodyAsString(response);</span>
+<span class="fc" id="L102">            final String responseCode = new StringBuilder(&quot;\nHTTP Response (&quot;)</span>
+<span class="fc" id="L103">                    .append(response.protocol()</span>
+<span class="fc" id="L104">                            .name()</span>
+<span class="fc" id="L105">                            .replaceFirst(&quot;_&quot;, &quot;/&quot;)</span>
+<span class="fc" id="L106">                            .replace('_', '.'))</span>
+<span class="fc" id="L107">                    .append(&quot; &quot;)</span>
+<span class="fc" id="L108">                    .append(response.code())</span>
+<span class="fc" id="L109">                    .append(&quot;) in &quot;)</span>
+<span class="fc" id="L110">                    .append(responseTimeMs)</span>
+<span class="fc" id="L111">                    .append(&quot; ms&quot;)</span>
+<span class="fc" id="L112">                    .toString();</span>
+<span class="fc" id="L113">            log.atLevel(loggingLevel)</span>
+<span class="fc" id="L114">                    .log(&quot;{}\n HEADERS:{}\n BODY:\n{}&quot;,</span>
                             responseCode,
-<span class="fc" id="L117">                            redactHeaders(response.headers()),</span>
-<span class="fc" id="L118">                            bodyResponsePair.getLeft());</span>
-<span class="fc" id="L119">            return bodyResponsePair.getRight();</span>
+<span class="fc" id="L116">                            redactHeaders(response.headers()),</span>
+<span class="fc" id="L117">                            bodyResponsePair.getLeft());</span>
+<span class="fc" id="L118">            return bodyResponsePair.getRight();</span>
         }
 
-<span class="fc" id="L122">        return response;</span>
+<span class="fc" id="L121">        return response;</span>
     }
 
     @VisibleForTesting
     String getBodyAsString(final Request request) throws IOException {
-<span class="fc bfc" id="L127" title="All 4 branches covered.">        if (Objects.isNull(request) || Objects.isNull(request.body())) {</span>
-<span class="fc" id="L128">            return &quot;[No Body]&quot;;</span>
+<span class="fc bfc" id="L126" title="All 4 branches covered.">        if (Objects.isNull(request) || Objects.isNull(request.body())) {</span>
+<span class="fc" id="L127">            return &quot;[No Body]&quot;;</span>
         }
 
-<span class="fc" id="L131">        final RequestBody body = request.body();</span>
-<span class="fc" id="L132">        final MediaType mediaType = body.contentType();</span>
-<span class="fc" id="L133">        final String type = mediaType.type();</span>
-<span class="fc" id="L134">        final boolean isApplicationType = StringUtils.equals(type, &quot;application&quot;);</span>
-<span class="pc bpc" id="L135" title="1 of 4 branches missed.">        if (!StringUtils.equals(type, &quot;text&quot;) &amp;&amp; !isApplicationType) {</span>
-<span class="fc" id="L136">            return &quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;;</span>
+<span class="fc" id="L130">        final RequestBody body = request.body();</span>
+<span class="fc" id="L131">        final MediaType mediaType = body.contentType();</span>
+<span class="fc" id="L132">        final String type = mediaType.type();</span>
+<span class="fc" id="L133">        final boolean isApplicationType = &quot;application&quot;.equals(type);</span>
+<span class="pc bpc" id="L134" title="1 of 4 branches missed.">        if (!&quot;text&quot;.equals(type) &amp;&amp; !isApplicationType) {</span>
+<span class="fc" id="L135">            return &quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;;</span>
         }
 
-<span class="fc" id="L139">        final String subType = mediaType.subtype();</span>
-<span class="fc" id="L140">        final boolean isSubTypeJson = StringUtils.equals(subType, &quot;json&quot;);</span>
-<span class="pc bpc" id="L141" title="1 of 4 branches missed.">        if (isApplicationType &amp;&amp; !isSubTypeJson) {</span>
-<span class="fc" id="L142">            return &quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;;</span>
+<span class="fc" id="L138">        final String subType = mediaType.subtype();</span>
+<span class="fc" id="L139">        final boolean isSubTypeJson = &quot;json&quot;.equals(subType);</span>
+<span class="pc bpc" id="L140" title="1 of 4 branches missed.">        if (isApplicationType &amp;&amp; !isSubTypeJson) {</span>
+<span class="fc" id="L141">            return &quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;;</span>
         }
 
-<span class="fc" id="L145">        final Buffer buffer = newBuffer();</span>
-<span class="fc" id="L146">        body.writeTo(buffer);</span>
+<span class="fc" id="L144">        final Buffer buffer = newBuffer();</span>
+<span class="fc" id="L145">        body.writeTo(buffer);</span>
 
-<span class="fc" id="L148">        final String bodyContent = buffer.readUtf8();</span>
-<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        return isSubTypeJson ? gsonify(bodyContent) : bodyContent;</span>
+<span class="fc" id="L147">        final String bodyContent = buffer.readUtf8();</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">        return isSubTypeJson ? gsonify(bodyContent) : bodyContent;</span>
     }
 
     @VisibleForTesting
     Buffer newBuffer() {
-<span class="nc" id="L154">        return new Buffer();</span>
+<span class="nc" id="L153">        return new Buffer();</span>
     }
 
     @VisibleForTesting
     Pair&lt;String, Response&gt; extractResponseBodyAsString(final Response response) throws IOException {
-<span class="fc bfc" id="L159" title="All 4 branches covered.">        if (Objects.isNull(response) || Objects.isNull(response.body())) {</span>
-<span class="fc" id="L160">            return Pair.of(&quot;[No Body]&quot;, response);</span>
+<span class="fc bfc" id="L158" title="All 4 branches covered.">        if (Objects.isNull(response) || Objects.isNull(response.body())) {</span>
+<span class="fc" id="L159">            return Pair.of(&quot;[No Body]&quot;, response);</span>
         }
 
-<span class="fc" id="L163">        final ResponseBody body = response.body();</span>
-<span class="fc" id="L164">        final MediaType mediaType = body.contentType();</span>
-<span class="fc" id="L165">        final String type = mediaType.type();</span>
-<span class="fc" id="L166">        final boolean isApplicationType = StringUtils.equals(type, &quot;application&quot;);</span>
-<span class="pc bpc" id="L167" title="1 of 4 branches missed.">        if (!StringUtils.equals(type, &quot;text&quot;) &amp;&amp; !isApplicationType) {</span>
-<span class="fc" id="L168">            return Pair.of(&quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;, response);</span>
+<span class="fc" id="L162">        final ResponseBody body = response.body();</span>
+<span class="fc" id="L163">        final MediaType mediaType = body.contentType();</span>
+<span class="fc" id="L164">        final String type = mediaType.type();</span>
+<span class="fc" id="L165">        final boolean isApplicationType = &quot;application&quot;.equals(type);</span>
+<span class="pc bpc" id="L166" title="1 of 4 branches missed.">        if (!&quot;text&quot;.equals(type) &amp;&amp; !isApplicationType) {</span>
+<span class="fc" id="L167">            return Pair.of(&quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;, response);</span>
         }
 
-<span class="fc" id="L171">        final String subType = mediaType.subtype();</span>
-<span class="fc" id="L172">        final boolean isSubTypeJson = StringUtils.equals(subType, &quot;json&quot;);</span>
-<span class="pc bpc" id="L173" title="1 of 4 branches missed.">        if (isApplicationType &amp;&amp; !isSubTypeJson) {</span>
-<span class="fc" id="L174">            return Pair.of(&quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;, response);</span>
+<span class="fc" id="L170">        final String subType = mediaType.subtype();</span>
+<span class="fc" id="L171">        final boolean isSubTypeJson = &quot;json&quot;.equals(subType);</span>
+<span class="pc bpc" id="L172" title="1 of 4 branches missed.">        if (isApplicationType &amp;&amp; !isSubTypeJson) {</span>
+<span class="fc" id="L173">            return Pair.of(&quot;[Unsupported content type: &quot; + mediaType + &quot;]&quot;, response);</span>
         }
 
-<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (GZIP_ENCODING.equals(response.header(CONTENT_ENCODING))) {</span>
-<span class="fc" id="L178">            final String bodyContent = newBufferedSource(body).readUtf8();</span>
-<span class="fc" id="L179">            final Response wrappedResponse = response.newBuilder()</span>
-<span class="fc" id="L180">                    .removeHeader(CONTENT_ENCODING)</span>
-<span class="fc" id="L181">                    .body(ResponseBody.create(mediaType, bodyContent))</span>
-<span class="fc" id="L182">                    .build();</span>
-<span class="pc bpc" id="L183" title="1 of 2 branches missed.">            final String formattedBodyContent = isSubTypeJson ? gsonify(bodyContent) : bodyContent;</span>
-<span class="fc" id="L184">            return Pair.of(formattedBodyContent, wrappedResponse);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        if (GZIP_ENCODING.equals(response.header(CONTENT_ENCODING))) {</span>
+<span class="fc" id="L177">            final String bodyContent = newBufferedSource(body).readUtf8();</span>
+<span class="fc" id="L178">            final Response wrappedResponse = response.newBuilder()</span>
+<span class="fc" id="L179">                    .removeHeader(CONTENT_ENCODING)</span>
+<span class="fc" id="L180">                    .body(ResponseBody.create(bodyContent, mediaType))</span>
+<span class="fc" id="L181">                    .build();</span>
+<span class="pc bpc" id="L182" title="1 of 2 branches missed.">            final String formattedBodyContent = isSubTypeJson ? gsonify(bodyContent) : bodyContent;</span>
+<span class="fc" id="L183">            return Pair.of(formattedBodyContent, wrappedResponse);</span>
         }
 
-<span class="fc" id="L187">        final String bodyContent = body.string();</span>
-<span class="fc" id="L188">        final Response wrappedResponse = response.newBuilder()</span>
-<span class="fc" id="L189">                .body(ResponseBody.create(mediaType, bodyContent))</span>
-<span class="fc" id="L190">                .build();</span>
-<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        final String formattedBodyContent = isSubTypeJson ? gsonify(bodyContent) : bodyContent;</span>
-<span class="fc" id="L192">        return Pair.of(formattedBodyContent, wrappedResponse);</span>
+<span class="fc" id="L186">        final String bodyContent = body.string();</span>
+<span class="fc" id="L187">        final Response wrappedResponse = response.newBuilder()</span>
+<span class="fc" id="L188">                .body(ResponseBody.create(bodyContent, mediaType))</span>
+<span class="fc" id="L189">                .build();</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        final String formattedBodyContent = isSubTypeJson ? gsonify(bodyContent) : bodyContent;</span>
+<span class="fc" id="L191">        return Pair.of(formattedBodyContent, wrappedResponse);</span>
     }
 
     @VisibleForTesting
     BufferedSource newBufferedSource(final ResponseBody body) {
-<span class="nc" id="L197">        return Okio.buffer(new GzipSource(body.source()));</span>
+<span class="nc" id="L196">        return Okio.buffer(new GzipSource(body.source()));</span>
     }
 
     @VisibleForTesting
     String gsonify(final String value) {
-<span class="nc" id="L202">        return gson.toJson(new JsonParser().parse(value));</span>
+<span class="nc" id="L201">        return gson.toJson(JsonParser.parseString(value));</span>
     }
 
     @VisibleForTesting
     String redactHeaders(final Headers headers) {
-<span class="fc bfc" id="L207" title="All 4 branches covered.">        if (Objects.isNull(headers) || headers.size() &lt; 1) {</span>
-<span class="fc" id="L208">            return &quot;  No Headers&quot;;</span>
+<span class="fc bfc" id="L206" title="All 4 branches covered.">        if (Objects.isNull(headers) || headers.size() &lt; 1) {</span>
+<span class="fc" id="L207">            return &quot;  No Headers&quot;;</span>
         }
 
-<span class="fc" id="L211">        final StringJoiner sj = new StringJoiner(&quot;\n  &quot;);</span>
-<span class="fc" id="L212">        headers.forEach(p -&gt; {</span>
-<span class="fc bfc" id="L213" title="All 2 branches covered.">            if (redactedHeaders.contains(p.getFirst().trim())) {</span>
-<span class="fc" id="L214">                sj.add(p.getFirst().trim() + &quot;:&quot; + REDACTED);</span>
+<span class="fc" id="L210">        final StringJoiner sj = new StringJoiner(&quot;\n  &quot;);</span>
+<span class="fc" id="L211">        headers.forEach(p -&gt; {</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            if (redactedHeaders.contains(p.getFirst().trim())) {</span>
+<span class="fc" id="L213">                sj.add(p.getFirst().trim() + &quot;:&quot; + REDACTED);</span>
             } else {
-<span class="fc" id="L216">                sj.add(p.getFirst() + &quot;: &quot; + p.getSecond());</span>
+<span class="fc" id="L215">                sj.add(p.getFirst() + &quot;: &quot; + p.getSecond());</span>
             }
-<span class="fc" id="L218">        });</span>
+<span class="fc" id="L217">        });</span>
 
-<span class="fc" id="L220">        return &quot;\n  &quot; + sj;</span>
+<span class="fc" id="L219">        return &quot;\n  &quot; + sj;</span>
     }
 
     @VisibleForTesting
-<span class="fc bfc" id="L224" title="All 2 branches covered.">    String redactUrl(@NonNull final HttpUrl url) {</span>
-<span class="fc bfc" id="L225" title="All 4 branches covered.">        if (url.querySize() == 0 || redactedQueryParams.isEmpty()) {</span>
-<span class="fc" id="L226">            return url.toString();</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">    String redactUrl(@NonNull final HttpUrl url) {</span>
+<span class="fc bfc" id="L224" title="All 4 branches covered.">        if (url.querySize() == 0 || redactedQueryParams.isEmpty()) {</span>
+<span class="fc" id="L225">            return url.toString();</span>
         }
 
-<span class="fc" id="L229">        final HttpUrl.Builder urlBuilder = url.newBuilder().query(null);</span>
-<span class="fc bfc" id="L230" title="All 2 branches covered.">        for (int i = 0; i &lt; url.querySize(); ++i) {</span>
-<span class="fc" id="L231">            final String paramName = url.queryParameterName(i);</span>
-<span class="fc bfc" id="L232" title="All 2 branches covered.">            final String paramValue = redactedQueryParams.contains(paramName)</span>
-<span class="fc" id="L233">                    ? REDACTED_QUERY_PARAM_VALUE</span>
-<span class="fc" id="L234">                    : url.queryParameterValue(i);</span>
+<span class="fc" id="L228">        final HttpUrl.Builder urlBuilder = url.newBuilder().query(null);</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        for (int i = 0; i &lt; url.querySize(); ++i) {</span>
+<span class="fc" id="L230">            final String paramName = url.queryParameterName(i);</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            final String paramValue = redactedQueryParams.contains(paramName)</span>
+<span class="fc" id="L232">                    ? REDACTED_QUERY_PARAM_VALUE</span>
+<span class="fc" id="L233">                    : url.queryParameterValue(i);</span>
 
-<span class="fc" id="L236">            urlBuilder.addQueryParameter(paramName, paramValue);</span>
+<span class="fc" id="L235">            urlBuilder.addQueryParameter(paramName, paramValue);</span>
         }
 
-<span class="fc" id="L239">        return urlBuilder.build().toString();</span>
+<span class="fc" id="L238">        return urlBuilder.build().toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

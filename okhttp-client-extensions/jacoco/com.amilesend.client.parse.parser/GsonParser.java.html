@@ -46,7 +46,7 @@ public interface GsonParser&lt;T&gt; {
      * @param jsonContent the byte array
      * @return the parsed POJO instance
      */
-<span class="nc bnc" id="L49" title="All 4 branches missed.">    default T parse(@NonNull final Gson gson, @NonNull final byte[] jsonContent) throws IOException {</span>
+<span class="nc bnc" id="L49" title="All 4 branches missed.">    default T parse(@NonNull final Gson gson, final byte @NonNull [] jsonContent) throws IOException {</span>
 <span class="nc" id="L50">        try (final InputStream contentStream = new ByteArrayInputStream(jsonContent)) {</span>
 <span class="nc" id="L51">            return parse(gson, contentStream);</span>
         }

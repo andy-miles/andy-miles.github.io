@@ -6,3 +6,4 @@ com.amilesend.client.crypto
 com.amilesend.client.parse
 com.amilesend.client.parse.parser
 com.amilesend.client.parse.strategy
+com.amilesend.client.util

@@ -39,8 +39,7 @@ public class CryptoHelperFactory {
     @NonNull
     private final KeyStoreHelper keyStoreHelper;
     /** The password for the keystore. */
-    @NonNull
-    private final char[] keyPassword;
+    private final char @NonNull [] keyPassword;
     /** The key alias that is stored in the keystore. */
     @Builder.Default
     @NonNull
@@ -54,26 +53,26 @@ public class CryptoHelperFactory {
      */
     public CryptoHelper newInstance() throws CryptoHelperException {
         try {
-<span class="fc" id="L57">            SecretKey cryptoKey = keyStoreHelper.getSecretKey(keyAlias, keyPassword);</span>
+<span class="fc" id="L56">            SecretKey cryptoKey = keyStoreHelper.getSecretKey(keyAlias, keyPassword);</span>
             // Not using Optional#ofNullable() here so that exceptions are propagated
-<span class="fc bfc" id="L59" title="All 2 branches covered.">            if (cryptoKey == null) {</span>
-<span class="fc" id="L60">                cryptoKey = generateNewCryptoKey();</span>
-<span class="fc" id="L61">                keyStoreHelper.saveSecretKey(keyAlias, cryptoKey, keyPassword);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (cryptoKey == null) {</span>
+<span class="fc" id="L59">                cryptoKey = generateNewCryptoKey();</span>
+<span class="fc" id="L60">                keyStoreHelper.saveSecretKey(keyAlias, cryptoKey, keyPassword);</span>
             }
 
-<span class="fc" id="L64">            return new CryptoHelper(KEY_CIPHER_ALGORITHM, cryptoKey);</span>
-<span class="fc" id="L65">        } catch (final KeyStoreHelperException ex) {</span>
-<span class="fc" id="L66">            throw new CryptoHelperException(&quot;Unable to retrieve key from keystore: &quot; + ex.getMessage(), ex);</span>
-<span class="fc" id="L67">        } catch (final NoSuchAlgorithmException ex) {</span>
-<span class="fc" id="L68">            throw new CryptoHelperException(</span>
-<span class="fc" id="L69">                    &quot;Unable to generate a new crypto key (malformed algorithm): &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L63">            return new CryptoHelper(KEY_CIPHER_ALGORITHM, cryptoKey);</span>
+<span class="fc" id="L64">        } catch (final KeyStoreHelperException ex) {</span>
+<span class="fc" id="L65">            throw new CryptoHelperException(&quot;Unable to retrieve key from keystore: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L66">        } catch (final NoSuchAlgorithmException ex) {</span>
+<span class="fc" id="L67">            throw new CryptoHelperException(</span>
+<span class="fc" id="L68">                    &quot;Unable to generate a new crypto key (malformed algorithm): &quot; + ex.getMessage(), ex);</span>
         }
     }
 
     private SecretKey generateNewCryptoKey() throws NoSuchAlgorithmException {
-<span class="fc" id="L74">        final KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM);</span>
-<span class="fc" id="L75">        keyGenerator.init(KEY_SIZE);</span>
-<span class="fc" id="L76">        return keyGenerator.generateKey();</span>
+<span class="fc" id="L73">        final KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM);</span>
+<span class="fc" id="L74">        keyGenerator.init(KEY_SIZE);</span>
+<span class="fc" id="L75">        return keyGenerator.generateKey();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
