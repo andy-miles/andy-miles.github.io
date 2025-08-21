@@ -21,6 +21,9 @@ import com.amilesend.client.connection.file.ProgressReportingRequestBody;
 import com.amilesend.client.connection.file.TransferProgressCallback;
 import com.amilesend.client.parse.strategy.GsonExclude;
 import com.amilesend.client.parse.strategy.GsonSerializeExclude;
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
 import com.amilesend.onedrive.connection.OneDriveConnection;
 import com.amilesend.onedrive.resource.activities.ItemActivity;
 import com.amilesend.onedrive.resource.item.type.Audio;
@@ -46,7 +49,6 @@ import com.amilesend.onedrive.resource.item.type.Video;
 import com.amilesend.onedrive.resource.request.AddPermissionRequest;
 import com.amilesend.onedrive.resource.request.CreateSharingLinkRequest;
 import com.amilesend.onedrive.resource.request.PreviewRequest;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.annotations.SerializedName;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -55,8 +57,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import okhttp3.RequestBody;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -68,6 +68,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static com.amilesend.client.connection.Connection.Headers.CONTENT_TYPE;
 import static com.amilesend.onedrive.connection.OneDriveConnection.JSON_MEDIA_TYPE;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PAGE_PARSER;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PARSER;
@@ -78,7 +79,6 @@ import static com.amilesend.onedrive.parse.resource.parser.Parsers.newPermission
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.newPermissionParser;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.newPreviewParser;
 import static com.amilesend.onedrive.resource.ResourceHelper.objectDefinedEquals;
-import static com.google.common.net.HttpHeaders.CONTENT_TYPE;
 
 /**
  * Describes a resource stored in a drive.
@@ -731,66 +731,68 @@ public class DriveItem extends BaseItem {
 <span class="fc" id="L731">        final boolean isSameDestinationId = Optional.ofNullable(getParentReference())</span>
 <span class="fc" id="L732">                .map(r -&gt; r.getId().equals(destinationParentId))</span>
 <span class="fc" id="L733">                .orElse(false);</span>
-<span class="fc" id="L734">        final boolean isSameName = StringUtils.equals(getName(), newName);</span>
-<span class="fc bfc" id="L735" title="All 4 branches covered.">        Validate.isTrue(!(isSameDestinationId &amp;&amp; isSameName),</span>
+<span class="fc" id="L734">        final boolean isSameName = Optional.ofNullable(getName())</span>
+<span class="fc" id="L735">                .map(n -&gt; n.equals(newName))</span>
+<span class="fc" id="L736">                .orElse(false);</span>
+<span class="fc bfc" id="L737" title="All 4 branches covered.">        Validate.isTrue(!(isSameDestinationId &amp;&amp; isSameName),</span>
                 &quot;Both destinationParentId and newName must not be the same as the original drive item&quot;);
 
-<span class="fc bfc" id="L738" title="All 2 branches covered.">        if (StringUtils.isNotBlank(destinationParentId)) {</span>
-<span class="fc bfc" id="L739" title="All 2 branches covered.">            final ItemReference parentReference = getParentReference() != null</span>
-<span class="fc" id="L740">                    ? getParentReference()</span>
-<span class="fc" id="L741">                    : ItemReference.builder().id(destinationParentId).build();</span>
-<span class="fc" id="L742">            setParentReference(parentReference);</span>
+<span class="fc bfc" id="L740" title="All 2 branches covered.">        if (StringUtils.isNotBlank(destinationParentId)) {</span>
+<span class="fc bfc" id="L741" title="All 2 branches covered.">            final ItemReference parentReference = getParentReference() != null</span>
+<span class="fc" id="L742">                    ? getParentReference()</span>
+<span class="fc" id="L743">                    : ItemReference.builder().id(destinationParentId).build();</span>
+<span class="fc" id="L744">            setParentReference(parentReference);</span>
         }
 
-<span class="fc bfc" id="L745" title="All 2 branches covered.">        if (StringUtils.isNotBlank(newName)) {</span>
-<span class="fc" id="L746">            setName(newName);</span>
+<span class="fc bfc" id="L747" title="All 2 branches covered.">        if (StringUtils.isNotBlank(newName)) {</span>
+<span class="fc" id="L748">            setName(newName);</span>
         }
-<span class="fc" id="L748">    }</span>
+<span class="fc" id="L750">    }</span>
 
     private String getContentUrl(final String urlEncodedDriveItemId) {
-<span class="fc" id="L751">        return new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L752">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
-<span class="fc" id="L753">                .append(urlEncodedDriveItemId)</span>
-<span class="fc" id="L754">                .append(CONTENT_URL_SUFFIX)</span>
-<span class="fc" id="L755">                .toString();</span>
+<span class="fc" id="L753">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L754">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L755">                .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L756">                .append(CONTENT_URL_SUFFIX)</span>
+<span class="fc" id="L757">                .toString();</span>
     }
 
     private String getContentUrl(final String urlEncodedDriveItemId, final String filename) {
-<span class="fc" id="L759">        return new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L760">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
-<span class="fc" id="L761">                .append(urlEncodedDriveItemId)</span>
-<span class="fc" id="L762">                .append(&quot;:/&quot;)</span>
-<span class="fc" id="L763">                .append(URLEncoder.encode(filename, StandardCharsets.UTF_8))</span>
-<span class="fc" id="L764">                .append(&quot;:&quot;)</span>
-<span class="fc" id="L765">                .append(CONTENT_URL_SUFFIX)</span>
-<span class="fc" id="L766">                .toString();</span>
+<span class="fc" id="L761">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L762">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L763">                .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L764">                .append(&quot;:/&quot;)</span>
+<span class="fc" id="L765">                .append(URLEncoder.encode(filename, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L766">                .append(&quot;:&quot;)</span>
+<span class="fc" id="L767">                .append(CONTENT_URL_SUFFIX)</span>
+<span class="fc" id="L768">                .toString();</span>
     }
 
     private String getChildrenUrl(final DriveItemPage page, final String urlEncodedDriveItemId) {
-<span class="fc bfc" id="L770" title="All 2 branches covered.">        return page == null ? getChildrenUrl(urlEncodedDriveItemId) : page.getNextLink();</span>
+<span class="fc bfc" id="L772" title="All 2 branches covered.">        return page == null ? getChildrenUrl(urlEncodedDriveItemId) : page.getNextLink();</span>
     }
 
     private String getChildrenUrl(final String urlEncodedDriveItemId) {
-<span class="fc" id="L774">        return new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L775">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
-<span class="fc" id="L776">                .append(urlEncodedDriveItemId)</span>
-<span class="fc" id="L777">                .append(&quot;/children&quot;)</span>
-<span class="fc" id="L778">                .toString();</span>
+<span class="fc" id="L776">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L777">                .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L778">                .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L779">                .append(&quot;/children&quot;)</span>
+<span class="fc" id="L780">                .toString();</span>
     }
 
     private String getSearchUrl(
             final DriveItemPage page,
             final String urlEncodedDriveItemId,
             final String searchQuery) {
-<span class="fc bfc" id="L785" title="All 2 branches covered.">        return page == null</span>
-<span class="fc" id="L786">                ? new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L787">                        .append(DRIVE_ITEM_BASE_URL_PATH)</span>
-<span class="fc" id="L788">                        .append(urlEncodedDriveItemId)</span>
-<span class="fc" id="L789">                        .append(&quot;/search(q='&quot;)</span>
-<span class="fc" id="L790">                        .append(URLEncoder.encode(searchQuery, StandardCharsets.UTF_8))</span>
-<span class="fc" id="L791">                        .append(&quot;')&quot;)</span>
-<span class="fc" id="L792">                        .toString()</span>
-<span class="fc" id="L793">                : page.getNextLink();</span>
+<span class="fc bfc" id="L787" title="All 2 branches covered.">        return page == null</span>
+<span class="fc" id="L788">                ? new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L789">                        .append(DRIVE_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L790">                        .append(urlEncodedDriveItemId)</span>
+<span class="fc" id="L791">                        .append(&quot;/search(q='&quot;)</span>
+<span class="fc" id="L792">                        .append(URLEncoder.encode(searchQuery, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L793">                        .append(&quot;')&quot;)</span>
+<span class="fc" id="L794">                        .toString()</span>
+<span class="fc" id="L795">                : page.getNextLink();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

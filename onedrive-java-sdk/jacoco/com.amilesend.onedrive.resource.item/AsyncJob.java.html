@@ -17,15 +17,15 @@
  */
 package com.amilesend.onedrive.resource.item;
 
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
 import com.amilesend.onedrive.connection.OneDriveConnection;
 import com.amilesend.onedrive.resource.item.type.AsyncJobStatus;
-import com.google.common.annotations.VisibleForTesting;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
-import org.apache.commons.lang3.Validate;
 
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.ASYNC_JOB_STATUS_PARSER;
 
@@ -40,7 +40,6 @@ import static com.amilesend.onedrive.parse.resource.parser.Parsers.ASYNC_JOB_STA
 @Builder
 @EqualsAndHashCode
 public class AsyncJob {
-
     @Getter(AccessLevel.PACKAGE)
     @VisibleForTesting
     private final String monitorUrl;
@@ -53,12 +52,12 @@ public class AsyncJob {
      * @param monitorUrl the URL used to monitor the asynchronous job status
      * @param connection the API connection used to query the job status
      */
-<span class="fc bfc" id="L56" title="All 2 branches covered.">    public AsyncJob(final String monitorUrl, @NonNull OneDriveConnection connection) {</span>
-<span class="fc" id="L57">        Validate.notBlank(monitorUrl, &quot;monitorUrl must not be blank&quot;);</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">    public AsyncJob(final String monitorUrl, @NonNull OneDriveConnection connection) {</span>
+<span class="fc" id="L56">        Validate.notBlank(monitorUrl, &quot;monitorUrl must not be blank&quot;);</span>
 
-<span class="fc" id="L59">        this.monitorUrl = monitorUrl;</span>
-<span class="fc" id="L60">        this.connection = connection;</span>
-<span class="fc" id="L61">    }</span>
+<span class="fc" id="L58">        this.monitorUrl = monitorUrl;</span>
+<span class="fc" id="L59">        this.connection = connection;</span>
+<span class="fc" id="L60">    }</span>
 
     /**
      * Gets the current {@link AsyncJobStatus} for the remote asynchronous operation.
@@ -67,10 +66,10 @@ public class AsyncJob {
      * @see AsyncJobStatus
      */
     public AsyncJobStatus getStatus() {
-<span class="fc" id="L70">        return connection.execute(</span>
-<span class="fc" id="L71">                connection.newRequestBuilder()</span>
-<span class="fc" id="L72">                        .url(monitorUrl)</span>
-<span class="fc" id="L73">                        .build(),</span>
+<span class="fc" id="L69">        return connection.execute(</span>
+<span class="fc" id="L70">                connection.newRequestBuilder()</span>
+<span class="fc" id="L71">                        .url(monitorUrl)</span>
+<span class="fc" id="L72">                        .build(),</span>
                 ASYNC_JOB_STATUS_PARSER);
     }
 }

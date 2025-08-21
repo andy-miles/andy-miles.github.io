@@ -22,8 +22,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-import static com.google.common.net.HttpHeaders.AUTHORIZATION;
-import static com.google.common.net.MediaType.FORM_DATA;
+import static com.amilesend.client.connection.Connection.Headers.AUTHORIZATION;
 
 /**
  *  The interface that defines the manager that is responsible for obtaining and refreshing tokens
@@ -32,7 +31,6 @@ import static com.google.common.net.MediaType.FORM_DATA;
  */
 public interface OneDriveAuthManager extends AuthManager&lt;OneDriveAuthInfo&gt; {
     String AUTH_TOKEN_URL = &quot;https://login.microsoftonline.com/common/oauth2/v2.0/token&quot;;
-<span class="fc" id="L35">    String FORM_DATA_CONTENT_TYPE = FORM_DATA.toString();</span>
     String CLIENT_ID_BODY_PARAM = &quot;client_id&quot;;
     String CLIENT_SECRET_BODY_PARAM = &quot;client_secret&quot;;
     String REDIRECT_URI_BODY_PARAM = &quot;redirect_uri&quot;;
@@ -44,7 +42,7 @@ public interface OneDriveAuthManager extends AuthManager&lt;OneDriveAuthInfo&gt;
 
     @Override
     default Request.Builder addAuthentication(final Request.Builder requestBuilder) {
-<span class="fc" id="L47">        return requestBuilder.addHeader(AUTHORIZATION, refreshIfExpiredAndFetchFullToken());</span>
+<span class="fc" id="L45">        return requestBuilder.addHeader(AUTHORIZATION, refreshIfExpiredAndFetchFullToken());</span>
     }
 
     /**
@@ -59,10 +57,10 @@ public interface OneDriveAuthManager extends AuthManager&lt;OneDriveAuthInfo&gt;
      * accordingly.
      */
     default void refreshIfExpired() {
-<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (isExpired()) {</span>
-<span class="fc" id="L63">            refreshToken();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (isExpired()) {</span>
+<span class="fc" id="L61">            refreshToken();</span>
         }
-<span class="fc" id="L65">    }</span>
+<span class="fc" id="L63">    }</span>
 
     /**
      * Helper method to refresh authentication if expired and return the full token used in request headers.
@@ -70,8 +68,8 @@ public interface OneDriveAuthManager extends AuthManager&lt;OneDriveAuthInfo&gt;
      * @return the full auth token
      */
     default String refreshIfExpiredAndFetchFullToken() {
-<span class="fc" id="L73">        refreshIfExpired();</span>
-<span class="fc" id="L74">        return getAuthInfo().getFullToken();</span>
+<span class="fc" id="L71">        refreshIfExpired();</span>
+<span class="fc" id="L72">        return getAuthInfo().getFullToken();</span>
     }
 
     /** Retrieves the associated endpoint to use for OneDrive operations. */
@@ -104,18 +102,18 @@ public interface OneDriveAuthManager extends AuthManager&lt;OneDriveAuthInfo&gt;
      */
     static OneDriveAuthInfo fetchAuthInfo(final OkHttpClient httpClient, final Request request) {
         try {
-<span class="fc" id="L107">            try (final Response response = httpClient.newCall(request).execute()) {</span>
-<span class="fc bfc" id="L108" title="All 2 branches covered.">                if (!response.isSuccessful()) {</span>
-<span class="fc" id="L109">                    throw new AuthManagerException(&quot;Unsuccessful refresh token request: &quot; + response);</span>
+<span class="fc" id="L105">            try (final Response response = httpClient.newCall(request).execute()) {</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                if (!response.isSuccessful()) {</span>
+<span class="fc" id="L107">                    throw new AuthManagerException(&quot;Unsuccessful refresh token request: &quot; + response);</span>
                 }
 
-<span class="fc" id="L112">                final String json = response.body().string();</span>
-<span class="fc" id="L113">                return OneDriveAuthInfo.fromJson(json);</span>
+<span class="fc" id="L110">                final String json = response.body().string();</span>
+<span class="fc" id="L111">                return OneDriveAuthInfo.fromJson(json);</span>
             }
-<span class="fc" id="L115">        } catch (final AuthManagerException ex) {</span>
-<span class="fc" id="L116">            throw ex;</span>
-<span class="fc" id="L117">        } catch (final Exception ex) {</span>
-<span class="fc" id="L118">            throw new AuthManagerException(&quot;Error refreshing token: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L113">        } catch (final AuthManagerException ex) {</span>
+<span class="fc" id="L114">            throw ex;</span>
+<span class="fc" id="L115">        } catch (final Exception ex) {</span>
+<span class="fc" id="L116">            throw new AuthManagerException(&quot;Error refreshing token: &quot; + ex.getMessage(), ex);</span>
         }
     }
 }

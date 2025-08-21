@@ -18,20 +18,20 @@
 package com.amilesend.onedrive.resource.site;
 
 import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
 import com.amilesend.onedrive.connection.OneDriveConnection;
 import com.amilesend.onedrive.resource.item.BaseItem;
 import com.amilesend.onedrive.resource.item.DriveItem;
 import com.amilesend.onedrive.resource.item.type.SharePointIds;
 import com.amilesend.onedrive.resource.site.response.GetColumnValuesResponse;
 import com.amilesend.onedrive.resource.site.type.ContentType;
-import com.google.common.annotations.VisibleForTesting;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import okhttp3.RequestBody;
-import org.apache.commons.lang3.Validate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -268,21 +268,23 @@ public class ListItem extends BaseItem {
 <span class="fc" id="L268">        final java.util.List&lt;String&gt; encodedColumns = new ArrayList&lt;&gt;(columns.size());</span>
 <span class="fc bfc" id="L269" title="All 2 branches covered.">        for (final String column : columns) {</span>
 <span class="fc" id="L270">            Validate.notNull(column, &quot;column name must not be null&quot;);</span>
-<span class="fc bfc" id="L271" title="All 2 branches covered.">            Validate.isTrue(column.length() &lt; MAX_COLUMN_LENGTH);</span>
-<span class="fc" id="L272">            encodedColumns.add(URLEncoder.encode(column, StandardCharsets.UTF_8));</span>
-<span class="fc" id="L273">        }</span>
+<span class="fc" id="L271">            Validate.isTrue(</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">                    column.length() &lt; MAX_COLUMN_LENGTH,</span>
+                    &quot;column length must be &lt; &quot; + MAX_COLUMN_LENGTH);
+<span class="fc" id="L274">            encodedColumns.add(URLEncoder.encode(column, StandardCharsets.UTF_8));</span>
+<span class="fc" id="L275">        }</span>
 
-<span class="fc" id="L275">        return String.join(&quot;,&quot;, encodedColumns);</span>
+<span class="fc" id="L277">        return String.join(&quot;,&quot;, encodedColumns);</span>
     }
 
     private StringBuilder newStringBuilderForListItemUrl() {
-<span class="fc" id="L279">        return new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L280">                .append(SITE_BASE_URL_PATH)</span>
-<span class="fc" id="L281">                .append(getSiteId())</span>
-<span class="fc" id="L282">                .append(LIST_BASE_URL_PATH)</span>
-<span class="fc" id="L283">                .append(getListId())</span>
-<span class="fc" id="L284">                .append(LIST_ITEM_BASE_URL_PATH)</span>
-<span class="fc" id="L285">                .append(getId());</span>
+<span class="fc" id="L281">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L282">                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L283">                .append(getSiteId())</span>
+<span class="fc" id="L284">                .append(LIST_BASE_URL_PATH)</span>
+<span class="fc" id="L285">                .append(getListId())</span>
+<span class="fc" id="L286">                .append(LIST_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L287">                .append(getId());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
