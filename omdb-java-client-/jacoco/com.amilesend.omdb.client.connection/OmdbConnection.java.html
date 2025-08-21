@@ -6,21 +6,21 @@ import com.amilesend.client.connection.RequestException;
 import com.amilesend.client.connection.ResponseException;
 import com.amilesend.client.connection.ResponseParseException;
 import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.client.util.VisibleForTesting;
 import com.amilesend.omdb.client.model.FailureResponse;
 import com.amilesend.omdb.client.parse.GsonFactory;
-import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.JsonParseException;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.apache.commons.lang3.BooleanUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Objects;
 
 /**
  * The Open Movie Database Connection.
@@ -67,10 +67,11 @@ public class OmdbConnection extends Connection&lt;GsonFactory&gt; {
 <span class="fc" id="L67">            final FailureResponse failureResponse = getGsonFactory()</span>
 <span class="fc" id="L68">                    .getInstance(this)</span>
 <span class="fc" id="L69">                    .fromJson(contentReader, FailureResponse.class);</span>
-<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (BooleanUtils.isFalse(failureResponse.getResponse())) {</span>
-<span class="nc" id="L71">                throw new ResponseException(failureResponse.getError());</span>
+<span class="fc" id="L70">            final Boolean responseValue = failureResponse.getResponse();</span>
+<span class="pc bpc" id="L71" title="2 of 4 branches missed.">            if (Objects.isNull(responseValue) || !responseValue.booleanValue()) {</span>
+<span class="nc" id="L72">                throw new ResponseException(failureResponse.getError());</span>
             }
         }
-<span class="fc" id="L74">    }</span>
+<span class="fc" id="L75">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

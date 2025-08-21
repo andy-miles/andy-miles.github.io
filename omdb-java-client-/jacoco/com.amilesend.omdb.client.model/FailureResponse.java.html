@@ -17,11 +17,11 @@
  */
 package com.amilesend.omdb.client.model;
 
+import com.amilesend.client.util.StringUtils;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.Optional;
 
@@ -48,7 +48,7 @@ public class FailureResponse {
     public Boolean getResponse() {
 <span class="fc" id="L49">        return Optional.ofNullable(response)</span>
 <span class="fc" id="L50">                .filter(StringUtils::isNotBlank)</span>
-<span class="fc" id="L51">                .map(StringUtils::lowerCase)</span>
+<span class="fc" id="L51">                .map(String::toLowerCase)</span>
 <span class="fc" id="L52">                .map(Boolean::parseBoolean)</span>
 <span class="fc" id="L53">                .orElse(Boolean.FALSE);</span>
     }
