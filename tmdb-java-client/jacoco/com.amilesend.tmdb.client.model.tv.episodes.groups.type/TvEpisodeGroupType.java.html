@@ -17,32 +17,31 @@
  */
 package com.amilesend.tmdb.client.model.tv.episodes.groups.type;
 
-import com.google.common.collect.ImmutableMap;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 
 /** Defines the TV Episode Group Type. */
-<span class="fc" id="L27">@RequiredArgsConstructor</span>
+<span class="fc" id="L26">@RequiredArgsConstructor</span>
 @Getter
 public enum TvEpisodeGroupType {
-<span class="fc" id="L30">    ORIGINAL_AIR_DATE(1, &quot;Original air date&quot;),</span>
-<span class="fc" id="L31">    ABSOLUTE(2, &quot;Absolute&quot;),</span>
-<span class="fc" id="L32">    DVD(3, &quot;DVD&quot;),</span>
-<span class="fc" id="L33">    DIGITAL(4, &quot;Digital&quot;),</span>
-<span class="fc" id="L34">    STORY_ARC(5, &quot;Story arc&quot;),</span>
-<span class="fc" id="L35">    PRODUCTION(6, &quot;Production&quot;),</span>
-<span class="fc" id="L36">    TV(7, &quot;TV&quot;);</span>
+<span class="fc" id="L29">    ORIGINAL_AIR_DATE(1, &quot;Original air date&quot;),</span>
+<span class="fc" id="L30">    ABSOLUTE(2, &quot;Absolute&quot;),</span>
+<span class="fc" id="L31">    DVD(3, &quot;DVD&quot;),</span>
+<span class="fc" id="L32">    DIGITAL(4, &quot;Digital&quot;),</span>
+<span class="fc" id="L33">    STORY_ARC(5, &quot;Story arc&quot;),</span>
+<span class="fc" id="L34">    PRODUCTION(6, &quot;Production&quot;),</span>
+<span class="fc" id="L35">    TV(7, &quot;TV&quot;);</span>
 
-<span class="fc" id="L38">    private static final Map&lt;Integer, TvEpisodeGroupType&gt; TYPE_TO_ENUM = ImmutableMap.of(</span>
-<span class="fc" id="L39">            1, ORIGINAL_AIR_DATE,</span>
-<span class="fc" id="L40">            2, ABSOLUTE,</span>
-<span class="fc" id="L41">            3, DVD,</span>
-<span class="fc" id="L42">            4, DIGITAL,</span>
-<span class="fc" id="L43">            5, STORY_ARC,</span>
-<span class="fc" id="L44">            6, PRODUCTION,</span>
-<span class="fc" id="L45">            7, TV);</span>
+<span class="fc" id="L37">    private static final Map&lt;Integer, TvEpisodeGroupType&gt; TYPE_TO_ENUM = Map.of(</span>
+<span class="fc" id="L38">            1, ORIGINAL_AIR_DATE,</span>
+<span class="fc" id="L39">            2, ABSOLUTE,</span>
+<span class="fc" id="L40">            3, DVD,</span>
+<span class="fc" id="L41">            4, DIGITAL,</span>
+<span class="fc" id="L42">            5, STORY_ARC,</span>
+<span class="fc" id="L43">            6, PRODUCTION,</span>
+<span class="fc" id="L44">            7, TV);</span>
 
     /** The TV episode group type value. */
     private final int type;
@@ -56,16 +55,16 @@ public enum TvEpisodeGroupType {
      * @return the associated enum reference
      */
     public static TvEpisodeGroupType fromType(final int type) {
-<span class="fc" id="L59">        return TYPE_TO_ENUM.get(type);</span>
+<span class="fc" id="L58">        return TYPE_TO_ENUM.get(type);</span>
     }
 
     @Override
     public String toString() {
-<span class="nc" id="L64">        return new StringBuilder(&quot;(&quot;)</span>
-<span class="nc" id="L65">                .append(type)</span>
-<span class="nc" id="L66">                .append(&quot;) &quot;)</span>
-<span class="nc" id="L67">                .append(name)</span>
-<span class="nc" id="L68">                .toString();</span>
+<span class="nc" id="L63">        return new StringBuilder(&quot;(&quot;)</span>
+<span class="nc" id="L64">                .append(type)</span>
+<span class="nc" id="L65">                .append(&quot;) &quot;)</span>
+<span class="nc" id="L66">                .append(name)</span>
+<span class="nc" id="L67">                .toString();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
