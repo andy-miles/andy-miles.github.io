@@ -24,8 +24,8 @@ okhttp-client-extensions,com.amilesend.client.connection,ResponseParseException,
 okhttp-client-extensions,com.amilesend.client.connection,RequestException,0,9,0,0,0,4,0,2,0,2
 okhttp-client-extensions,com.amilesend.client.connection,DefaultConnectionBuilder,0,26,0,0,0,10,0,2,0,2
 okhttp-client-extensions,com.amilesend.client.connection.file,TransferFileWriter,0,62,0,6,0,13,0,4,0,1
-okhttp-client-extensions,com.amilesend.client.connection.file,LogProgressCallback.TransferType,0,24,0,0,0,4,0,1,0,1
 okhttp-client-extensions,com.amilesend.client.connection.file,ProgressReportingRequestBody.MultiPartBuilder,0,105,0,2,0,30,0,9,0,8
+okhttp-client-extensions,com.amilesend.client.connection.file,LogProgressCallback.TransferType,0,24,0,0,0,4,0,1,0,1
 okhttp-client-extensions,com.amilesend.client.connection.file,TransferFileUtil,0,48,0,8,0,12,0,6,0,2
 okhttp-client-extensions,com.amilesend.client.connection.file,ProgressReportingRequestBody,0,89,0,4,0,23,0,9,0,7
 okhttp-client-extensions,com.amilesend.client.connection.file,LogProgressCallback,0,227,0,4,0,43,0,11,0,9
