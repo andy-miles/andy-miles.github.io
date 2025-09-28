@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SleeveCondition.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.model.marketplace.type</a> &gt; <span class="el_source">SleeveCondition.java</span></div><h1>SleeveCondition.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.model.marketplace.type;
+
+import com.amilesend.client.util.StringUtils;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+@Getter
+public enum SleeveCondition {
+<span class="fc" id="L32">    MINT(&quot;Mint (M)&quot;),</span>
+<span class="fc" id="L33">    NEAR_MINT(&quot;Near Mint (NM or M-)&quot;),</span>
+<span class="fc" id="L34">    VERY_GOOD_PLUS(&quot;Very Good Plus (VG+)&quot;),</span>
+<span class="fc" id="L35">    VERY_GOOD(&quot;Very Good (VG)&quot;),</span>
+<span class="fc" id="L36">    GOOD_PLUS(&quot;Good Plus (G+)&quot;),</span>
+<span class="fc" id="L37">    GOOD(&quot;Good (G)&quot;),</span>
+<span class="fc" id="L38">    FAIR(&quot;Fair (F)&quot;),</span>
+<span class="fc" id="L39">    POOR(&quot;Poor (P)&quot;),</span>
+<span class="fc" id="L40">    NOT_GRADED(&quot;Not Graded&quot;),</span>
+<span class="fc" id="L41">    GENERIC(&quot;Generic&quot;),</span>
+<span class="fc" id="L42">    NO_COVER(&quot;No Cover&quot;);</span>
+
+    /** The list of possible values. */
+<span class="fc" id="L45">    public static List&lt;String&gt; VALUES = getValueList();</span>
+
+    /** The map of values to enum references used for JSON marshalling. */
+<span class="fc" id="L48">    private static Map&lt;String, SleeveCondition&gt; VALUE_TO_ENUM = getValueToEnumMap();</span>
+
+    private final String value;
+
+    @Override
+    public String toString() {
+<span class="nc" id="L54">        return value;</span>
+    }
+
+    /**
+     * Gets the {@code SleeveCondition} enum from the given value.
+     *
+     * @param value the value
+     * @return the condition, or {@code null}
+     */
+    public static SleeveCondition fromValue(final String value) {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        if (StringUtils.isBlank(value)) {</span>
+<span class="nc" id="L65">            return null;</span>
+        }
+
+<span class="fc" id="L68">        return VALUE_TO_ENUM.get(value);</span>
+    }
+
+    private static Map&lt;String, SleeveCondition&gt; getValueToEnumMap() {
+<span class="fc" id="L72">        return Arrays.stream(SleeveCondition.values())</span>
+<span class="fc" id="L73">                .collect(Collectors.toMap(SleeveCondition::getValue, (c) -&gt; c));</span>
+    }
+
+    private static List&lt;String&gt; getValueList() {
+<span class="fc" id="L77">        return Arrays.stream(SleeveCondition.values())</span>
+<span class="fc" id="L78">                .map(SleeveCondition::getValue)</span>
+<span class="fc" id="L79">                .collect(Collectors.toList());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InventoryCsvWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.csv</a> &gt; <span class="el_source">InventoryCsvWriter.java</span></div><h1>InventoryCsvWriter.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.csv;
+
+import com.amilesend.client.util.Validate;
+import com.amilesend.discogs.csv.type.InventoryHeader;
+import com.amilesend.discogs.csv.type.InventoryRecord;
+import com.amilesend.discogs.csv.type.InventoryRecordType;
+import com.amilesend.discogs.csv.validation.ValidationException;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/**
+ * Utility to write an inventory CSV file used for Discogs inventory management (i.e., creating new inventory items,
+ * or update existing inventory items).
+ */
+@Getter
+@EqualsAndHashCode
+public class InventoryCsvWriter implements AutoCloseable {
+    /** The path of the CSV file to write. */
+    private final Path csvFile;
+    /** Indicator to append an existing file, or to overwrite and create a new CSV file. */
+    private final boolean isAppended;
+    /**
+     * The list of defined CSV headers to be included in the CSV file.
+     *
+     * @see InventoryHeader
+     */
+    private final List&lt;InventoryHeader&gt; headers;
+    /** The printer used to format and write to the file. */
+    private final CSVPrinter csvPrinter;
+    /**
+     * The record type (i.e., for new inventory items, or to update existing items).
+     *
+     * @see InventoryRecordType
+     */
+    private final InventoryRecordType recordType;
+
+    @Builder
+    private InventoryCsvWriter(
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            @NonNull final Path csvFile,</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            @NonNull final List&lt;InventoryHeader&gt; headers,</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            @NonNull final InventoryRecordType recordType,</span>
+            final CSVFormat csvFormat,
+<span class="fc" id="L73">            final boolean isAppended) throws IOException, ValidationException {</span>
+<span class="fc" id="L74">        this.headers = new ArrayList&lt;&gt;(headers);</span>
+<span class="fc" id="L75">        this.isAppended = isAppended;</span>
+<span class="fc" id="L76">        this.recordType = recordType;</span>
+
+<span class="fc" id="L78">        validateRequiredHeaders(headers, recordType);</span>
+
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (isAppended) {</span>
+<span class="fc" id="L81">            Validate.isTrue(Files.isRegularFile(csvFile), &quot;CSV file must already exist and be regular&quot;);</span>
+<span class="fc" id="L82">            Validate.isTrue(Files.isWritable(csvFile), &quot;CSV file must be writable: &quot; + csvFile);</span>
+<span class="fc" id="L83">            this.csvFile = csvFile;</span>
+        } else {
+<span class="fc" id="L85">            Files.deleteIfExists(csvFile);</span>
+<span class="fc" id="L86">            Files.createDirectories(csvFile);</span>
+<span class="fc" id="L87">            this.csvFile = Files.createFile(csvFile);</span>
+        }
+
+<span class="fc" id="L90">        this.csvPrinter = Optional.ofNullable(csvFormat)</span>
+<span class="fc" id="L91">                .orElse(CSVFormat.RFC4180)</span>
+<span class="fc" id="L92">                .builder()</span>
+<span class="fc" id="L93">                .setHeader(toCsvHeaders(this.headers))</span>
+<span class="fc" id="L94">                .get()</span>
+<span class="fc" id="L95">                .print(this.csvFile, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L96">    }</span>
+
+    /**
+     * Writes a record to the CSV file.
+     *
+     * @param record the record to write
+     * @throws ValidationException if there is an error with the record
+     * @throws IOException if there is an issue writing the record to the file
+     */
+<span class="fc bfc" id="L105" title="All 2 branches covered.">    public void write(@NonNull final InventoryRecord record) throws ValidationException, IOException {</span>
+<span class="fc" id="L106">        record.validate(recordType);</span>
+<span class="fc" id="L107">        csvPrinter.printRecord(record.toCsvRow(headers, recordType));</span>
+<span class="fc" id="L108">    }</span>
+
+    @Override
+    public void close() throws Exception {
+<span class="fc" id="L112">        csvPrinter.close();</span>
+<span class="fc" id="L113">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L117">        return new StringBuilder(&quot;InventoryCsvWriter [&quot;)</span>
+<span class="fc" id="L118">                .append(recordType.name())</span>
+<span class="fc" id="L119">                .append(&quot;]: &quot;)</span>
+<span class="fc" id="L120">                .append(csvFile)</span>
+<span class="fc" id="L121">                .toString();</span>
+    }
+
+    private static void validateRequiredHeaders(
+            final List&lt;InventoryHeader&gt; headers,
+            final InventoryRecordType type) {
+<span class="fc" id="L127">        final List&lt;InventoryHeader&gt; required = InventoryHeader.getRequiredHeaders(type);</span>
+
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (!headers.containsAll(required)) {</span>
+<span class="fc" id="L130">            throw new IllegalArgumentException(&quot;Parsed headers must contain all required headers: &quot; + required);</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+    private static String[] toCsvHeaders(final List&lt;InventoryHeader&gt; headers) {
+<span class="fc" id="L135">        final List&lt;String&gt; strHeaders = headers.stream()</span>
+<span class="fc" id="L136">                .map(InventoryHeader::getHeader)</span>
+<span class="fc" id="L137">                .collect(Collectors.toList());</span>
+<span class="fc" id="L138">        final String[] csvHeaders = new String[headers.size()];</span>
+<span class="fc" id="L139">        return strHeaders.toArray(csvHeaders);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

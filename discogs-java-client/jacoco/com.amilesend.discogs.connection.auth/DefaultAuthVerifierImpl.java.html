@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultAuthVerifierImpl.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection.auth</a> &gt; <span class="el_source">DefaultAuthVerifierImpl.java</span></div><h1>DefaultAuthVerifierImpl.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.connection.auth;
+
+import com.amilesend.client.connection.auth.AuthException;
+import com.amilesend.client.connection.auth.AuthManager;
+import com.amilesend.discogs.model.Api;
+import com.amilesend.discogs.model.AuthenticationOptional;
+import com.amilesend.discogs.model.AuthenticationRequired;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static java.lang.StackWalker.Option.RETAIN_CLASS_REFERENCE;
+
+/**
+ * Helper to verify authentication defined for specific API calls to fail early if not configured for required calls.
+ * &lt;p/&gt;
+ * Note: This class checks the call stack for classes annotated with the {@link Api} annotation. Next, it
+ * checks the method to see if it is annotated with either {@link AuthenticationRequired} or
+ * {@link AuthenticationOptional}.  If auth is required, then an {@link AuthException} is thrown; else, an info
+ * log statement is recorded.
+ *
+ * @see AuthVerifier
+ * @see Api
+ * @see AuthenticationRequired
+ * @see AuthenticationOptional
+ */
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public class DefaultAuthVerifierImpl implements AuthVerifier {
+    // Accounts for this class (i.e., #checkIfAuthenticated() -&gt; #getApiMethodDescriptor()
+    private static final int DEFAULT_SKIP_FRAMES = 2;
+    private static final int MAX_STACK_WALK_DEPTH = 20;
+
+    /** The configured stack walker. */
+    @NonNull
+    private final StackWalker stackWalker;
+    /** The logger. */
+    private final Logger log;
+
+    /** Creates a new {@link DefaultAuthVerifierImpl} instance with the default settings configured. */
+    public DefaultAuthVerifierImpl() {
+<span class="nc" id="L69">        this(StackWalker.getInstance(Set.of(RETAIN_CLASS_REFERENCE), MAX_STACK_WALK_DEPTH),</span>
+<span class="nc" id="L70">                LoggerFactory.getLogger(DefaultAuthVerifierImpl.class));</span>
+<span class="nc" id="L71">    }</span>
+
+    @Override
+    public void checkIfAuthenticated(final AuthManager&lt;?&gt; authManager) {
+<span class="fc" id="L75">        final MethodDescriptor methodDescriptor = getApiMethodDescriptor();</span>
+<span class="fc" id="L76">        final MethodAuthType methodAuthType = methodDescriptor.getType();</span>
+<span class="fc bfc" id="L77" title="All 4 branches covered.">        if (methodAuthType == MethodAuthType.NONE || isAuthenticated(authManager)) {</span>
+<span class="fc" id="L78">            return;</span>
+        }
+
+<span class="fc" id="L81">        final String msg = new StringBuilder(&quot;Client authorization is not configured to access &quot;)</span>
+<span class="fc" id="L82">                .append(methodDescriptor.getApiClass().getSimpleName())</span>
+<span class="fc" id="L83">                .append(&quot;::&quot;)</span>
+<span class="fc" id="L84">                .append(methodDescriptor.getMethodName())</span>
+<span class="fc" id="L85">                .toString();</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        switch (methodAuthType) {</span>
+            case REQUIRED:
+<span class="fc" id="L88">                throw new AuthException(msg);</span>
+            default: /* fall through */
+            case OPTIONAL:
+<span class="fc" id="L91">                log.info(msg);</span>
+                break;
+        }
+<span class="fc" id="L94">    }</span>
+
+    private boolean isAuthenticated(final AuthManager&lt;?&gt; authManager) {
+<span class="fc" id="L97">        return Optional.ofNullable(authManager)</span>
+<span class="fc" id="L98">                .map(AuthManager::isAuthenticated)</span>
+<span class="fc" id="L99">                .orElse(false);</span>
+    }
+
+    private MethodDescriptor getApiMethodDescriptor() {
+        try {
+            // This finds the list of stack frames that reference the API class
+<span class="fc" id="L105">            final List&lt;StackWalker.StackFrame&gt; apiStackFrames = stackWalker.walk(</span>
+<span class="fc" id="L106">                    stream -&gt; stream.skip(DEFAULT_SKIP_FRAMES)</span>
+<span class="fc" id="L107">                            .filter(sf -&gt; sf.getDeclaringClass().isAnnotationPresent(Api.class))</span>
+<span class="fc" id="L108">                            .collect(Collectors.toList()));</span>
+            // This iterates through the frames specific to the API class to find any methods that are annotated
+<span class="fc" id="L110">            return apiStackFrames.stream()</span>
+<span class="fc" id="L111">                    .filter(sf -&gt; containsAuthenticationAnnotation(sf))</span>
+<span class="fc" id="L112">                    .findFirst()</span>
+<span class="fc" id="L113">                    .map(sf -&gt; MethodDescriptor.builder()</span>
+<span class="fc" id="L114">                            .methodName(sf.getMethodName())</span>
+<span class="fc" id="L115">                            .apiClass(sf.getDeclaringClass())</span>
+<span class="fc" id="L116">                            .type(getMethodFromStackFrame(sf)</span>
+<span class="fc" id="L117">                                    .map(MethodAuthType::from)</span>
+<span class="fc" id="L118">                                    .orElse(MethodAuthType.NONE))</span>
+<span class="fc" id="L119">                            .build())</span>
+<span class="fc" id="L120">                    .orElse(MethodDescriptor.builder()</span>
+<span class="fc" id="L121">                            .methodName(&quot;???&quot;)</span>
+<span class="fc" id="L122">                            .apiClass(null)</span>
+<span class="fc" id="L123">                            .type(MethodAuthType.NONE)</span>
+<span class="fc" id="L124">                            .build());</span>
+<span class="fc" id="L125">        } catch (final Exception ex) {</span>
+            // This check should not blow up the API invocation (i.e., let the service verify and throw an exception).
+<span class="fc" id="L127">            return  MethodDescriptor.builder()</span>
+<span class="fc" id="L128">                    .methodName(&quot;???&quot;)</span>
+<span class="fc" id="L129">                    .apiClass(null)</span>
+<span class="fc" id="L130">                    .type(MethodAuthType.NONE)</span>
+<span class="fc" id="L131">                    .build();</span>
+        }
+    }
+
+    private boolean containsAuthenticationAnnotation(final StackWalker.StackFrame stackFrame) {
+<span class="fc" id="L136">        return getMethodFromStackFrame(stackFrame)</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">                .map(m -&gt; m.isAnnotationPresent(AuthenticationRequired.class)</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">                        || m.isAnnotationPresent(AuthenticationOptional.class))</span>
+<span class="fc" id="L139">                .orElse(false);</span>
+    }
+
+    private Optional&lt;Method&gt; getMethodFromStackFrame(final StackWalker.StackFrame stackFrame) {
+<span class="fc" id="L143">        final Class&lt;?&gt; apiClass = stackFrame.getDeclaringClass();</span>
+        try {
+<span class="fc" id="L145">            return Optional.of(apiClass.getMethod(stackFrame.getMethodName()));</span>
+<span class="fc" id="L146">        } catch (final NoSuchMethodException ex) {</span>
+<span class="fc" id="L147">            return Optional.empty();</span>
+        }
+    }
+
+    /** Describes the current API method authorization requirement type. */
+<span class="fc" id="L152">    private enum MethodAuthType {</span>
+<span class="fc" id="L153">        REQUIRED, OPTIONAL, NONE;</span>
+
+        public static MethodAuthType from(final Method method) {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">            if (Objects.isNull(method)) {</span>
+<span class="nc" id="L157">                return NONE;</span>
+            }
+
+<span class="fc bfc" id="L160" title="All 2 branches covered.">            if (method.isAnnotationPresent(AuthenticationRequired.class)) {</span>
+<span class="fc" id="L161">                return REQUIRED;</span>
+            }
+
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">            if (method.isAnnotationPresent(AuthenticationOptional.class)) {</span>
+<span class="fc" id="L165">                return OPTIONAL;</span>
+            }
+
+<span class="nc" id="L168">            return NONE;</span>
+        }
+    }
+
+    /** Describes the calling API method. */
+    @Builder
+    @Getter
+    private static class MethodDescriptor {
+        /** The type. */
+        private final MethodAuthType type;
+        /** The API class. */
+        private final Class&lt;?&gt; apiClass;
+        /** The API method name. */
+        private final String methodName;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

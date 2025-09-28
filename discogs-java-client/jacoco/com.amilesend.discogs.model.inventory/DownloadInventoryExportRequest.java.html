@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DownloadInventoryExportRequest.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.model.inventory</a> &gt; <span class="el_source">DownloadInventoryExportRequest.java</span></div><h1>DownloadInventoryExportRequest.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.model.inventory;
+
+import com.amilesend.client.connection.file.LogProgressCallback;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.client.util.Validate;
+import com.amilesend.discogs.model.PathParameter;
+import com.amilesend.discogs.model.QueryParameterBasedRequest;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NonNull;
+import okhttp3.HttpUrl;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+
+/**
+ * The request to download an inventory export CSV file to the filesystem.
+ *
+ * @see QueryParameterBasedRequest
+ */
+@Data
+public class DownloadInventoryExportRequest implements QueryParameterBasedRequest {
+    /** The inventory export identifier (required). */
+    @PathParameter
+    private final long exportId;
+    /** The folder to download the CSV to (required). */
+    private final Path folderPath;
+    /**
+     * The callback for transfer progress (optional). Note: If {@code null}, then the default
+     * {@link LogProgressCallback} will be used to log transfer progress.
+     *
+     * @see TransferProgressCallback
+     * @see LogProgressCallback
+     */
+    private final TransferProgressCallback callback;
+
+    @Builder
+    private DownloadInventoryExportRequest(
+            final long exportId,
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">            @NonNull final Path folderPath,</span>
+<span class="fc" id="L59">            final TransferProgressCallback callback) {</span>
+<span class="fc" id="L60">        this.exportId = exportId;</span>
+<span class="fc" id="L61">        this.folderPath = folderPath;</span>
+<span class="fc" id="L62">        this.callback = Optional.ofNullable(callback)</span>
+<span class="pc" id="L63">                .orElseGet(() -&gt; LogProgressCallback.builder()</span>
+<span class="nc" id="L64">                        .prefix(new StringBuilder(&quot;[Discogs -&gt;&quot;)</span>
+<span class="nc" id="L65">                                .append(folderPath)</span>
+<span class="nc" id="L66">                                .append(&quot;]&quot;)</span>
+<span class="nc" id="L67">                                .toString())</span>
+<span class="nc" id="L68">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="nc" id="L69">                        .build());</span>
+<span class="fc" id="L70">    }</span>
+
+    @Override
+    public HttpUrl.Builder populateQueryParameters(final HttpUrl.Builder urlBuilder) {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        Validate.isTrue(exportId &gt; 0L, &quot;exportId must be &gt; 0&quot;);</span>
+<span class="fc" id="L75">        Validate.isTrue(Files.exists(folderPath), &quot;folderPath must exist&quot;);</span>
+<span class="fc" id="L76">        Validate.isTrue(Files.isDirectory(folderPath), &quot;folderPath must be a directory&quot;);</span>
+<span class="fc" id="L77">        Validate.isTrue(Files.isWritable(folderPath), &quot;folderPath must be writable&quot;);</span>
+<span class="fc" id="L78">        return urlBuilder;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuthReceiverCallback.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection.auth.oauth</a> &gt; <span class="el_source">OAuthReceiverCallback.java</span></div><h1>OAuthReceiverCallback.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.connection.auth.oauth;
+
+import com.amilesend.client.util.Pair;
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.client.util.VisibleForTesting;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.stream.Collectors;
+
+import static java.net.HttpURLConnection.HTTP_MOVED_TEMP;
+import static java.net.HttpURLConnection.HTTP_OK;
+
+/**
+ * HttpServer handler that takes the verifier token passed over from the OAuth provider and
+ * stashes it where {@link OAuthReceiver#waitForCode} will find it.
+ */
+<span class="fc" id="L54">@Slf4j</span>
+public class OAuthReceiverCallback implements HttpHandler {
+    private static final String LANDING_HTML_RESOURCE = &quot;/SuccessLanding.html&quot;;
+<span class="fc" id="L57">    private static final String LANDING_HTML_FALLBACK = new StringBuilder(&quot;&lt;html&gt;&quot;)</span>
+<span class="fc" id="L58">            .append(&quot;&lt;head&gt;&lt;title&gt;OAuth Authentication Token Received&lt;/title&gt;&lt;/head&gt;&quot;)</span>
+<span class="fc" id="L59">            .append(&quot;&lt;body&gt;&quot;)</span>
+<span class="fc" id="L60">            .append(&quot;Received verification response. You may now close this window.&quot;)</span>
+<span class="fc" id="L61">            .append(&quot;&lt;/body&gt;&quot;)</span>
+<span class="fc" id="L62">            .append(&quot;&lt;/html&gt;\n&quot;)</span>
+<span class="fc" id="L63">            .toString();</span>
+
+    private final String callbackPath;
+    private final String successLandingPageUrl;
+    private final String failureLandingPageUrl;
+    /** To block until receiving an authorization response or stop() is called. */
+<span class="fc" id="L69">    private final Semaphore waitUnlessSignaled = new Semaphore(0 /* initially zero permit */);</span>
+
+    /** The authorization code. */
+    @VisibleForTesting // The Setter
+    @Setter(value = AccessLevel.PACKAGE)
+    @Getter
+    private volatile String code;
+    /** The error code. */
+    @VisibleForTesting // The Setter
+    @Setter(value = AccessLevel.PACKAGE)
+    @Getter
+    private volatile String error;
+
+    /**
+     * Builds a new {@code OAuthReceiverCallback}
+     *
+     * @param callbackPath the path to listen for the redirect
+     * @param successLandingPageUrl optional URL for a custom successful landing page
+     * @param failureLandingPageUrl optional URL for a custom failure landing page
+     */
+    @Builder
+    public OAuthReceiverCallback(
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">            @NonNull final String callbackPath,</span>
+            final String successLandingPageUrl,
+<span class="fc" id="L93">            final String failureLandingPageUrl) {</span>
+<span class="fc" id="L94">        this.callbackPath = callbackPath;</span>
+<span class="fc" id="L95">        this.successLandingPageUrl = successLandingPageUrl;</span>
+<span class="fc" id="L96">        this.failureLandingPageUrl = failureLandingPageUrl;</span>
+<span class="fc" id="L97">    }</span>
+
+    /**
+     * Handles the given request and sets the corresponding redirect status.
+     *
+     * @param httpExchange the exchange containing the request from the client
+     * @throws IOException if unable to retrieve request information from the exchange
+     */
+    @Override
+    public void handle(final HttpExchange httpExchange) throws IOException {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (!callbackPath.equals(httpExchange.getRequestURI().getPath())) {</span>
+<span class="nc" id="L108">            return;</span>
+        }
+
+        try {
+<span class="fc" id="L112">            final Map&lt;String, String&gt; params = queryToMap(httpExchange.getRequestURI().getQuery());</span>
+<span class="fc" id="L113">            code = params.get(&quot;oauth_verifier&quot;);</span>
+<span class="fc" id="L114">            error = params.get(&quot;denied&quot;);</span>
+
+<span class="fc" id="L116">            final Headers respHeaders = httpExchange.getResponseHeaders();</span>
+<span class="fc bfc" id="L117" title="All 4 branches covered.">            if (StringUtils.isBlank(error) &amp;&amp; StringUtils.isNotBlank(successLandingPageUrl)) {</span>
+<span class="fc" id="L118">                respHeaders.add(&quot;Location&quot;, successLandingPageUrl);</span>
+<span class="fc" id="L119">                httpExchange.sendResponseHeaders(HTTP_MOVED_TEMP, -1);</span>
+<span class="fc bfc" id="L120" title="All 4 branches covered.">            } else if (StringUtils.isNotBlank(error) &amp;&amp; StringUtils.isNotBlank(failureLandingPageUrl)) {</span>
+<span class="fc" id="L121">                respHeaders.add(&quot;Location&quot;, failureLandingPageUrl);</span>
+<span class="fc" id="L122">                httpExchange.sendResponseHeaders(HTTP_MOVED_TEMP, -1);</span>
+            } else {
+<span class="fc" id="L124">                writeLandingHtml(httpExchange, respHeaders);</span>
+            }
+<span class="fc" id="L126">            httpExchange.close();</span>
+        } finally {
+<span class="fc" id="L128">            releaseLock();</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Blocks until the server receives a login result, or the server is stopped by {@link OAuthReceiver#stop()},
+     * to return an authorization code.
+     *
+     * @return authorization code if login succeeds; may return {@code null} if the server is stopped
+     *     by {@link OAuthReceiver#stop()}
+     * @throws OAuthReceiverException if the server receives an error code (through an HTTP request parameter
+     *     {@code error})
+     */
+    public String waitForCode() {
+<span class="fc" id="L142">        waitUnlessSignaled.acquireUninterruptibly();</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        if (StringUtils.isNotBlank(error)) {</span>
+<span class="fc" id="L144">            throw new OAuthReceiverException(&quot;User authorization failed&quot;);</span>
+        }
+<span class="fc" id="L146">        return code;</span>
+    }
+
+    /** Releases the lock. */
+    public void releaseLock() {
+<span class="fc" id="L151">        waitUnlessSignaled.release();</span>
+<span class="fc" id="L152">    }</span>
+
+    /**
+     * Utility method to extract query parameters from a URL and return them as a map.
+     *
+     * @param query the query parameters
+     * @return the map of query parameters
+     */
+    static Map&lt;String, String&gt; queryToMap(final String query) {
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (StringUtils.isBlank(query)) {</span>
+<span class="fc" id="L162">            return Collections.emptyMap();</span>
+        }
+
+<span class="fc" id="L165">        return Arrays.stream(query.split(&quot;&amp;&quot;))</span>
+<span class="fc" id="L166">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L167">                .map(kv -&gt; {</span>
+<span class="pc bpc" id="L168" title="1 of 2 branches missed.">                    if (!kv.contains(&quot;=&quot;)){</span>
+<span class="nc" id="L169">                        return Pair.of(kv, StringUtils.EMPTY);</span>
+                    }
+
+<span class="fc" id="L172">                    final String[] pair = kv.split(&quot;=&quot;);</span>
+<span class="pc bpc" id="L173" title="3 of 4 branches missed.">                    if (pair.length != 2 &amp;&amp; pair.length &gt; 0) {</span>
+<span class="nc" id="L174">                        return Pair.of(pair[0], StringUtils.EMPTY);</span>
+                    }
+
+<span class="fc" id="L177">                    return Pair.of(pair[0], pair[1]);</span>
+                })
+<span class="fc" id="L179">                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));</span>
+    }
+
+    private static void writeLandingHtml(final HttpExchange exchange, final Headers headers) throws IOException {
+<span class="fc" id="L183">        try (final OutputStream os = exchange.getResponseBody();</span>
+<span class="fc" id="L184">             final OutputStreamWriter doc = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {</span>
+<span class="fc" id="L185">            exchange.sendResponseHeaders(HTTP_OK, 0);</span>
+<span class="fc" id="L186">            headers.add(&quot;ContentType&quot;, &quot;text/html&quot;);</span>
+<span class="fc" id="L187">            doc.write(getLandingHtml());</span>
+<span class="fc" id="L188">            doc.flush();</span>
+        }
+<span class="fc" id="L190">    }</span>
+
+    private static String getLandingHtml() {
+        try {
+<span class="pc" id="L194">            final Path resourcePath = Paths.get(OAuthReceiverCallback.class</span>
+<span class="fc" id="L195">                    .getClassLoader()</span>
+<span class="fc" id="L196">                    .getResource(LANDING_HTML_RESOURCE)</span>
+<span class="nc" id="L197">                    .toURI());</span>
+<span class="nc" id="L198">            return Files.readString(resourcePath);</span>
+<span class="fc" id="L199">        } catch (final IOException | URISyntaxException | NullPointerException ex) {</span>
+<span class="fc" id="L200">            log.warn(&quot;Error trying to load resource: {}&quot;, LANDING_HTML_RESOURCE);</span>
+<span class="fc" id="L201">            return LANDING_HTML_FALLBACK;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OAuthManager.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection.auth</a> &gt; <span class="el_source">OAuthManager.java</span></div><h1>OAuthManager.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.connection.auth;
+
+import com.amilesend.client.connection.auth.AuthException;
+import com.amilesend.client.connection.auth.AuthManager;
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
+import com.amilesend.discogs.connection.RandomAlphaNumericStringGenerator;
+import com.amilesend.discogs.connection.auth.info.KeySecretAuthInfo;
+import com.amilesend.discogs.connection.auth.info.OAuthInfo;
+import com.amilesend.discogs.connection.auth.oauth.AccessTokenResponse;
+import com.amilesend.discogs.connection.auth.oauth.OAuthReceiver;
+import com.amilesend.discogs.connection.auth.oauth.RequestTokenResponse;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.slf4j.event.Level;
+
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static com.amilesend.client.connection.Connection.Headers.AUTHORIZATION;
+import static com.amilesend.client.connection.Connection.Headers.CONTENT_TYPE;
+import static com.amilesend.client.connection.Connection.Headers.USER_AGENT;
+
+/**
+ * Defines the auth manager for OAuth-authenticated requests.
+ *
+ * @see AuthManager
+ * @see OAuthInfo
+ */
+<span class="fc" id="L60">@Slf4j</span>
+public class OAuthManager implements AuthManager&lt;OAuthInfo&gt; {
+    private static final String REQUEST_TOKEN_URL = &quot;https://api.discogs.com/oauth/request_token&quot;;
+    private static final String AUTHORIZE_URL = &quot;https://www.discogs.com/oauth/authorize&quot;;
+    private static final String ACCESS_TOKEN_URL = &quot;https://api.discogs.com/oauth/access_token&quot;;
+    private static final String APPLICATION_FORM_URL_ENCODED_CONTENT_TYPE =
+            &quot;application/x-www-form-urlencoded&quot;;
+<span class="fc" id="L67">    private static final RandomAlphaNumericStringGenerator RANDOM_STRING_GENERATOR =</span>
+            new RandomAlphaNumericStringGenerator();
+    private static final int NONCE_LENGTH = 12;
+
+<span class="fc" id="L71">    private final ReentrantLock lock = new ReentrantLock();</span>
+    private final OkHttpClient httpClient;
+    private final OAuthReceiver oAuthReceiver;
+    private final KeySecretAuthInfo appCredentials;
+    private final String requestTokenUrl;
+    private final String authorizeUrl;
+    private final String accessTokenUrl;
+    private final String userAgent;
+<span class="fc" id="L79">    private final AtomicReference&lt;OAuthInfo&gt; oAuthInfo = new AtomicReference&lt;&gt;();</span>
+
+    @Builder
+    private OAuthManager(
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            @NonNull final OkHttpClient httpClient,</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">            @NonNull final OAuthReceiver oAuthReceiver,</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            @NonNull final KeySecretAuthInfo appCredentials,</span>
+            final String requestTokenUrl,
+            final String authorizeUrl,
+            final String accessTokenUrl,
+            final OAuthInfo oAuthToken,
+<span class="fc" id="L90">            final String userAgent) {</span>
+<span class="fc" id="L91">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
+
+<span class="fc" id="L93">        this.httpClient = httpClient;</span>
+<span class="fc" id="L94">        this.oAuthReceiver = oAuthReceiver;</span>
+<span class="fc" id="L95">        this.appCredentials = appCredentials;</span>
+<span class="fc" id="L96">        this.requestTokenUrl = Optional.ofNullable(requestTokenUrl)</span>
+<span class="fc" id="L97">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L98">                .orElse(REQUEST_TOKEN_URL);</span>
+<span class="fc" id="L99">        this.authorizeUrl = Optional.ofNullable(authorizeUrl)</span>
+<span class="fc" id="L100">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L101">                .orElse(AUTHORIZE_URL);</span>
+<span class="fc" id="L102">        this.accessTokenUrl = Optional.ofNullable(accessTokenUrl)</span>
+<span class="fc" id="L103">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L104">                .orElse(ACCESS_TOKEN_URL);</span>
+<span class="fc" id="L105">        this.userAgent = userAgent;</span>
+<span class="fc" id="L106">        this.oAuthInfo.set(oAuthToken);</span>
+<span class="fc" id="L107">    }</span>
+
+    @Override
+    public OAuthInfo getAuthInfo() {
+<span class="fc" id="L111">        OAuthInfo info = oAuthInfo.get();</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (Objects.nonNull(info)) {</span>
+<span class="fc" id="L113">            return info;</span>
+        }
+
+<span class="fc" id="L116">        lock.lock();</span>
+        try {
+<span class="fc" id="L118">            info = authenticate();</span>
+<span class="fc" id="L119">            oAuthInfo.set(info);</span>
+<span class="fc" id="L120">            return info;</span>
+        } finally {
+<span class="fc" id="L122">            lock.unlock();</span>
+        }
+    }
+
+    @Override
+<span class="fc bfc" id="L127" title="All 2 branches covered.">    public Request.Builder addAuthentication(@NonNull final Request.Builder requestBuilder) {</span>
+<span class="fc" id="L128">        final OAuthInfo authInfo = getAuthInfo();</span>
+<span class="fc" id="L129">        final String authHeaderValue = toAuthHeaderForRequestSigning(appCredentials, authInfo);</span>
+<span class="fc" id="L130">        return requestBuilder.addHeader(AUTHORIZATION, authHeaderValue);</span>
+    }
+
+    @VisibleForTesting
+    OAuthInfo authenticate() {
+<span class="fc" id="L135">        final RequestTokenResponse requestToken = fetchRequestToken(appCredentials, oAuthReceiver.getRedirectUri());</span>
+<span class="fc" id="L136">        final String authVerifier = fetchAuthVerifier(requestToken);</span>
+<span class="fc" id="L137">        final AccessTokenResponse accessTokenResponse = fetchAccessToken(appCredentials, requestToken, authVerifier);</span>
+<span class="fc" id="L138">        return accessTokenResponse.toOAuthInfo();</span>
+    }
+
+    @VisibleForTesting
+    String fetchAuthVerifier(final RequestTokenResponse requestTokenResponse) {
+<span class="fc" id="L143">        oAuthReceiver.start();</span>
+        try {
+<span class="fc" id="L145">            browse(getAuthCodeUri(requestTokenResponse.getToken()));</span>
+<span class="fc" id="L146">            return oAuthReceiver.waitForCode();</span>
+        } finally {
+<span class="fc" id="L148">            oAuthReceiver.stop();</span>
+        }
+    }
+
+    @VisibleForTesting
+    RequestTokenResponse fetchRequestToken(final KeySecretAuthInfo appCredentials, final String callbackUrl) {
+<span class="fc" id="L154">        final Request request = new Request.Builder()</span>
+<span class="fc" id="L155">                .url(requestTokenUrl)</span>
+<span class="fc" id="L156">                .addHeader(AUTHORIZATION, toAuthHeaderValueForRequestToken(appCredentials, callbackUrl))</span>
+<span class="fc" id="L157">                .addHeader(USER_AGENT, userAgent)</span>
+<span class="fc" id="L158">                .addHeader(CONTENT_TYPE, APPLICATION_FORM_URL_ENCODED_CONTENT_TYPE)</span>
+<span class="fc" id="L159">                .get()</span>
+<span class="fc" id="L160">                .build();</span>
+<span class="fc" id="L161">        final String requestTokenBodyValue = fetchToken(request);</span>
+<span class="fc" id="L162">        return RequestTokenResponse.parseBodyResponse(requestTokenBodyValue);</span>
+    }
+
+    @VisibleForTesting
+    AccessTokenResponse fetchAccessToken(
+            final KeySecretAuthInfo appCredentials,
+            final RequestTokenResponse requestTokenResponse,
+            final String authVerifier) {
+<span class="fc" id="L170">        final Request request = new Request.Builder()</span>
+<span class="fc" id="L171">                .url(accessTokenUrl)</span>
+<span class="fc" id="L172">                .addHeader(AUTHORIZATION,</span>
+<span class="fc" id="L173">                        toAuthHeaderValueForAccessToken(appCredentials, requestTokenResponse, authVerifier))</span>
+<span class="fc" id="L174">                .addHeader(USER_AGENT, userAgent)</span>
+<span class="fc" id="L175">                .addHeader(CONTENT_TYPE, APPLICATION_FORM_URL_ENCODED_CONTENT_TYPE)</span>
+<span class="fc" id="L176">                .post(newEmptyRequestBody())</span>
+<span class="fc" id="L177">                .build();</span>
+<span class="fc" id="L178">        final String accessTokenBodyValue = fetchToken(request);</span>
+<span class="fc" id="L179">        return AccessTokenResponse.parseBodyResponse(accessTokenBodyValue);</span>
+    }
+
+    @VisibleForTesting
+    String fetchToken(final Request request) {
+        try {
+<span class="fc" id="L185">            try (final Response response = httpClient.newCall(request).execute()) {</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">                if (!response.isSuccessful()) {</span>
+<span class="fc" id="L187">                    throw new AuthException(&quot;Unsuccessful token request: &quot; + response);</span>
+                }
+
+<span class="fc" id="L190">                return response.body().string();</span>
+            }
+<span class="fc" id="L192">        } catch (final AuthException ex) {</span>
+<span class="fc" id="L193">            throw ex;</span>
+<span class="fc" id="L194">        } catch (final Exception ex) {</span>
+<span class="fc" id="L195">            throw new AuthException(&quot;Error fetching token: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    @VisibleForTesting
+    void browse(final String url) {
+<span class="fc" id="L201">        Validate.notBlank(url, &quot;url must not be blank&quot;);</span>
+
+        // Ask user to open in their browser using copy-paste
+<span class="fc" id="L204">        printAndLog(&quot;Please open the following address in your browser: &quot; + url, Level.INFO);</span>
+        try {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">            if (!Desktop.isDesktopSupported()) {</span>
+<span class="fc" id="L207">                return;</span>
+            }
+
+<span class="fc" id="L210">            final Desktop desktop = Desktop.getDesktop();</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">            if (!desktop.isSupported(Desktop.Action.BROWSE)) {</span>
+<span class="fc" id="L212">                return;</span>
+            }
+
+<span class="fc" id="L215">            printAndLog(&quot;Attempting to open that address in the default browser now...&quot;, Level.INFO);</span>
+<span class="fc" id="L216">            desktop.browse(URI.create(url));</span>
+<span class="fc" id="L217">        } catch (final IOException | InternalError ex) {</span>
+<span class="fc" id="L218">            printAndLog(&quot;Unable to open browser&quot;, Level.WARN, ex);</span>
+<span class="fc" id="L219">        }</span>
+<span class="fc" id="L220">    }</span>
+
+    @VisibleForTesting
+    void printAndLog(final String msg, final Level level) {
+<span class="nc" id="L224">        printAndLog(msg, level, null);</span>
+<span class="nc" id="L225">    }</span>
+
+    @VisibleForTesting
+    void printAndLog(final String msg, final Level level, final Throwable cause) {
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (Objects.isNull(cause)) {</span>
+<span class="nc" id="L230">            log.atLevel(level).log(msg);</span>
+        } else {
+<span class="nc" id="L232">            log.atLevel(level).log(msg, cause);</span>
+        }
+
+<span class="nc" id="L235">        System.out.println(msg);</span>
+<span class="nc" id="L236">    }</span>
+
+    @VisibleForTesting
+    String getAuthCodeUri(final String requestToken) {
+<span class="fc" id="L240">        return new StringBuilder(authorizeUrl)</span>
+<span class="fc" id="L241">                .append(&quot;?oauth_token=&quot;)</span>
+<span class="fc" id="L242">                .append(URLEncoder.encode(requestToken, StandardCharsets.UTF_8))</span>
+<span class="fc" id="L243">                .toString();</span>
+    }
+
+    @VisibleForTesting
+    String toAuthHeaderValueForRequestToken(
+            final KeySecretAuthInfo appCredentials,
+            final String callbackUrl) {
+<span class="fc" id="L250">        return toAuthHeaderCommon(appCredentials)</span>
+<span class="fc" id="L251">                .append(&quot;oauth_consumer_key=\&quot;&quot;).append(appCredentials.getKey()).append(&quot;\&quot;, &quot;)</span>
+<span class="fc" id="L252">                .append(&quot;oauth_signature=\&quot;&quot;).append(appCredentials.getSecret()).append(&quot;&amp;\&quot;, &quot;)</span>
+<span class="fc" id="L253">                .append(&quot;oauth_callback=\&quot;&quot;).append(callbackUrl).append(&quot;\&quot;&quot;)</span>
+<span class="fc" id="L254">                .toString();</span>
+    }
+
+    @VisibleForTesting
+    String toAuthHeaderValueForAccessToken(
+            final KeySecretAuthInfo appCredentials,
+            final RequestTokenResponse requestTokenResponse,
+            final String authVerifier) {
+<span class="fc" id="L262">        return toAuthHeaderCommon(appCredentials)</span>
+<span class="fc" id="L263">                .append(&quot;oauth_token=\&quot;&quot;).append(requestTokenResponse.getToken()).append(&quot;\&quot;, &quot;)</span>
+<span class="fc" id="L264">                .append(&quot;oauth_signature=\&quot;&quot;).append(appCredentials.getSecret())</span>
+<span class="fc" id="L265">                .append(&quot;&amp;&quot;).append(requestTokenResponse.getSecret()).append(&quot;\&quot;, &quot;)</span>
+<span class="fc" id="L266">                .append(&quot;oauth_verifier=\&quot;&quot;).append(authVerifier).append(&quot;\&quot;&quot;)</span>
+<span class="fc" id="L267">                .toString();</span>
+    }
+
+    @VisibleForTesting
+    String toAuthHeaderForRequestSigning(
+            final KeySecretAuthInfo appCredentials,
+            final OAuthInfo userTokenInfo) {
+<span class="fc" id="L274">        return toAuthHeaderCommon(appCredentials)</span>
+<span class="fc" id="L275">                .append(&quot;oauth_token=\&quot;&quot;).append(userTokenInfo.getToken()).append(&quot;\&quot;, &quot;)</span>
+<span class="fc" id="L276">                .append(&quot;oauth_signature=\&quot;&quot;).append(appCredentials.getSecret())</span>
+<span class="fc" id="L277">                .append(&quot;&amp;&quot;).append(userTokenInfo.getSecret()).append(&quot;\&quot;&quot;)</span>
+<span class="fc" id="L278">                .toString();</span>
+    }
+
+    private static StringBuilder toAuthHeaderCommon(final KeySecretAuthInfo appCredentials) {
+<span class="fc" id="L282">        return new StringBuilder(&quot;OAuth &quot;)</span>
+<span class="fc" id="L283">                .append(&quot;oauth_consumer_key=\&quot;&quot;).append(appCredentials.getKey()).append(&quot;\&quot;, &quot;)</span>
+<span class="fc" id="L284">                .append(&quot;oauth_nonce=\&quot;&quot;).append(generateNewNonce()).append(&quot;\&quot;, &quot;)</span>
+<span class="fc" id="L285">                .append(&quot;oauth_signature_method=\&quot;PLAINTEXT\&quot;, &quot;)</span>
+<span class="fc" id="L286">                .append(&quot;oauth_timestamp=\&quot;&quot;).append(System.currentTimeMillis()).append(&quot;\&quot;, &quot;);</span>
+    }
+
+    private static String generateNewNonce() {
+<span class="fc" id="L290">        return RANDOM_STRING_GENERATOR.next(NONCE_LENGTH);</span>
+    }
+
+    private static RequestBody newEmptyRequestBody() {
+<span class="fc" id="L294">        return RequestBody.create(new byte[0]);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

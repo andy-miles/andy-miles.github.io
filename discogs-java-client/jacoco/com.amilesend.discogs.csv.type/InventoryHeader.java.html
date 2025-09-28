@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InventoryHeader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.csv.type</a> &gt; <span class="el_source">InventoryHeader.java</span></div><h1>InventoryHeader.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.csv.type;
+
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.discogs.csv.validation.MediaConditionValidator;
+import com.amilesend.discogs.csv.validation.NoOpValidator;
+import com.amilesend.discogs.csv.validation.PositiveIntValidator;
+import com.amilesend.discogs.csv.validation.PriceValidator;
+import com.amilesend.discogs.csv.validation.SleeveConditionValidator;
+import com.amilesend.discogs.csv.validation.ValueValidator;
+import com.amilesend.discogs.csv.validation.YesNoValidator;
+import com.amilesend.discogs.csv.validation.ZeroOrPositiveIntValidator;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/** Defines the CSV headers for an inventory IMPORT/EXPORT file. */
+<span class="fc" id="L38">@RequiredArgsConstructor</span>
+@Getter
+public enum InventoryHeader {
+<span class="fc" id="L41">    RELEASE_ID(&quot;release_id&quot;, true, new PositiveIntValidator( false)),</span>
+<span class="fc" id="L42">    PRICE(&quot;price&quot;, true, new PriceValidator()),</span>
+<span class="fc" id="L43">    MEDIA_CONDITION(&quot;media_condition&quot;, true, new MediaConditionValidator()),</span>
+<span class="fc" id="L44">    COMMENTS(&quot;comments&quot;, false, new NoOpValidator()),</span>
+<span class="fc" id="L45">    SLEEVE_CONDITION(&quot;sleeve_condition&quot;, false, new SleeveConditionValidator()),</span>
+<span class="fc" id="L46">    ACCEPT_OFFER(&quot;accept_offer&quot;, false, new YesNoValidator()),</span>
+<span class="fc" id="L47">    LOCATION(&quot;location&quot;, false, new NoOpValidator()),</span>
+<span class="fc" id="L48">    EXTERNAL_ID(&quot;external_id&quot;, false, new NoOpValidator()),</span>
+<span class="fc" id="L49">    WEIGHT(&quot;weight&quot;, false, new ZeroOrPositiveIntValidator(true)),</span>
+<span class="fc" id="L50">    FORMAT_QUANTITY(&quot;format_quantity&quot;, false, new ZeroOrPositiveIntValidator(true));</span>
+
+    /** The map of CSV header values to enum references. */
+<span class="fc" id="L53">    private static Map&lt;String, InventoryHeader&gt; VALUE_TO_ENUM = getValueToEnumMap();</span>
+
+<span class="fc" id="L55">    private static List&lt;InventoryHeader&gt; REQUIRED_FOR_NEW_RECORD = List.of(RELEASE_ID, PRICE, MEDIA_CONDITION);</span>
+<span class="fc" id="L56">    private static List&lt;InventoryHeader&gt; REQUIRED_FOR_UPDATE = List.of(RELEASE_ID);</span>
+
+    private final String header;
+    private final boolean isRequired;
+    private final ValueValidator validator;
+
+    /**
+     * Gets the {@code InventoryHeader} enum from the given value.
+     *
+     * @param value the value
+     * @return the header, or {@code null}
+     */
+    public static InventoryHeader fromValue(final String value) {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">        if (StringUtils.isBlank(value)) {</span>
+<span class="nc" id="L70">            return null;</span>
+        }
+
+<span class="fc" id="L73">        return VALUE_TO_ENUM.get(value);</span>
+    }
+
+    /**
+     * Gets the list of headers that are required.
+     *
+     * @return the list of required headers
+     */
+    public static List&lt;InventoryHeader&gt; getRequiredHeaders(final InventoryRecordType type) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        switch (type) {</span>
+            case UPDATE:
+<span class="fc" id="L84">                return REQUIRED_FOR_UPDATE;</span>
+            default:
+            case NEW:
+<span class="fc" id="L87">                return REQUIRED_FOR_NEW_RECORD;</span>
+        }
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L93">        return header;</span>
+    }
+
+    private static Map&lt;String, InventoryHeader&gt; getValueToEnumMap() {
+<span class="fc" id="L97">        return Arrays.stream(InventoryHeader.values())</span>
+<span class="fc" id="L98">                .collect(Collectors.toMap(InventoryHeader::getHeader, (c) -&gt; c));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

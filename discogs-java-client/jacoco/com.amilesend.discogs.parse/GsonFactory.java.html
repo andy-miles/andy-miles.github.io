@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GsonFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.parse</a> &gt; <span class="el_source">GsonFactory.java</span></div><h1>GsonFactory.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.parse;
+
+import com.amilesend.client.parse.GsonFactoryBase;
+import com.amilesend.discogs.connection.DiscogsConnection;
+import com.amilesend.discogs.model.collection.GetCollectionItemsByFolderResponse;
+import com.amilesend.discogs.model.collection.GetCollectionItemsByReleaseResponse;
+import com.amilesend.discogs.model.database.GetArtistReleasesResponse;
+import com.amilesend.discogs.model.database.GetLabelReleasesResponse;
+import com.amilesend.discogs.model.database.GetMasterReleaseVersionsResponse;
+import com.amilesend.discogs.model.database.SearchResponse;
+import com.amilesend.discogs.model.database.type.SearchType;
+import com.amilesend.discogs.model.identity.GetUserContributionsResponse;
+import com.amilesend.discogs.model.identity.GetUserSubmissionsResponse;
+import com.amilesend.discogs.model.inventory.GetExportsResponse;
+import com.amilesend.discogs.model.inventory.GetUploadsResponse;
+import com.amilesend.discogs.model.lists.GetUserListsResponse;
+import com.amilesend.discogs.model.marketplace.GetInventoryResponse;
+import com.amilesend.discogs.model.marketplace.GetOrderMessagesResponse;
+import com.amilesend.discogs.model.marketplace.GetOrdersResponse;
+import com.amilesend.discogs.model.marketplace.type.Condition;
+import com.amilesend.discogs.model.marketplace.type.SleeveCondition;
+import com.amilesend.discogs.model.type.ListingStatus;
+import com.amilesend.discogs.model.wantlist.GetWantListResponse;
+import com.amilesend.discogs.parse.adapter.ConditionAdapter;
+import com.amilesend.discogs.parse.adapter.ListingStatusAdapter;
+import com.amilesend.discogs.parse.adapter.LocalDateTimeTypeAdapter;
+import com.amilesend.discogs.parse.adapter.LocalDateTypeAdapter;
+import com.amilesend.discogs.parse.adapter.SearchTypeAdapter;
+import com.amilesend.discogs.parse.adapter.SleeveConditionAdapter;
+import com.amilesend.discogs.parse.creator.GetArtistReleasesResponseCreator;
+import com.amilesend.discogs.parse.creator.GetCollectionItemsByFolderResponseCreator;
+import com.amilesend.discogs.parse.creator.GetCollectionItemsByReleaseResponseCreator;
+import com.amilesend.discogs.parse.creator.GetExportsResponseCreator;
+import com.amilesend.discogs.parse.creator.GetInventoryResponseCreator;
+import com.amilesend.discogs.parse.creator.GetLabelReleasesResponseCreator;
+import com.amilesend.discogs.parse.creator.GetMasterReleaseVersionsResponseCreator;
+import com.amilesend.discogs.parse.creator.GetOrderMessagesResponseCreator;
+import com.amilesend.discogs.parse.creator.GetOrdersResponseCreator;
+import com.amilesend.discogs.parse.creator.GetUploadsResponseCreator;
+import com.amilesend.discogs.parse.creator.GetUserContributionsResponseCreator;
+import com.amilesend.discogs.parse.creator.GetUserListsResponseCreator;
+import com.amilesend.discogs.parse.creator.GetUserSubmissionsResponseCreator;
+import com.amilesend.discogs.parse.creator.GetWantListResponseCreator;
+import com.amilesend.discogs.parse.creator.SearchResponseCreator;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import static com.google.gson.FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES;
+
+/** Factory that vends new pre-configured {@link Gson} instances. */
+@NoArgsConstructor
+public class GsonFactory extends GsonFactoryBase&lt;DiscogsConnection&gt; {
+<span class="fc" id="L74">    private static final GsonFactory INSTANCE = new GsonFactory();</span>
+<span class="fc" id="L75">    private static final Gson AUTH_INSTANCE = new GsonBuilder()</span>
+<span class="fc" id="L76">            .setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES)</span>
+<span class="fc" id="L77">            .create();</span>
+
+    /**
+     * Gets the {@link Gson} instance used for authentication.
+     *
+     * @return the configured Gson instance
+     */
+    public static Gson getGsonForAuthentication() {
+<span class="nc" id="L85">        return AUTH_INSTANCE;</span>
+    }
+
+    @Override
+    protected GsonBuilder configure(final GsonBuilder gsonBuilder, final DiscogsConnection connection) {
+<span class="fc" id="L90">        return gsonBuilder.setFieldNamingPolicy(LOWER_CASE_WITH_UNDERSCORES)</span>
+<span class="fc" id="L91">                .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())</span>
+<span class="fc" id="L92">                .registerTypeAdapter(LocalDate.class, new LocalDateTypeAdapter())</span>
+<span class="fc" id="L93">                .registerTypeAdapter(SearchType.class, new SearchTypeAdapter())</span>
+<span class="fc" id="L94">                .registerTypeAdapter(Condition.class, new ConditionAdapter())</span>
+<span class="fc" id="L95">                .registerTypeAdapter(SleeveCondition.class, new SleeveConditionAdapter())</span>
+<span class="fc" id="L96">                .registerTypeAdapter(ListingStatus.class, new ListingStatusAdapter())</span>
+<span class="fc" id="L97">                .registerTypeAdapter(</span>
+                        GetUserSubmissionsResponse.class,
+                        new GetUserSubmissionsResponseCreator(connection))
+<span class="fc" id="L100">                .registerTypeAdapter(</span>
+                        GetUserContributionsResponse.class,
+                        new GetUserContributionsResponseCreator(connection))
+<span class="fc" id="L103">                .registerTypeAdapter(</span>
+                        GetMasterReleaseVersionsResponse.class,
+                        new GetMasterReleaseVersionsResponseCreator(connection))
+<span class="fc" id="L106">                .registerTypeAdapter(</span>
+                        GetArtistReleasesResponse.class,
+                        new GetArtistReleasesResponseCreator(connection))
+<span class="fc" id="L109">                .registerTypeAdapter(</span>
+                        GetLabelReleasesResponse.class,
+                        new GetLabelReleasesResponseCreator(connection))
+<span class="fc" id="L112">                .registerTypeAdapter(</span>
+                        SearchResponse.class,
+                        new SearchResponseCreator(connection))
+<span class="fc" id="L115">                .registerTypeAdapter(</span>
+                        GetInventoryResponse.class,
+                        new GetInventoryResponseCreator(connection))
+<span class="fc" id="L118">                .registerTypeAdapter(</span>
+                        GetOrdersResponse.class,
+                        new GetOrdersResponseCreator(connection))
+<span class="fc" id="L121">                .registerTypeAdapter(</span>
+                        GetOrderMessagesResponse.class,
+                        new GetOrderMessagesResponseCreator(connection))
+<span class="fc" id="L124">                .registerTypeAdapter(</span>
+                        GetCollectionItemsByReleaseResponse.class,
+                        new GetCollectionItemsByReleaseResponseCreator(connection))
+<span class="fc" id="L127">                .registerTypeAdapter(</span>
+                        GetCollectionItemsByFolderResponse.class,
+                        new GetCollectionItemsByFolderResponseCreator(connection))
+<span class="fc" id="L130">                .registerTypeAdapter(</span>
+                        GetWantListResponse.class,
+                        new GetWantListResponseCreator(connection))
+<span class="fc" id="L133">                .registerTypeAdapter(</span>
+                        GetUserListsResponse.class,
+                        new GetUserListsResponseCreator(connection))
+<span class="fc" id="L136">                .registerTypeAdapter(</span>
+                        GetExportsResponse.class,
+                        new GetExportsResponseCreator(connection))
+<span class="fc" id="L139">                .registerTypeAdapter(</span>
+                        GetUploadsResponse.class,
+                        new GetUploadsResponseCreator(connection));
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

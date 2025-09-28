@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ApiBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.api</a> &gt; <span class="el_source">ApiBase.java</span></div><h1>ApiBase.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.api;
+
+import com.amilesend.client.parse.parser.BasicParser;
+import com.amilesend.discogs.connection.DiscogsConnection;
+import com.amilesend.discogs.connection.auth.oauth.OAuthReceiverException;
+import com.amilesend.discogs.model.BodyBasedRequest;
+import com.amilesend.discogs.model.QueryParameterBasedRequest;
+import com.google.gson.Gson;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import java.util.Objects;
+
+import static com.amilesend.discogs.connection.DiscogsConnection.JSON_MEDIA_TYPE;
+
+/** Wraps a {@link OkHttpClient} that manages parsing responses to corresponding POJO types. */
+@RequiredArgsConstructor
+public abstract class ApiBase {
+    /** The connection that wraps the underlying HTTP client. */
+    @NonNull
+    @Getter
+    private final DiscogsConnection connection;
+
+    /**
+     * Helper method to get the {@link Gson} instance for the connection.
+     *
+     * @return the Gson instance
+     */
+    protected Gson getGsonForConnection() {
+<span class="fc" id="L53">        return connection.getGsonFactory().getInstance(connection);</span>
+    }
+
+    /**
+     * Executes a GET request for the given URL path and expected response type class.
+     *
+     * @param apiPath the path for the operation relative to the base URL
+     * @param responseType the expected response type class
+     * @return the deserialized response
+     * @param &lt;T&gt; the response type
+     */
+    protected &lt;T&gt; T executeGet(final String apiPath, final Class&lt;T&gt; responseType) {
+<span class="fc" id="L65">        final Request request = connection.newRequestBuilder()</span>
+<span class="fc" id="L66">                .url(buildHttpUrl(apiPath, null))</span>
+<span class="fc" id="L67">                .build();</span>
+<span class="fc" id="L68">        return connection.execute(request, new BasicParser&lt;&gt;(responseType));</span>
+    }
+
+    /**
+     * Executes a GET request for the given URL path, request, and expected response type class.
+     *
+     * @param apiPath the path for the operation relative to the base URL
+     * @param request the request
+     * @param responseType the response type class
+     * @return the deserialized response
+     * @param &lt;T&gt; the response type
+     */
+    protected &lt;T&gt; T executeGet(
+            final String apiPath,
+            final QueryParameterBasedRequest request,
+            final Class&lt;T&gt; responseType) throws OAuthReceiverException {
+<span class="fc" id="L84">        return connection.execute(</span>
+<span class="fc" id="L85">                connection.newRequestBuilder()</span>
+<span class="fc" id="L86">                        .url(buildHttpUrl(apiPath, request))</span>
+<span class="fc" id="L87">                        .build(),</span>
+                new BasicParser&lt;&gt;(responseType));
+    }
+
+    /**
+     * Executes a PUT request for the given URL path, request, and expected response type class.
+     *
+     * @param apiPath the path for the operation relative to the base URL
+     * @param request the request
+     * @param responseType the response type class
+     * @return the deserialized response
+     * @param &lt;T&gt; the response type
+     * @throws OAuthReceiverException
+     */
+    protected &lt;T&gt; T executePut(
+            final String apiPath,
+            final BodyBasedRequest request,
+            final Class&lt;T&gt; responseType) throws OAuthReceiverException {
+<span class="fc" id="L105">        final Request httpRequest = connection.newRequestBuilder()</span>
+<span class="fc" id="L106">                .url(buildHttpUrl(apiPath, request))</span>
+<span class="fc" id="L107">                .put(RequestBody.create(getGsonForConnection().toJson(request), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L108">                .build();</span>
+<span class="fc" id="L109">        return connection.execute(httpRequest, new BasicParser&lt;&gt;(responseType));</span>
+    }
+
+    /**
+     * Executes a POST request for the given URL path, request, and expected response type class.
+     *
+     * @param apiPath the path for the operation relative to the base URL
+     * @param request the request
+     * @param responseType the response type class
+     * @return the deserialized response
+     * @param &lt;T&gt; the response type
+     */
+    protected &lt;T&gt; T executePost(
+            final String apiPath,
+            final BodyBasedRequest request,
+            final Class&lt;T&gt; responseType) throws OAuthReceiverException {
+<span class="fc" id="L125">        return connection.execute(buildPostRequest(apiPath, request), new BasicParser&lt;&gt;(responseType));</span>
+    }
+
+    /**
+     * Executes a POST request for the given URL path and request.
+     *
+     * @param apiPath the path for the operation relative to the base URL
+     * @param request the request
+     */
+    protected void executePost(final String apiPath, final BodyBasedRequest request) {
+<span class="fc" id="L135">        try (final Response ignored = connection.execute(buildPostRequest(apiPath, request))) {</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">        }</span>
+<span class="fc" id="L137">    }</span>
+
+    private Request buildPostRequest(final String apiPath, final BodyBasedRequest request) {
+<span class="fc" id="L140">        return connection.newRequestBuilder()</span>
+<span class="fc" id="L141">                .url(buildHttpUrl(apiPath, request))</span>
+<span class="fc" id="L142">                .post(RequestBody.create(getGsonForConnection().toJson(request), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L143">                .build();</span>
+    }
+
+    /**
+     * Executes a DELETE request for the given URL path, request with no expectation of a response object.
+     *
+     * @param apiPath the path for the operation relative to the base URL
+     * @param request the request
+     */
+    protected void executeDelete(final String apiPath, final QueryParameterBasedRequest request) {
+<span class="fc" id="L153">        try (final Response response = connection.execute(buildDeleteRequest(apiPath, request))) {</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        }</span>
+<span class="fc" id="L155">    }</span>
+
+    /**
+     * Builds a delete request for the given URL path and request.
+     *
+     * @param apiPath the URL path
+     * @param request the query parameter based request
+     * @return the HTTP request
+     */
+    protected Request buildDeleteRequest(final String apiPath, final QueryParameterBasedRequest request) {
+<span class="fc" id="L165">        final HttpUrl httpUrl = buildHttpUrl(apiPath, request);</span>
+
+<span class="fc" id="L167">        return connection.newRequestBuilder()</span>
+<span class="fc" id="L168">                .url(httpUrl)</span>
+<span class="fc" id="L169">                .delete()</span>
+<span class="fc" id="L170">                .build();</span>
+    }
+
+    /**
+     * Builds a new {@link HttpUrl} for the givne path and request
+     *
+     * @param apiPath the URL path
+     * @param request the request
+     * @return the URL
+     */
+    protected HttpUrl buildHttpUrl(final String apiPath, final QueryParameterBasedRequest request) {
+<span class="fc" id="L181">        final String urlPath = new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L182">                .append(apiPath)</span>
+<span class="fc" id="L183">                .toString();</span>
+<span class="fc" id="L184">        final HttpUrl.Builder urlBuilder = HttpUrl.parse(urlPath).newBuilder();</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">        if (Objects.nonNull(request)) {</span>
+<span class="fc" id="L186">            request.populateQueryParameters(urlBuilder);</span>
+        }
+
+<span class="fc" id="L189">        return urlBuilder.build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

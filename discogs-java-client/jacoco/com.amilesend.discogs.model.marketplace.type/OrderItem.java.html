@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrderItem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.model.marketplace.type</a> &gt; <span class="el_source">OrderItem.java</span></div><h1>OrderItem.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.model.marketplace.type;
+
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
+
+import java.util.Objects;
+
+/** Describes an item associated with an {@link Order}. */
+@Builder
+@Getter
+@ToString
+public class OrderItem {
+    /** The item identifier. */
+    private final Long id;
+    /**
+     * The release information.
+     *
+     * @see Release
+     */
+    private final Release release;
+    /**
+     * The price.
+     *
+     * @see Price
+     */
+    private final Price price;
+
+    @Override
+    public boolean equals(final Object that) {
+<span class="nc bnc" id="L48" title="All 4 branches missed.">        if (that == null || getClass() != that.getClass()) {</span>
+<span class="nc" id="L49">            return false;</span>
+        }
+
+<span class="nc" id="L52">        final OrderItem thatOrderItem = (OrderItem) that;</span>
+<span class="nc" id="L53">        return Objects.equals(id, thatOrderItem.id);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L58">        return Objects.hashCode(id);</span>
+    }
+
+    /** Describes a release for an order item. */
+    @Builder
+    @Getter
+    @ToString
+    public static class Release {
+        /** The release identifier. */
+        private final Long id;
+        /** The release description. */
+        private final String description;
+
+        @Override
+        public boolean equals(final Object that) {
+<span class="nc bnc" id="L73" title="All 4 branches missed.">            if (that == null || getClass() != that.getClass()) {</span>
+<span class="nc" id="L74">                return false;</span>
+            }
+
+<span class="nc" id="L77">            final Release thatRelease = (Release) that;</span>
+<span class="nc" id="L78">            return Objects.equals(id, thatRelease.id);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L83">            return Objects.hashCode(id);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

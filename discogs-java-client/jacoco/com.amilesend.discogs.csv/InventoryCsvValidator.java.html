@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InventoryCsvValidator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.csv</a> &gt; <span class="el_source">InventoryCsvValidator.java</span></div><h1>InventoryCsvValidator.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.csv;
+
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
+import com.amilesend.discogs.csv.type.InventoryHeader;
+import com.amilesend.discogs.csv.type.InventoryRecordType;
+import com.amilesend.discogs.csv.validation.ValidationException;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Utility to read an inventory CSV file and validate its contents based on the specification as described
+ * in the &lt;a href=&quot;https://www.discogs.com/developers#page:inventory-upload&quot;&gt;API Documentation&lt;/a&gt;.
+ */
+<span class="fc" id="L49">@Slf4j</span>
+@RequiredArgsConstructor
+public class InventoryCsvValidator {
+    @NonNull
+    private final CSVFormat csvFormat;
+
+    /**
+     * Creates a new {@code InventoryCsvValidator} instance with the default CSVFormat configured.
+     *
+     * @see CSVFormat#RFC4180
+     */
+    public InventoryCsvValidator() {
+<span class="fc" id="L61">        this(CSVFormat.RFC4180.builder()</span>
+<span class="fc" id="L62">                .setSkipHeaderRecord(true)</span>
+<span class="fc" id="L63">                .get());</span>
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Validates an inventory CSV file by:
+     * &lt;ul&gt;
+     *     &lt;li&gt;Validating that headers are recognized&lt;/li&gt;
+     *     &lt;li&gt;Required headers are present&lt;/li&gt;
+     *     &lt;li&gt;Contents adhere to column value constraints&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param csvFile the CSV file to validate
+     * @param type the type of operation that the CSV file is for (i.e., new inventory, or updating existing inventory
+     *             items).
+     * @throws IOException if an error occurred while attempting to read the file
+     * @throws ValidationException if the file failed validation. See {@link ValidationException#getErrors()} for
+     *                             a detailed description of each validation error
+     * @see InventoryRecordType
+     */
+<span class="fc bfc" id="L82" title="All 4 branches covered.">    public void validate(@NonNull final Path csvFile, @NonNull final InventoryRecordType type)</span>
+            throws IOException, ValidationException {
+<span class="fc" id="L84">        validateCsvPath(csvFile);</span>
+<span class="fc" id="L85">        try (final CSVParser parser = getCSVParser(csvFile)) {</span>
+            // Converts and validates the headers
+<span class="fc" id="L87">            final List&lt;InventoryHeader&gt; parsedHeaders = toInventoryHeaders(parser.getHeaderNames(), type);</span>
+<span class="fc" id="L88">            final List&lt;ValidationException.Descriptor&gt; errors = scan(parser, parsedHeaders);</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">            if (errors.isEmpty()) {</span>
+<span class="fc" id="L90">                return;</span>
+            }
+
+<span class="fc" id="L93">            final String msg = new StringBuilder(&quot;File [&quot;)</span>
+<span class="fc" id="L94">                    .append(csvFile.getFileName())</span>
+<span class="fc" id="L95">                    .append(&quot;] failed validation&quot;)</span>
+<span class="fc" id="L96">                    .toString();</span>
+<span class="fc" id="L97">            throw new ValidationException(msg, errors);</span>
+        }
+    }
+
+    @VisibleForTesting
+    CSVParser getCSVParser(final Path csvFile) throws IOException {
+<span class="fc" id="L103">        return csvFormat.parse(new BufferedReader(new FileReader(csvFile.toFile(), StandardCharsets.UTF_8)));</span>
+    }
+
+    @VisibleForTesting
+    List&lt;ValidationException.Descriptor&gt; scan(
+            final CSVParser parser,
+            final List&lt;InventoryHeader&gt; parsedHeaders) {
+<span class="fc" id="L110">        final List&lt;ValidationException.Descriptor&gt; errors = new LinkedList&lt;&gt;();</span>
+<span class="fc" id="L111">        int row = 1;</span>
+        // Iterate through the CSV file for record validation in O(n*m) time.
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        for (final CSVRecord record : parser) {</span>
+<span class="fc" id="L114">            int col = 0;</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">            for (final InventoryHeader header : parsedHeaders) {</span>
+                try {
+<span class="fc" id="L117">                    header.getValidator().validate(record.get(header.getHeader()), header, row, col);</span>
+<span class="fc" id="L118">                } catch (final ValidationException ex) {</span>
+<span class="fc" id="L119">                    errors.addAll(ex.getErrors());</span>
+<span class="fc" id="L120">                }</span>
+<span class="fc" id="L121">                ++col;</span>
+<span class="fc" id="L122">            }</span>
+<span class="fc" id="L123">            ++row;</span>
+<span class="fc" id="L124">        }</span>
+
+<span class="fc" id="L126">        return errors;</span>
+    }
+
+    @VisibleForTesting
+    List&lt;InventoryHeader&gt; toInventoryHeaders(
+            final List&lt;String&gt; parsedHeaders,
+            final InventoryRecordType type) throws ValidationException {
+<span class="fc" id="L133">        validateHeaders(parsedHeaders, type);</span>
+<span class="fc" id="L134">        return parsedHeaders.stream()</span>
+<span class="fc" id="L135">                .map(InventoryHeader::fromValue)</span>
+<span class="fc" id="L136">                .collect(Collectors.toList());</span>
+    }
+
+    @VisibleForTesting
+    void validateRequiredHeaders(final List&lt;String&gt; headers, final InventoryRecordType type)
+            throws ValidationException {
+<span class="fc" id="L142">        final Set&lt;String&gt; required = InventoryHeader.getRequiredHeaders(type)</span>
+<span class="fc" id="L143">                .stream()</span>
+<span class="fc" id="L144">                .map(InventoryHeader::getHeader)</span>
+<span class="fc" id="L145">                .collect(Collectors.toSet());</span>
+
+<span class="fc bfc" id="L147" title="All 2 branches covered.">        if (!headers.containsAll(required)) {</span>
+<span class="fc" id="L148">            throw new ValidationException(&quot;Parsed headers must contain all required headers: &quot; + required);</span>
+        }
+<span class="fc" id="L150">    }</span>
+
+    @VisibleForTesting
+    void validateHeaders(final List&lt;String&gt; headers, final InventoryRecordType type) throws ValidationException {
+<span class="fc" id="L154">        validateRequiredHeaders(headers, type);</span>
+
+<span class="fc" id="L156">        final List&lt;ValidationException.Descriptor&gt; unrecognized = new ArrayList&lt;&gt;(headers.size());</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        for (int i = 0; i &lt; headers.size(); ++i) {</span>
+<span class="fc" id="L158">            final String headerValue = headers.get(i);</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (Objects.nonNull(InventoryHeader.fromValue(headerValue))) {</span>
+<span class="fc" id="L160">                continue;</span>
+            }
+
+<span class="fc" id="L163">            unrecognized.add(ValidationException.Descriptor.builder()</span>
+<span class="fc" id="L164">                    .row(0)</span>
+<span class="fc" id="L165">                    .col(i)</span>
+<span class="fc" id="L166">                    .value(headerValue)</span>
+<span class="fc" id="L167">                    .message(&quot;Unrecognized value&quot;)</span>
+<span class="fc" id="L168">                    .build());</span>
+        }
+
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        if (!unrecognized.isEmpty()) {</span>
+<span class="fc" id="L172">            throw new ValidationException(&quot;Malformed headers (unrecognized header values)&quot;, unrecognized);</span>
+        }
+<span class="fc" id="L174">    }</span>
+
+    @VisibleForTesting
+    void validateCsvPath(final Path csvFile) {
+<span class="fc" id="L178">        Validate.isTrue(Files.exists(csvFile), &quot;csvFile does not exist: &quot; + csvFile);</span>
+<span class="fc" id="L179">        Validate.isTrue(Files.isReadable(csvFile), &quot;csvFile must be readable: &quot; + csvFile);</span>
+<span class="fc" id="L180">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

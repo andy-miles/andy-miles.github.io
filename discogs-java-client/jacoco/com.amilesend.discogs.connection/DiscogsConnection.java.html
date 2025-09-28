@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiscogsConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection</a> &gt; <span class="el_source">DiscogsConnection.java</span></div><h1>DiscogsConnection.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.connection;
+
+import com.amilesend.client.connection.Connection;
+import com.amilesend.client.connection.ConnectionException;
+import com.amilesend.client.connection.RequestException;
+import com.amilesend.client.connection.auth.AuthManager;
+import com.amilesend.client.connection.file.TransferFileWriter;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.client.util.Validate;
+import com.amilesend.client.util.VisibleForTesting;
+import com.amilesend.discogs.connection.auth.AuthVerifier;
+import com.amilesend.discogs.connection.auth.NoOpAuthVerifier;
+import com.amilesend.discogs.model.inventory.type.DownloadInformation;
+import com.amilesend.discogs.model.inventory.type.UploadInformation;
+import com.amilesend.discogs.parse.GsonFactory;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+
+import static com.amilesend.client.connection.Connection.Headers.ACCEPT;
+import static com.amilesend.client.connection.Connection.Headers.ACCEPT_ENCODING;
+import static com.amilesend.client.connection.Connection.Headers.USER_AGENT;
+
+/**
+ * Wraps a {@link OkHttpClient} that manages authentication refresh and parsing responses to corresponding POJO types.
+ *
+ * @see AuthManager
+ */
+@SuperBuilder
+@Getter
+<span class="fc" id="L59">@Slf4j</span>
+public class DiscogsConnection extends Connection&lt;GsonFactory&gt; {
+    public static final String DEFAULT_BASE_URL = &quot;https://api.discogs.com&quot;;
+    public static final String TEXT_CSV_TYPE = &quot;text/csv; charset=utf-8&quot;;
+    public static final String LOCATION = &quot;Location&quot;;
+    public static final String CONTENT_DISPOSITION = &quot;Content-Disposition&quot;;
+    public static final String CONTENT_LENGTH = &quot;Content-Length&quot;;
+
+    /** The authorization verifier used to check if API calls require authentication prior to invoking the API. */
+    @Builder.Default
+    private final AuthVerifier authVerifier = new NoOpAuthVerifier();
+
+    /**
+     * Creates a new {@link Request.Builder} with pre-configured headers for a download request that expects a
+     * CSV-formatted response.
+     *
+     * @return the request builder
+     */
+    public Request.Builder newRequestBuilderForDownload() {
+<span class="fc" id="L78">        final Request.Builder requestBuilder = new Request.Builder()</span>
+<span class="fc" id="L79">                .addHeader(USER_AGENT, getUserAgent())</span>
+<span class="fc" id="L80">                .addHeader(ACCEPT, TEXT_CSV_TYPE);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (isGzipContentEncodingEnabled()) {</span>
+<span class="fc" id="L82">            requestBuilder.addHeader(ACCEPT_ENCODING, GZIP_ENCODING);</span>
+        }
+
+<span class="fc" id="L85">        return getAuthManager().addAuthentication(requestBuilder);</span>
+    }
+
+    @Override
+<span class="fc bfc" id="L89" title="All 4 branches covered.">    public &lt;T&gt; T execute(@NonNull final Request request, @NonNull final GsonParser&lt;T&gt; parser)</span>
+            throws ConnectionException {
+<span class="fc" id="L91">        authVerifier.checkIfAuthenticated(getAuthManager());</span>
+<span class="fc" id="L92">        return super.execute(request, parser);</span>
+    }
+
+    /**
+     * Uploads the contents for a given {@code request}.
+     *
+     * @param request the request
+     * @param filename the name of the file that is uploaded
+     * @return the upload information
+     * @throws ConnectionException if an error occurred while uploading the content for the request
+     * @see UploadInformation
+     */
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">    public UploadInformation upload(@NonNull final Request request, final String filename) {</span>
+<span class="fc" id="L105">        try (final Response response = execute(request)) {</span>
+<span class="fc" id="L106">            return UploadInformation.builder()</span>
+<span class="fc" id="L107">                    .filename(filename)</span>
+<span class="fc" id="L108">                    .location(response.header(LOCATION))</span>
+<span class="fc" id="L109">                    .build();</span>
+        }
+    }
+
+    @Override
+<span class="fc bfc" id="L114" title="All 2 branches covered.">    public Response execute(@NonNull final Request request) throws ConnectionException {</span>
+<span class="fc" id="L115">        authVerifier.checkIfAuthenticated(getAuthManager());</span>
+<span class="fc" id="L116">        return super.execute(request);</span>
+    }
+
+    /**
+     * Downloads the contents for the given {@code request} to the specified {@code folderPath}.
+     *
+     * @param request the request
+     * @param folderPath the path of the folder to download the content to
+     * @param callback the {@link TransferProgressCallback} call to invoke to report download transfer progress
+     * @return the download information
+     * @throws ConnectionException if an error occurred while downloading the content for the request
+     * @see DownloadInformation
+     */
+    public DownloadInformation download(
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            @NonNull final Request request,</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">            @NonNull final Path folderPath,</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) throws ConnectionException {</span>
+<span class="fc" id="L133">        authVerifier.checkIfAuthenticated(getAuthManager());</span>
+
+<span class="fc" id="L135">        try (final Response response = getHttpClient().newCall(request).execute()) {</span>
+<span class="fc" id="L136">            final String fileName = parseFileNameFromContentDisposition(response.header(CONTENT_DISPOSITION));</span>
+<span class="fc" id="L137">            final long sizeBytes = Optional.of(response)</span>
+<span class="fc" id="L138">                            .map(r -&gt; r.header(CONTENT_LENGTH))</span>
+<span class="fc" id="L139">                            .map(Long::parseLong)</span>
+<span class="fc" id="L140">                            .orElseThrow(() -&gt;</span>
+<span class="nc" id="L141">                                    new IllegalStateException(&quot;Response does not define a CONTENT_LENGTH header&quot;));</span>
+<span class="fc" id="L142">            final Path downloadPath = checkFolderAndGetDestinationPath(folderPath, fileName);</span>
+
+<span class="fc" id="L144">            final long downloadBytes = processDownloadResponse(response, downloadPath, sizeBytes, callback);</span>
+<span class="fc" id="L145">            return DownloadInformation.builder()</span>
+<span class="fc" id="L146">                    .fileName(fileName)</span>
+<span class="fc" id="L147">                    .sizeBytes(sizeBytes)</span>
+<span class="fc" id="L148">                    .downloadPath(downloadPath)</span>
+<span class="fc" id="L149">                    .downloadedBytes(downloadBytes)</span>
+<span class="fc" id="L150">                    .build();</span>
+<span class="fc" id="L151">        } catch (final ConnectionException ex) {</span>
+            // Response failed validation, notify the callback
+<span class="fc" id="L153">            callback.onFailure(ex);</span>
+<span class="fc" id="L154">            throw ex;</span>
+<span class="fc" id="L155">        } catch (final Exception ex) {</span>
+            // The underlying TransferFileWriter will record an onFailure to the callback.
+<span class="fc" id="L157">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    @VisibleForTesting
+    String parseFileNameFromContentDisposition(final String headerValue) {
+<span class="fc" id="L163">        Validate.notBlank(headerValue, &quot;Content-Disposition header value must not be blank&quot;);</span>
+<span class="fc" id="L164">        final String validationErrorMsg = &quot;Content-Disposition header value contains unexpected format: &quot; + headerValue;</span>
+<span class="fc" id="L165">        Validate.isTrue(headerValue.startsWith(&quot;attachment; filename=&quot;), validationErrorMsg);</span>
+
+<span class="fc" id="L167">        final String[] tokens = headerValue.split(&quot;=&quot;);</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        Validate.isTrue(tokens.length == 2, validationErrorMsg);</span>
+
+<span class="fc" id="L170">        return tokens[1];</span>
+    }
+
+    @VisibleForTesting
+    Path checkFolderAndGetDestinationPath(final Path folderPath, final String name) throws IOException {
+<span class="fc" id="L175">        final Path normalizedFolderPath = folderPath.toAbsolutePath().normalize();</span>
+<span class="fc bfc" id="L176" title="All 4 branches covered.">        if (Files.exists(normalizedFolderPath) &amp;&amp; !Files.isDirectory(normalizedFolderPath)) {</span>
+<span class="fc" id="L177">            throw new IllegalArgumentException(normalizedFolderPath + &quot; must not already exist as a file&quot;);</span>
+        }
+
+<span class="fc" id="L180">        Files.createDirectories(normalizedFolderPath);</span>
+<span class="fc" id="L181">        return normalizedFolderPath.resolve(name);</span>
+    }
+
+    @VisibleForTesting
+    long processDownloadResponse(
+            final Response response,
+            final Path downloadPath,
+            final long sizeBytes,
+            final TransferProgressCallback callback) throws IOException {
+<span class="fc" id="L190">        validateResponseCode(response);</span>
+
+<span class="fc" id="L192">        final long totalBytes = TransferFileWriter.builder()</span>
+<span class="fc" id="L193">                .output(downloadPath)</span>
+<span class="fc" id="L194">                .callback(callback)</span>
+<span class="fc" id="L195">                .build()</span>
+<span class="fc" id="L196">                .write(response.body().source(), sizeBytes);</span>
+
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L199">            log.debug(&quot;Downloaded [{}] bytes to [{}]&quot;, totalBytes, downloadPath);</span>
+        }
+<span class="fc" id="L201">        return totalBytes;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

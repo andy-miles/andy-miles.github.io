@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DatabaseApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.api</a> &gt; <span class="el_source">DatabaseApi.java</span></div><h1>DatabaseApi.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.api;
+
+import com.amilesend.discogs.connection.DiscogsConnection;
+import com.amilesend.discogs.model.Api;
+import com.amilesend.discogs.model.AuthenticationRequired;
+import com.amilesend.discogs.model.database.DeleteUserReleaseRequest;
+import com.amilesend.discogs.model.database.GetArtistInformationRequest;
+import com.amilesend.discogs.model.database.GetArtistInformationResponse;
+import com.amilesend.discogs.model.database.GetArtistReleasesRequest;
+import com.amilesend.discogs.model.database.GetArtistReleasesResponse;
+import com.amilesend.discogs.model.database.GetCommunityReleaseRatingRequest;
+import com.amilesend.discogs.model.database.GetCommunityReleaseRatingResponse;
+import com.amilesend.discogs.model.database.GetLabelInformationRequest;
+import com.amilesend.discogs.model.database.GetLabelInformationResponse;
+import com.amilesend.discogs.model.database.GetLabelReleasesRequest;
+import com.amilesend.discogs.model.database.GetLabelReleasesResponse;
+import com.amilesend.discogs.model.database.GetMasterReleaseRequest;
+import com.amilesend.discogs.model.database.GetMasterReleaseResponse;
+import com.amilesend.discogs.model.database.GetMasterReleaseVersionsRequest;
+import com.amilesend.discogs.model.database.GetMasterReleaseVersionsResponse;
+import com.amilesend.discogs.model.database.GetReleaseRequest;
+import com.amilesend.discogs.model.database.GetReleaseResponse;
+import com.amilesend.discogs.model.database.GetUserReleaseRatingRequest;
+import com.amilesend.discogs.model.database.GetUserReleaseRatingResponse;
+import com.amilesend.discogs.model.database.SearchRequest;
+import com.amilesend.discogs.model.database.SearchResponse;
+import com.amilesend.discogs.model.database.UpdateUserReleaseRatingRequest;
+import com.amilesend.discogs.model.database.UpdateUserReleaseRatingResponse;
+import lombok.NonNull;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+/**
+ * The Discogs Database API.
+ * &lt;br/&gt;
+ * &lt;a href=&quot;https://www.discogs.com/developers#page:database&quot;&gt;API Documentation&lt;/a&gt;
+ * &lt;br/&gt;
+ * Note: The GET Release Stats API is broken and does not provide meaningful data.  It is therefore omitted from this
+ * API interface. See &lt;a href=&quot;https://www.discogs.com/forum/thread/865093?message_id=8630743#8630743&quot;&gt; this
+ * forum post&lt;/a&gt; for context.
+ *
+ * @see ApiBase
+ */
+@Api
+public class DatabaseApi extends ApiBase {
+    private static final String RELEASES_API_PATH = &quot;/releases/&quot;;
+    private static final String MASTERS_API_PATH = &quot;/masters/&quot;;
+    private static final String LABELS_API_PATH = &quot;/labels/&quot;;
+    private static final String ARTISTS_API_PATH = &quot;/artists/&quot;;
+
+    /**
+     * Creates a new {@code DatabaseApi} object.
+     *
+     * @param connection the underlying client connection
+     */
+    public DatabaseApi(final DiscogsConnection connection) {
+<span class="fc" id="L75">        super(connection);</span>
+<span class="fc" id="L76">    }</span>
+
+    /**
+     * Gets a release.
+     *
+     * @param request the request
+     * @return the release
+     * @see GetReleaseRequest
+     * @see GetReleaseResponse
+     */
+<span class="fc bfc" id="L86" title="All 2 branches covered.">    public GetReleaseResponse getRelease(@NonNull final GetReleaseRequest request) {</span>
+<span class="fc" id="L87">        final String subPath = new StringBuilder(RELEASES_API_PATH)</span>
+<span class="fc" id="L88">                .append(request.getReleaseId())</span>
+<span class="fc" id="L89">                .toString();</span>
+<span class="fc" id="L90">        return executeGet(subPath, request, GetReleaseResponse.class);</span>
+    }
+
+    /**
+     * Gets a release rating for a user.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetUserReleaseRatingRequest
+     * @see GetUserReleaseRatingResponse
+     */
+<span class="fc bfc" id="L101" title="All 2 branches covered.">    public GetUserReleaseRatingResponse getUserReleaseRating(@NonNull final GetUserReleaseRatingRequest request) {</span>
+<span class="fc" id="L102">        final String subPath = new StringBuilder(RELEASES_API_PATH)</span>
+<span class="fc" id="L103">                .append(request.getReleaseId())</span>
+<span class="fc" id="L104">                .append(&quot;/rating/&quot;)</span>
+<span class="fc" id="L105">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L106">                .toString();</span>
+<span class="fc" id="L107">        return executeGet(subPath, request, GetUserReleaseRatingResponse.class);</span>
+    }
+
+    /**
+     * Updates the release rating for a user.
+     *
+     * @param request the request
+     * @return the response
+     * @see UpdateUserReleaseRatingRequest
+     * @see UpdateUserReleaseRatingResponse
+     */
+    @AuthenticationRequired
+    public UpdateUserReleaseRatingResponse updateUserReleaseRating(
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            @NonNull final UpdateUserReleaseRatingRequest request) {</span>
+<span class="fc" id="L121">        final String subPath = new StringBuilder(RELEASES_API_PATH)</span>
+<span class="fc" id="L122">                .append(request.getReleaseId())</span>
+<span class="fc" id="L123">                .append(&quot;/rating/&quot;)</span>
+<span class="fc" id="L124">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L125">                .toString();</span>
+<span class="fc" id="L126">        return executePut(subPath, request, UpdateUserReleaseRatingResponse.class);</span>
+    }
+
+    /**
+     * Deletes a release rating for a user.
+     *
+     * @param request the request
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L135" title="All 2 branches covered.">    public void deleteUserReleaseRating(@NonNull final DeleteUserReleaseRequest request) {</span>
+<span class="fc" id="L136">        final String subPath = new StringBuilder(RELEASES_API_PATH)</span>
+<span class="fc" id="L137">                .append(request.getReleaseId())</span>
+<span class="fc" id="L138">                .append(&quot;/rating/&quot;)</span>
+<span class="fc" id="L139">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L140">                .toString();</span>
+<span class="fc" id="L141">        executeDelete(subPath, request);</span>
+<span class="fc" id="L142">    }</span>
+
+    /**
+     * Gets the community rating for a given release.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCommunityReleaseRatingRequest
+     * @see GetCommunityReleaseRatingResponse
+     */
+    public GetCommunityReleaseRatingResponse getCommunityReleaseRating(
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            @NonNull final GetCommunityReleaseRatingRequest request) {</span>
+<span class="fc" id="L154">        final String subPath = new StringBuilder(RELEASES_API_PATH)</span>
+<span class="fc" id="L155">                .append(request.getReleaseId())</span>
+<span class="fc" id="L156">                .append(&quot;/rating&quot;)</span>
+<span class="fc" id="L157">                .toString();</span>
+<span class="fc" id="L158">        return executeGet(subPath, request, GetCommunityReleaseRatingResponse.class);</span>
+    }
+
+    /**
+     * Gets the master release for the given identifier.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetMasterReleaseRequest
+     * @see GetMasterReleaseResponse
+     */
+<span class="fc bfc" id="L169" title="All 2 branches covered.">    public GetMasterReleaseResponse getMasterRelease(@NonNull final GetMasterReleaseRequest request) {</span>
+<span class="fc" id="L170">        final String subPath = new StringBuilder(MASTERS_API_PATH)</span>
+<span class="fc" id="L171">                .append(request.getMasterId())</span>
+<span class="fc" id="L172">                .toString();</span>
+<span class="fc" id="L173">        return executeGet(subPath, request, GetMasterReleaseResponse.class);</span>
+    }
+
+    /**
+     * Gets the master release versions.
+     *
+     * @param request the request
+     * @return the master release versions
+     * @see GetMasterReleaseVersionsRequest
+     * @see GetMasterReleaseVersionsResponse
+     */
+    public GetMasterReleaseVersionsResponse getMasterReleaseVersions(
+<span class="fc bfc" id="L185" title="All 2 branches covered.">            @NonNull final GetMasterReleaseVersionsRequest request) {</span>
+<span class="fc" id="L186">        final String subPath = new StringBuilder(MASTERS_API_PATH)</span>
+<span class="fc" id="L187">                .append(request.getMasterId())</span>
+<span class="fc" id="L188">                .append(&quot;/versions&quot;)</span>
+<span class="fc" id="L189">                .toString();</span>
+<span class="fc" id="L190">        return executeGet(subPath, request, GetMasterReleaseVersionsResponse.class);</span>
+    }
+
+    /**
+     * Gets information about a specific artists
+     *
+     * @param request the request
+     * @return the response
+     * @see GetArtistInformationRequest
+     * @see GetArtistInformationResponse
+     */
+<span class="fc bfc" id="L201" title="All 2 branches covered.">    public GetArtistInformationResponse getArtistInformation(@NonNull final GetArtistInformationRequest request) {</span>
+<span class="fc" id="L202">        final String subPath = new StringBuilder(ARTISTS_API_PATH)</span>
+<span class="fc" id="L203">                .append(request.getArtistId())</span>
+<span class="fc" id="L204">                .toString();</span>
+<span class="fc" id="L205">        return executeGet(subPath, request, GetArtistInformationResponse.class);</span>
+    }
+
+    /**
+     * Gets the list of releases and masters associated with an artist.
+     *
+     * @param request the request
+     * @return the paginated response
+     * @see GetArtistReleasesRequest
+     * @see GetArtistReleasesResponse
+     */
+<span class="fc bfc" id="L216" title="All 2 branches covered.">    public GetArtistReleasesResponse getArtistReleases(@NonNull final GetArtistReleasesRequest request) {</span>
+<span class="fc" id="L217">        final String subPath = new StringBuilder(ARTISTS_API_PATH)</span>
+<span class="fc" id="L218">                .append(request.getArtistId())</span>
+<span class="fc" id="L219">                .append(&quot;/releases&quot;)</span>
+<span class="fc" id="L220">                .toString();</span>
+<span class="fc" id="L221">        return executeGet(subPath, request, GetArtistReleasesResponse.class);</span>
+    }
+
+    /**
+     * Gets information about a specific abel.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetLabelInformationRequest
+     * @see GetMasterReleaseResponse
+     */
+<span class="fc bfc" id="L232" title="All 2 branches covered.">    public GetLabelInformationResponse getLabelInformation(@NonNull final GetLabelInformationRequest request) {</span>
+<span class="fc" id="L233">        final String subPath = new StringBuilder(LABELS_API_PATH)</span>
+<span class="fc" id="L234">                .append(request.getLabelId())</span>
+<span class="fc" id="L235">                .toString();</span>
+<span class="fc" id="L236">        return executeGet(subPath, request, GetLabelInformationResponse.class);</span>
+    }
+
+    /**
+     * Gets the paginated list of releases for a label.
+     *
+     * @param request the request
+     * @return the paginated response
+     * @see GetLabelReleasesRequest
+     * @see GetLabelReleasesResponse
+     */
+<span class="fc bfc" id="L247" title="All 2 branches covered.">    public GetLabelReleasesResponse getLabelReleases(@NonNull final GetLabelReleasesRequest request) {</span>
+<span class="fc" id="L248">        final String subPath = new StringBuilder(LABELS_API_PATH)</span>
+<span class="fc" id="L249">                .append(request.getLabelId())</span>
+<span class="fc" id="L250">                .append(&quot;/releases&quot;)</span>
+<span class="fc" id="L251">                .toString();</span>
+<span class="fc" id="L252">        return executeGet(subPath, request, GetLabelReleasesResponse.class);</span>
+    }
+
+    /**
+     * Searches for masters, releases, artists, and labels.
+     *
+     * @param request the request
+     * @return the search response
+     * @see SearchRequest
+     * @see SearchResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L264" title="All 2 branches covered.">    public SearchResponse search(@NonNull final SearchRequest request) {</span>
+<span class="fc" id="L265">        return executeGet(&quot;/database/search&quot;, request, SearchResponse.class);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

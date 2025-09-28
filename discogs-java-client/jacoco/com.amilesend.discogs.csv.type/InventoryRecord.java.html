@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InventoryRecord.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.csv.type</a> &gt; <span class="el_source">InventoryRecord.java</span></div><h1>InventoryRecord.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.csv.type;
+
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.client.util.Validate;
+import com.amilesend.discogs.csv.validation.ValidationException;
+import com.amilesend.discogs.model.marketplace.type.Condition;
+import com.amilesend.discogs.model.marketplace.type.SleeveCondition;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+/** Defines a record for an inventory item as a CSV row. */
+@Builder
+@Getter
+@EqualsAndHashCode
+public class InventoryRecord {
+    /** The yes value for {@link #acceptOffer}. */
+    public static final String YES = &quot;Y&quot;;
+    /** The no value for {@link #acceptOffer}. */
+    public static final String NO = &quot;N&quot;;
+
+    /** The release identifier (required). */
+    @NonNull
+    private final Integer releaseId;
+    /** The price (required). */
+    private final Double price;
+    /**
+     * The media condition (required).
+     *
+     * @see Condition
+     */
+    private final Condition mediaCondition;
+    /**
+     * The sleeve condition (optional).
+     *
+     * @see SleeveCondition
+     */
+    private final SleeveCondition sleeveCondition;
+    /** Free-form comments. */
+    private final String comments;
+    /**
+     * Flag indicator if buyer offers are accepted or not (optional).
+     *
+     * @see #YES
+     * @see #NO
+     */
+    private final String acceptOffer;
+    /** Free-form text field to describe the location (optional). */
+    private final String location;
+    /** Free-form notes for external identifiers (optional). */
+    private final String externalId;
+    /** The item weight in grams (optional). */
+    private final Integer weight;
+    /** The item format quantity (optional). */
+    private final Integer formatQuantity;
+
+    /**
+     * Gets the list of headers based on the populated fields.
+     *
+     * @return the list of defined headers
+     */
+    public List&lt;InventoryHeader&gt; getDefinedHeaders() {
+<span class="fc" id="L86">        final List&lt;InventoryHeader&gt; headers = new ArrayList&lt;&gt;(10);</span>
+<span class="fc" id="L87">        headers.add(InventoryHeader.RELEASE_ID);</span>
+
+<span class="fc" id="L89">        Optional.ofNullable(price).ifPresent(p -&gt; headers.add(InventoryHeader.PRICE));</span>
+<span class="fc" id="L90">        Optional.ofNullable(mediaCondition).ifPresent(mc -&gt; headers.add(InventoryHeader.MEDIA_CONDITION));</span>
+<span class="fc" id="L91">        Optional.ofNullable(sleeveCondition)</span>
+<span class="fc" id="L92">                .ifPresent(c -&gt; headers.add(InventoryHeader.SLEEVE_CONDITION));</span>
+<span class="fc" id="L93">        Optional.ofNullable(comments).ifPresent(c -&gt; headers.add(InventoryHeader.COMMENTS));</span>
+<span class="fc" id="L94">        Optional.ofNullable(acceptOffer).ifPresent(o -&gt; headers.add(InventoryHeader.ACCEPT_OFFER));</span>
+<span class="fc" id="L95">        Optional.ofNullable(location).ifPresent(l -&gt; headers.add(InventoryHeader.LOCATION));</span>
+<span class="fc" id="L96">        Optional.ofNullable(externalId).ifPresent(e -&gt; headers.add(InventoryHeader.EXTERNAL_ID));</span>
+<span class="fc" id="L97">        Optional.ofNullable(weight).ifPresent(w -&gt; headers.add(InventoryHeader.WEIGHT));</span>
+<span class="fc" id="L98">        Optional.ofNullable(formatQuantity).ifPresent(q -&gt; headers.add(InventoryHeader.FORMAT_QUANTITY));</span>
+
+<span class="fc" id="L100">        return headers;</span>
+    }
+
+    /**
+     * Validates the record contents based on the defined record type.
+     *
+     * @param type the record type
+     * @throws ValidationException if there is an error with the record
+     * @see InventoryRecordType
+     */
+<span class="fc bfc" id="L110" title="All 2 branches covered.">    public void validate(@NonNull final InventoryRecordType type) throws ValidationException {</span>
+<span class="fc" id="L111">        final List&lt;InventoryHeader&gt; definedHeaders = getDefinedHeaders();</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (!definedHeaders.containsAll(InventoryHeader.getRequiredHeaders(type))) {</span>
+<span class="fc" id="L113">            throw new ValidationException(&quot;defined values for headers is missing required headers for type: &quot;</span>
+<span class="fc" id="L114">                    + type.name());</span>
+        }
+
+<span class="fc" id="L117">        final List&lt;ValidationException.Descriptor&gt; errors = new ArrayList&lt;&gt;(definedHeaders.size());</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        for (int col = 0; col &lt; definedHeaders.size(); ++col) {</span>
+<span class="fc" id="L119">            final InventoryHeader header = definedHeaders.get(col);</span>
+            try {
+<span class="fc" id="L121">                header.getValidator().validate(getValue(header), header, null, col);</span>
+<span class="fc" id="L122">            } catch (final ValidationException ex) {</span>
+<span class="fc" id="L123">                errors.addAll(ex.getErrors());</span>
+<span class="fc" id="L124">            }</span>
+        }
+
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (!errors.isEmpty()) {</span>
+<span class="fc" id="L128">            throw new ValidationException(&quot;Record failed validation&quot;, errors);</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+    /**
+     * Converts the record to a list of String values that represents the row.
+     *
+     * @param docCsvHeaders the list of headers to include in the row
+     * @param type the record type
+     * @return the record represented as a list of strings
+     * @see InventoryHeader
+     * @see InventoryRecordType
+     */
+    public List&lt;String&gt; toCsvRow(
+<span class="fc bfc" id="L142" title="All 2 branches covered.">            @NonNull final List&lt;InventoryHeader&gt; docCsvHeaders,</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            @NonNull final InventoryRecordType type) {</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        Validate.isTrue(docCsvHeaders.size() &gt; 1, &quot;docCsvHeaders must have &gt; 1 defined values&quot;);</span>
+<span class="fc" id="L145">        Validate.isTrue(docCsvHeaders.containsAll(InventoryHeader.getRequiredHeaders(type)),</span>
+<span class="fc" id="L146">                &quot;docCsvHeaders is missing required headers for type: &quot; + type.name());</span>
+
+<span class="fc" id="L148">        return docCsvHeaders.stream()</span>
+<span class="fc" id="L149">                .map(this::getValue)</span>
+<span class="fc" id="L150">                .collect(Collectors.toList());</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L155">        return getDefinedHeaders().stream()</span>
+<span class="fc" id="L156">                .map(this::getValue)</span>
+<span class="fc" id="L157">                .collect(Collectors.joining(&quot;,&quot;));</span>
+    }
+
+    private String getValue(final InventoryHeader header) {
+<span class="pc bpc" id="L161" title="1 of 11 branches missed.">        switch (header) {</span>
+            case RELEASE_ID:
+<span class="fc" id="L163">                return releaseId.toString();</span>
+            case PRICE:
+<span class="fc" id="L165">                return price.toString();</span>
+            case MEDIA_CONDITION:
+<span class="fc" id="L167">                return mediaCondition.getValue();</span>
+            case COMMENTS:
+<span class="fc" id="L169">                return Optional.ofNullable(comments).orElse(StringUtils.EMPTY);</span>
+            case SLEEVE_CONDITION:
+<span class="fc" id="L171">                return Optional.ofNullable(sleeveCondition)</span>
+<span class="fc" id="L172">                        .map(SleeveCondition::getValue)</span>
+<span class="fc" id="L173">                        .orElse(StringUtils.EMPTY);</span>
+            case ACCEPT_OFFER:
+<span class="fc" id="L175">                return Optional.ofNullable(acceptOffer).orElse(StringUtils.EMPTY);</span>
+            case LOCATION:
+<span class="fc" id="L177">                return Optional.ofNullable(location).orElse(StringUtils.EMPTY);</span>
+            case EXTERNAL_ID:
+<span class="fc" id="L179">                return Optional.ofNullable(externalId).orElse(StringUtils.EMPTY);</span>
+            case WEIGHT:
+<span class="fc" id="L181">                return Optional.ofNullable(weight)</span>
+<span class="fc" id="L182">                        .map(Object::toString)</span>
+<span class="fc" id="L183">                        .orElse(StringUtils.EMPTY);</span>
+            case FORMAT_QUANTITY:
+<span class="fc" id="L185">                return Optional.ofNullable(formatQuantity)</span>
+<span class="fc" id="L186">                        .map(Object::toString)</span>
+<span class="fc" id="L187">                        .orElse(StringUtils.EMPTY);</span>
+            default:
+<span class="nc" id="L189">                throw new IllegalArgumentException(&quot;Unrecognized header value: &quot; + header);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

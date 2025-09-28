@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrderStatus.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.model.marketplace.type</a> &gt; <span class="el_source">OrderStatus.java</span></div><h1>OrderStatus.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.model.marketplace.type;
+
+import com.amilesend.client.util.StringUtils;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+<span class="fc" id="L28">@RequiredArgsConstructor</span>
+@Getter
+public enum OrderStatus {
+<span class="fc" id="L31">    NEW_ORDER(&quot;New Order&quot;),</span>
+<span class="fc" id="L32">    BUYER_CONTACTED(&quot;Buyer Contacted&quot;),</span>
+<span class="fc" id="L33">    INVOICE_SENT(&quot;Invoice Sent&quot;),</span>
+<span class="fc" id="L34">    PAYMENT_PENDING(&quot;Payment Pending&quot;),</span>
+<span class="fc" id="L35">    PAYMENT_RECEIVED(&quot;Payment Received&quot;),</span>
+<span class="fc" id="L36">    IN_PROGRESS(&quot;In Progress&quot;),</span>
+<span class="fc" id="L37">    SHIPPED(&quot;Shipped&quot;),</span>
+<span class="fc" id="L38">    REFUND_SENT(&quot;Refund Sent&quot;),</span>
+<span class="fc" id="L39">    CANCELLED_NON_PAYMENT(&quot;Cancelled (Non-Paying Buyer)&quot;),</span>
+<span class="fc" id="L40">    CANCELLED_ITEM_UNAVAILABLE(&quot;Cancelled (Item Unavailable)&quot;),</span>
+<span class="fc" id="L41">    CANCELLED_BUYER_REQUEST(&quot;Cancelled (Per Buyer's Request)&quot;);</span>
+
+<span class="fc" id="L43">    public static String QUERY_PARAM_NAME = &quot;status&quot;;</span>
+
+    /** The map of values to enum references used for JSON marshalling. */
+<span class="fc" id="L46">    private static Map&lt;String, OrderStatus&gt; VALUE_TO_ENUM = getValueToEnumMap();</span>
+
+    private final String value;
+
+    @Override
+    public String toString() {
+<span class="fc" id="L52">        return value;</span>
+    }
+
+    /**
+     * Gets the {@code Condition} enum from the given value.
+     *
+     * @param value the value
+     * @return the condition, or {@code null}
+     */
+    public static OrderStatus fromValue(final String value) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (StringUtils.isBlank(value)) {</span>
+<span class="nc" id="L63">            return null;</span>
+        }
+
+<span class="nc" id="L66">        return VALUE_TO_ENUM.get(value);</span>
+    }
+
+    private static Map&lt;String, OrderStatus&gt; getValueToEnumMap() {
+<span class="fc" id="L70">        return Arrays.stream(OrderStatus.values())</span>
+<span class="fc" id="L71">                .collect(Collectors.toMap(OrderStatus::getValue, (os) -&gt; os));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

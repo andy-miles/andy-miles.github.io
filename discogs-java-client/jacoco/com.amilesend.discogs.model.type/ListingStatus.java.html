@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListingStatus.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.model.type</a> &gt; <span class="el_source">ListingStatus.java</span></div><h1>ListingStatus.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.model.type;
+
+import com.amilesend.client.util.StringUtils;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.Arrays;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+/** Defines the listing status types. */
+<span class="fc" id="L29">@RequiredArgsConstructor</span>
+@Getter
+public enum ListingStatus {
+<span class="fc" id="L32">    FOR_SALE(&quot;For Sale&quot;),</span>
+<span class="fc" id="L33">    DRAFT(&quot;Draft&quot;);</span>
+
+    /** The query parameter attribute name. */
+    public static final String QUERY_PARAM_NAME = &quot;status&quot;;
+
+    /** The map of values to enum references used for JSON marshalling. */
+<span class="fc" id="L39">    private static Map&lt;String, ListingStatus&gt; VALUE_TO_ENUM = getValueToEnumMap();</span>
+
+    /** The query parameter attribute value. */
+    private final String value;
+
+    /**
+     * Gets the {@code ListingStatus} enum reference from the given value.
+     *
+     * @param value the value
+     * @return the search type, or {@code null} if none exist
+     */
+    public static ListingStatus fromValue(final String value) {
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (StringUtils.isBlank(value)) {</span>
+<span class="nc" id="L52">            return null;</span>
+        }
+
+<span class="fc" id="L55">        return VALUE_TO_ENUM.get(value);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L60">        return value;</span>
+    }
+
+    private static Map&lt;String, ListingStatus&gt; getValueToEnumMap() {
+<span class="fc" id="L64">        return Arrays.stream(ListingStatus.values())</span>
+<span class="fc" id="L65">                .collect(Collectors.toMap(ListingStatus::getValue, (ls) -&gt; ls));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserCollectionApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.api</a> &gt; <span class="el_source">UserCollectionApi.java</span></div><h1>UserCollectionApi.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.api;
+
+import com.amilesend.discogs.connection.DiscogsConnection;
+import com.amilesend.discogs.model.Api;
+import com.amilesend.discogs.model.AuthenticationOptional;
+import com.amilesend.discogs.model.AuthenticationRequired;
+import com.amilesend.discogs.model.collection.AddToFolderRequest;
+import com.amilesend.discogs.model.collection.AddToFolderResponse;
+import com.amilesend.discogs.model.collection.ChangeReleaseRatingRequest;
+import com.amilesend.discogs.model.collection.CreateFolderRequest;
+import com.amilesend.discogs.model.collection.CreateFolderResponse;
+import com.amilesend.discogs.model.collection.DeleteFolderRequest;
+import com.amilesend.discogs.model.collection.DeleteInstanceRequest;
+import com.amilesend.discogs.model.collection.EditInstanceFieldRequest;
+import com.amilesend.discogs.model.collection.GetCollectionItemsByFolderRequest;
+import com.amilesend.discogs.model.collection.GetCollectionItemsByFolderResponse;
+import com.amilesend.discogs.model.collection.GetCollectionItemsByReleaseRequest;
+import com.amilesend.discogs.model.collection.GetCollectionItemsByReleaseResponse;
+import com.amilesend.discogs.model.collection.GetCollectionValueRequest;
+import com.amilesend.discogs.model.collection.GetCollectionValueResponse;
+import com.amilesend.discogs.model.collection.GetCustomFieldsRequest;
+import com.amilesend.discogs.model.collection.GetCustomFieldsResponse;
+import com.amilesend.discogs.model.collection.GetFolderRequest;
+import com.amilesend.discogs.model.collection.GetFolderResponse;
+import com.amilesend.discogs.model.collection.GetFoldersRequest;
+import com.amilesend.discogs.model.collection.GetFoldersResponse;
+import com.amilesend.discogs.model.collection.MoveReleaseRequest;
+import com.amilesend.discogs.model.collection.RenameFolderRequest;
+import com.amilesend.discogs.model.collection.RenameFolderResponse;
+import lombok.NonNull;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+/**
+ * The Discogs User Collection API.
+ * &lt;br/&gt;
+ * &lt;a href=&quot;https://www.discogs.com/developers#page:user-collection&quot;&gt;API Documentation&lt;/a&gt;
+ *
+ * @see ApiBase
+ */
+@Api
+public class UserCollectionApi extends ApiBase {
+    private static final String API_PATH = &quot;/users/&quot;;
+    private static final String COLLECTION_SUB_PATH = &quot;/collection&quot;;
+    private static final String FOLDERS_SUB_PATH = &quot;/folders&quot;;
+    private static final String RELEASES_SUB_PATH = &quot;/releases&quot;;
+    private static final String INSTANCES_SUB_PATH = &quot;/instances&quot;;
+    private static final String FIELDS_SUB_PATH = &quot;/fields&quot;;
+
+    /**
+     * Creates a new {@code UserCollectionApi} object.
+     *
+     * @param connection the underlying client connection
+     */
+    public UserCollectionApi(final DiscogsConnection connection) {
+<span class="fc" id="L74">        super(connection);</span>
+<span class="fc" id="L75">    }</span>
+
+    /**
+     * Gets the list of a folders in a user's collection. Note: Authentication is optional. Non-authenticated
+     * requests will only be able to see a user's &quot;All&quot; folder (i.e., the user's public collection).
+     *
+     * @param request the request
+     * @return the response
+     * @see GetFoldersRequest
+     * @see GetFoldersResponse
+     */
+    @AuthenticationOptional
+<span class="fc bfc" id="L87" title="All 2 branches covered.">    public GetFoldersResponse getFolders(@NonNull final GetFoldersRequest request) {</span>
+<span class="fc" id="L88">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L89">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L90">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L91">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L92">                .toString();</span>
+<span class="fc" id="L93">        return executeGet(subPath, request, GetFoldersResponse.class);</span>
+    }
+
+    /**
+     * Creates a new folder within a user's collection.
+     *
+     * @param request the request
+     * @return the response
+     * @see CreateFolderRequest
+     * @see CreateFolderResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L105" title="All 2 branches covered.">    public CreateFolderResponse createFolder(@NonNull final CreateFolderRequest request) {</span>
+<span class="fc" id="L106">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L107">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L108">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L109">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L110">                .toString();</span>
+<span class="fc" id="L111">        return executePost(subPath, request, CreateFolderResponse.class);</span>
+    }
+
+    /**
+     * Gets a folder from a user's collection. Note: Authentication is optional. If
+     * {@link GetFolderRequest#getFolderId()} is not {@code 0}, then user authentication is required.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetFolderRequest
+     * @see GetFolderResponse
+     */
+    @AuthenticationOptional
+<span class="fc bfc" id="L124" title="All 2 branches covered.">    public GetFolderResponse getFolder(@NonNull final GetFolderRequest request) {</span>
+<span class="fc" id="L125">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L126">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L127">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L128">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L129">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L130">                .append(request.getFolderId())</span>
+<span class="fc" id="L131">                .toString();</span>
+<span class="fc" id="L132">        return executeGet(subPath, request, GetFolderResponse.class);</span>
+    }
+
+    /**
+     * Renames a folder within a user's collection. Note: Authentication is required.
+     *
+     * @param request the request
+     * @return the response
+     * @see RenameFolderRequest
+     * @see RenameFolderResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L144" title="All 2 branches covered.">    public RenameFolderResponse renameFolder(@NonNull final RenameFolderRequest request) {</span>
+<span class="fc" id="L145">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L146">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L147">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L148">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L149">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L150">                .append(request.getFolderId())</span>
+<span class="fc" id="L151">                .toString();</span>
+<span class="fc" id="L152">        return executePost(subPath, request, RenameFolderResponse.class);</span>
+    }
+
+    /**
+     * Deletes a folder from a user's collection. Note: Authentication is required.
+     *
+     * @param request the request
+     * @see DeleteFolderRequest
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L162" title="All 2 branches covered.">    public void deleteFolder(@NonNull final DeleteFolderRequest request) {</span>
+<span class="fc" id="L163">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L164">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L165">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L166">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L167">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L168">                .append(request.getFolderId())</span>
+<span class="fc" id="L169">                .toString();</span>
+<span class="fc" id="L170">        executeDelete(subPath, request);</span>
+<span class="fc" id="L171">    }</span>
+
+    /**
+     * Gets the paginated list of user collection items by release. Note: Authentication is required is the owner's
+     * collection is private.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCollectionItemsByReleaseRequest
+     * @see GetCollectionItemsByReleaseResponse
+     */
+    @AuthenticationOptional
+    public GetCollectionItemsByReleaseResponse getCollectionItems(
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            @NonNull final GetCollectionItemsByReleaseRequest request) {</span>
+<span class="fc" id="L185">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L186">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L187">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L188">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L189">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L190">                .append(request.getReleaseId())</span>
+<span class="fc" id="L191">                .toString();</span>
+<span class="fc" id="L192">        return executeGet(subPath, request, GetCollectionItemsByReleaseResponse.class);</span>
+    }
+
+    /**
+     * Gets a paginated list of items in a user collection folder.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCollectionItemsByFolderRequest
+     * @see GetCollectionItemsByFolderResponse
+     */
+    @AuthenticationOptional
+    public GetCollectionItemsByFolderResponse getCollectionItems(
+<span class="fc bfc" id="L205" title="All 2 branches covered.">            @NonNull final GetCollectionItemsByFolderRequest request) {</span>
+<span class="fc" id="L206">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L207">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L208">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L209">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L210">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L211">                .append(request.getFolderId())</span>
+<span class="fc" id="L212">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L213">                .toString();</span>
+<span class="fc" id="L214">        return executeGet(subPath, request, GetCollectionItemsByFolderResponse.class);</span>
+    }
+
+    /**
+     * Adds a release to a user's collection folder. Note: Authentication required.
+     *
+     * @param request the request
+     * @return the response
+     * @see AddToFolderRequest
+     * @see AddToFolderResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L226" title="All 2 branches covered.">    public AddToFolderResponse addToFolder(@NonNull final AddToFolderRequest request) {</span>
+<span class="fc" id="L227">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L228">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L229">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L230">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L231">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L232">                .append(request.getFolderId())</span>
+<span class="fc" id="L233">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L234">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L235">                .append(request.getReleaseId())</span>
+<span class="fc" id="L236">                .toString();</span>
+<span class="fc" id="L237">        return executePost(subPath, request, AddToFolderResponse.class);</span>
+    }
+
+    /**
+     * Changes the release rating.
+     *
+     * @param request the request
+     * @see ChangeReleaseRatingRequest
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L247" title="All 2 branches covered.">    public void changeReleaseRating(@NonNull final ChangeReleaseRatingRequest request) {</span>
+<span class="fc" id="L248">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L249">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L250">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L251">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L252">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L253">                .append(request.getFolderId())</span>
+<span class="fc" id="L254">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L255">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L256">                .append(request.getReleaseId())</span>
+<span class="fc" id="L257">                .append(INSTANCES_SUB_PATH)</span>
+<span class="fc" id="L258">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L259">                .append(request.getInstanceId())</span>
+<span class="fc" id="L260">                .toString();</span>
+<span class="fc" id="L261">        executePost(subPath, request);</span>
+<span class="fc" id="L262">    }</span>
+
+    /**
+     * Moves an instance to another folder.
+     *
+     * @param request the request
+     * @see MoveReleaseRequest
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L271" title="All 2 branches covered.">    public void moveRelease(@NonNull final MoveReleaseRequest request) {</span>
+<span class="fc" id="L272">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L273">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L274">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L275">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L276">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L277">                .append(request.getFolderId())</span>
+<span class="fc" id="L278">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L279">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L280">                .append(request.getReleaseId())</span>
+<span class="fc" id="L281">                .append(INSTANCES_SUB_PATH)</span>
+<span class="fc" id="L282">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L283">                .append(request.getInstanceId())</span>
+<span class="fc" id="L284">                .toString();</span>
+<span class="fc" id="L285">        executePost(subPath, request);</span>
+<span class="fc" id="L286">    }</span>
+
+    /**
+     * Deletes an instance from a folder.
+     *
+     * @param request the request
+     * @see DeleteInstanceRequest
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L295" title="All 2 branches covered.">    public void deleteInstance(@NonNull final DeleteInstanceRequest request) {</span>
+<span class="fc" id="L296">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L297">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L298">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L299">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L300">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L301">                .append(request.getFolderId())</span>
+<span class="fc" id="L302">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L303">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L304">                .append(request.getReleaseId())</span>
+<span class="fc" id="L305">                .append(INSTANCES_SUB_PATH)</span>
+<span class="fc" id="L306">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L307">                .append(request.getInstanceId())</span>
+<span class="fc" id="L308">                .toString();</span>
+<span class="fc" id="L309">        executeDelete(subPath, request);</span>
+<span class="fc" id="L310">    }</span>
+
+    /**
+     * Gets the list of custom fields for a user. Note: Authentication is optional.  If a collection is private,
+     * then authentication as the owner is required.  Non-authenticated requests can only retrieve fields with public
+     * fields.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCustomFieldsRequest
+     * @see GetCustomFieldsResponse
+     */
+    @AuthenticationOptional
+<span class="fc bfc" id="L323" title="All 2 branches covered.">    public GetCustomFieldsResponse getCustomFields(@NonNull final GetCustomFieldsRequest request) {</span>
+<span class="fc" id="L324">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L325">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L326">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L327">                .append(FIELDS_SUB_PATH)</span>
+<span class="fc" id="L328">                .toString();</span>
+<span class="fc" id="L329">        return executeGet(subPath, request, GetCustomFieldsResponse.class);</span>
+    }
+
+    /**
+     * Edits a field for an instance.
+     *
+     * @param request the request
+     * @see EditInstanceFieldRequest
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L339" title="All 2 branches covered.">    public void editInstanceField(@NonNull final EditInstanceFieldRequest request) {</span>
+<span class="fc" id="L340">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L341">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L342">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L343">                .append(FOLDERS_SUB_PATH)</span>
+<span class="fc" id="L344">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L345">                .append(request.getFolderId())</span>
+<span class="fc" id="L346">                .append(RELEASES_SUB_PATH)</span>
+<span class="fc" id="L347">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L348">                .append(request.getReleaseId())</span>
+<span class="fc" id="L349">                .append(INSTANCES_SUB_PATH)</span>
+<span class="fc" id="L350">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L351">                .append(request.getInstanceId())</span>
+<span class="fc" id="L352">                .append(FIELDS_SUB_PATH)</span>
+<span class="fc" id="L353">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L354">                .append(request.getFieldId())</span>
+<span class="fc" id="L355">                .toString();</span>
+<span class="fc" id="L356">        executePost(subPath, request);</span>
+<span class="fc" id="L357">    }</span>
+
+    /**
+     * Gets the value of a user's collection. Note: Must be authenticated as the collection owner.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetCollectionValueRequest
+     * @see GetCollectionValueResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L368" title="All 2 branches covered.">    public GetCollectionValueResponse getCollectionValue(@NonNull final GetCollectionValueRequest request) {</span>
+<span class="fc" id="L369">        final String subPath = new StringBuilder(API_PATH)</span>
+<span class="fc" id="L370">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L371">                .append(COLLECTION_SUB_PATH)</span>
+<span class="fc" id="L372">                .append(&quot;/value&quot;)</span>
+<span class="fc" id="L373">                .toString();</span>
+<span class="fc" id="L374">        return executeGet(subPath, request, GetCollectionValueResponse.class);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

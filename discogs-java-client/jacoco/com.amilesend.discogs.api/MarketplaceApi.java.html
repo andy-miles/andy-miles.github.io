@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MarketplaceApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.api</a> &gt; <span class="el_source">MarketplaceApi.java</span></div><h1>MarketplaceApi.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.api;
+
+import com.amilesend.client.parse.parser.MapParser;
+import com.amilesend.discogs.connection.DiscogsConnection;
+import com.amilesend.discogs.model.Api;
+import com.amilesend.discogs.model.AuthenticationOptional;
+import com.amilesend.discogs.model.AuthenticationRequired;
+import com.amilesend.discogs.model.marketplace.AddOrderMessageRequest;
+import com.amilesend.discogs.model.marketplace.AddOrderMessageResponse;
+import com.amilesend.discogs.model.marketplace.CreateListingRequest;
+import com.amilesend.discogs.model.marketplace.CreateListingResponse;
+import com.amilesend.discogs.model.marketplace.DeleteListingRequest;
+import com.amilesend.discogs.model.marketplace.GetFeeRequest;
+import com.amilesend.discogs.model.marketplace.GetFeeResponse;
+import com.amilesend.discogs.model.marketplace.GetInventoryRequest;
+import com.amilesend.discogs.model.marketplace.GetInventoryResponse;
+import com.amilesend.discogs.model.marketplace.GetListingRequest;
+import com.amilesend.discogs.model.marketplace.GetListingResponse;
+import com.amilesend.discogs.model.marketplace.GetOrderMessagesRequest;
+import com.amilesend.discogs.model.marketplace.GetOrderMessagesResponse;
+import com.amilesend.discogs.model.marketplace.GetOrderRequest;
+import com.amilesend.discogs.model.marketplace.GetOrderResponse;
+import com.amilesend.discogs.model.marketplace.GetOrdersRequest;
+import com.amilesend.discogs.model.marketplace.GetOrdersResponse;
+import com.amilesend.discogs.model.marketplace.GetPriceSuggestionsRequest;
+import com.amilesend.discogs.model.marketplace.GetPriceSuggestionsResponse;
+import com.amilesend.discogs.model.marketplace.GetReleaseStatisticsRequest;
+import com.amilesend.discogs.model.marketplace.GetReleaseStatisticsResponse;
+import com.amilesend.discogs.model.marketplace.UpdateListingRequest;
+import com.amilesend.discogs.model.marketplace.UpdateOrderRequest;
+import com.amilesend.discogs.model.marketplace.UpdateOrderResponse;
+import com.amilesend.discogs.model.marketplace.type.Condition;
+import com.amilesend.discogs.model.marketplace.type.Price;
+import com.amilesend.discogs.model.type.Currency;
+import lombok.NonNull;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * The Discogs Marketplace API.
+ * &lt;br/&gt;
+ * &lt;a href=&quot;https://www.discogs.com/developers#page:marketplace&quot;&gt;API Documentation&lt;/a&gt;
+ *
+ * @see ApiBase
+ */
+@Api
+public class MarketplaceApi extends ApiBase {
+    private static final String USERS_API_PATH = &quot;/users/&quot;;
+    private static final String MARKETPLACE_API_PATH = &quot;/marketplace&quot;;
+    private static final String LISTINGS_SUB_API_PATH = &quot;/listings/&quot;;
+    private static final String ORDERS_SUB_API_PATH = &quot;/orders/&quot;;
+    private static final String FEE_SUB_API_PATH = &quot;/fee/&quot;;
+
+    /**
+     * Creates a new {@code MarketplaceApi} object.
+     *
+     * @param connection the underlying client connection
+     */
+    public MarketplaceApi(final DiscogsConnection connection) {
+<span class="fc" id="L80">        super(connection);</span>
+<span class="fc" id="L81">    }</span>
+
+    /**
+     * Gets the list of listing for a user's inventory.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetInventoryRequest
+     * @see GetInventoryResponse
+     */
+<span class="fc bfc" id="L91" title="All 2 branches covered.">    public GetInventoryResponse getInventory(@NonNull final GetInventoryRequest request) {</span>
+<span class="fc" id="L92">        final String subPath = new StringBuilder(USERS_API_PATH)</span>
+<span class="fc" id="L93">                .append(URLEncoder.encode(request.getUsername(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L94">                .append(&quot;/inventory&quot;)</span>
+<span class="fc" id="L95">                .toString();</span>
+<span class="fc" id="L96">        return executeGet(subPath, request, GetInventoryResponse.class);</span>
+    }
+
+    /**
+     * Gets a listing.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetListingRequest
+     * @see GetListingResponse
+     */
+<span class="fc bfc" id="L107" title="All 2 branches covered.">    public GetListingResponse getListing(@NonNull final GetListingRequest request) {</span>
+<span class="fc" id="L108">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L109">                .append(LISTINGS_SUB_API_PATH)</span>
+<span class="fc" id="L110">                .append(request.getListingId())</span>
+<span class="fc" id="L111">                .toString();</span>
+<span class="fc" id="L112">        return executeGet(subPath, request, GetListingResponse.class);</span>
+    }
+
+    /**
+     * Updates a listing. Note: Must be authenticated as the listing owner.
+     *
+     * @param request the request
+     * @see UpdateListingRequest
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L122" title="All 2 branches covered.">    public void updateListing(@NonNull final UpdateListingRequest request) {</span>
+<span class="fc" id="L123">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L124">                .append(LISTINGS_SUB_API_PATH)</span>
+<span class="fc" id="L125">                .append(request.getListingId())</span>
+<span class="fc" id="L126">                .toString();</span>
+<span class="fc" id="L127">        executePost(subPath, request);</span>
+<span class="fc" id="L128">    }</span>
+
+    /**
+     * Deletes a listing. Note: Must be authenticated as the listing owner.
+     *
+     * @param request the request
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L136" title="All 2 branches covered.">    public void deleteListing(@NonNull final DeleteListingRequest request) {</span>
+<span class="fc" id="L137">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L138">                .append(LISTINGS_SUB_API_PATH)</span>
+<span class="fc" id="L139">                .append(request.getListingId())</span>
+<span class="fc" id="L140">                .toString();</span>
+<span class="fc" id="L141">        executeDelete(subPath, request);</span>
+<span class="fc" id="L142">    }</span>
+
+    /**
+     * Creates a new listing. Note: Must be authenticated as the listing owner.
+     *
+     * @param request the request that describes the new listing
+     * @return the response containing the listing identifier
+     * @see CreateListingRequest
+     * @see CreateListingResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L153" title="All 2 branches covered.">    public CreateListingResponse createListing(@NonNull final CreateListingRequest request) {</span>
+<span class="fc" id="L154">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L155">                .append(&quot;/listings&quot;)</span>
+<span class="fc" id="L156">                .toString();</span>
+<span class="fc" id="L157">        return executePost(subPath, request, CreateListingResponse.class);</span>
+    }
+
+    /**
+     * Gets information for a specific order. Note: Must be authenticated as the seller.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetOrderRequest
+     * @see GetOrderResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L169" title="All 2 branches covered.">    public GetOrderResponse getOrder(@NonNull final GetOrderRequest request) {</span>
+<span class="fc" id="L170">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L171">                .append(ORDERS_SUB_API_PATH)</span>
+<span class="fc" id="L172">                .append(URLEncoder.encode(request.getOrderId(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L173">                .toString();</span>
+<span class="fc" id="L174">        return executeGet(subPath, request, GetOrderResponse.class);</span>
+    }
+
+    /**
+     * Updates an order. Note: Must be authenticated as the seller.
+     *
+     * @param request the request with the attributes to update
+     * @return the response
+     * @see UpdateOrderRequest
+     * @see UpdateOrderResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L186" title="All 2 branches covered.">    public UpdateOrderResponse updateOrder(@NonNull final UpdateOrderRequest request) {</span>
+<span class="fc" id="L187">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L188">                .append(ORDERS_SUB_API_PATH)</span>
+<span class="fc" id="L189">                .append(URLEncoder.encode(request.getOrderId(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L190">                .toString();</span>
+<span class="fc" id="L191">        return executePost(subPath, request, UpdateOrderResponse.class);</span>
+    }
+
+    /**
+     * Gets the paginated list of orders for the authenticated user.
+     *
+     * @param request the request
+     * @return the paginated list of orders
+     * @see GetOrdersRequest
+     * @see GetOrdersResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L203" title="All 2 branches covered.">    public GetOrdersResponse getOrders(@NonNull final GetOrdersRequest request) {</span>
+<span class="fc" id="L204">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L205">                .append(&quot;/orders&quot;)</span>
+<span class="fc" id="L206">                .toString();</span>
+<span class="fc" id="L207">        return executeGet(subPath, request, GetOrdersResponse.class);</span>
+    }
+
+    /**
+     * Gets the paginated list of messages associated with an order. Note: Must be authenticated as the seller.
+     *
+     * @param request the request
+     * @return the paginated list of messages.
+     * @see GetOrderMessagesRequest
+     * @see GetOrderMessagesResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L219" title="All 2 branches covered.">    public GetOrderMessagesResponse getOrderMessages(@NonNull final GetOrderMessagesRequest request) {</span>
+<span class="fc" id="L220">        final String subPath  = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L221">                .append(ORDERS_SUB_API_PATH)</span>
+<span class="fc" id="L222">                .append(URLEncoder.encode(request.getOrderId(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L223">                .append(&quot;/messages&quot;)</span>
+<span class="fc" id="L224">                .toString();</span>
+<span class="fc" id="L225">        return executeGet(subPath, request, GetOrderMessagesResponse.class);</span>
+    }
+
+    /**
+     * Adds a message to an order: Must be authenticated as the seller.
+     *
+     * @param request the request
+     * @return the response
+     * @see AddOrderMessageRequest
+     * @see AddOrderMessageResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L237" title="All 2 branches covered.">    public AddOrderMessageResponse addOrderMessage(@NonNull final AddOrderMessageRequest request) {</span>
+<span class="fc" id="L238">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L239">                .append(ORDERS_SUB_API_PATH)</span>
+<span class="fc" id="L240">                .append(URLEncoder.encode(request.getOrderId(), StandardCharsets.UTF_8))</span>
+<span class="fc" id="L241">                .append(&quot;/messages&quot;)</span>
+<span class="fc" id="L242">                .toString();</span>
+<span class="fc" id="L243">        return executePost(subPath, request, AddOrderMessageResponse.class);</span>
+    }
+
+    /**
+     * Gets the fee when selling an item at a given price.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetFeeRequest
+     * @see GetFeeResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L255" title="All 2 branches covered.">    public GetFeeResponse getFee(@NonNull final GetFeeRequest request) {</span>
+<span class="fc" id="L256">        final StringBuilder subPathBuilder = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L257">                .append(FEE_SUB_API_PATH)</span>
+<span class="fc" id="L258">                .append(request.getPrice());</span>
+<span class="fc" id="L259">        final Currency currency = request.getCurrency();</span>
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        final String subPath = Objects.nonNull(currency)</span>
+<span class="fc" id="L261">                ? subPathBuilder.append(&quot;/&quot;).append(currency).toString()</span>
+<span class="pc" id="L262">                : subPathBuilder.toString();</span>
+<span class="fc" id="L263">        return executeGet(subPath, request, GetFeeResponse.class);</span>
+    }
+
+    /**
+     * Gets a map of prices suggestions foa given release.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetPriceSuggestionsRequest
+     * @see GetPriceSuggestionsResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L275" title="All 2 branches covered.">    public GetPriceSuggestionsResponse getPriceSuggestions(@NonNull final GetPriceSuggestionsRequest request) {</span>
+<span class="fc" id="L276">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L277">                .append(&quot;/price_suggestions/&quot;)</span>
+<span class="fc" id="L278">                .append(request.getReleaseId())</span>
+<span class="fc" id="L279">                .toString();</span>
+
+<span class="fc" id="L281">        final DiscogsConnection connection = getConnection();</span>
+<span class="fc" id="L282">        final Map&lt;Condition, Price&gt; prices =  connection.execute(</span>
+<span class="fc" id="L283">                connection.newRequestBuilder()</span>
+<span class="fc" id="L284">                        .url(buildHttpUrl(subPath, request))</span>
+<span class="fc" id="L285">                        .build(),</span>
+                new MapParser&lt;&gt;(Condition.class, Price.class));
+
+<span class="fc" id="L288">        return GetPriceSuggestionsResponse.builder()</span>
+<span class="fc" id="L289">                .priceSuggestions(prices)</span>
+<span class="fc" id="L290">                .build();</span>
+    }
+
+    /**
+     * Gets the sales statistics for a release. Note: Authentication is optional. Authenticated users will have the
+     * currency expressed by their configured preference. Unauthenticated users will have prices reflected in
+     * {@link Currency#USD}.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetReleaseStatisticsRequest
+     * @see GetReleaseStatisticsResponse
+     */
+    @AuthenticationOptional
+<span class="fc bfc" id="L304" title="All 2 branches covered.">    public GetReleaseStatisticsResponse getReleaseStatistics(@NonNull final GetReleaseStatisticsRequest request) {</span>
+<span class="fc" id="L305">        final String subPath = new StringBuilder(MARKETPLACE_API_PATH)</span>
+<span class="fc" id="L306">                .append(&quot;/stats/&quot;)</span>
+<span class="fc" id="L307">                .append(request.getReleaseId())</span>
+<span class="fc" id="L308">                .toString();</span>
+<span class="fc" id="L309">        return executeGet(subPath, request, GetReleaseStatisticsResponse.class);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

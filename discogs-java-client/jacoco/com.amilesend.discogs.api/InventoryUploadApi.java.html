@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InventoryUploadApi.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.api</a> &gt; <span class="el_source">InventoryUploadApi.java</span></div><h1>InventoryUploadApi.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.api;
+
+import com.amilesend.client.connection.RequestException;
+import com.amilesend.client.connection.file.ProgressReportingRequestBody;
+import com.amilesend.client.connection.file.TransferProgressCallback;
+import com.amilesend.discogs.connection.DiscogsConnection;
+import com.amilesend.discogs.model.Api;
+import com.amilesend.discogs.model.AuthenticationRequired;
+import com.amilesend.discogs.model.inventory.AddInventoryRequest;
+import com.amilesend.discogs.model.inventory.AddInventoryResponse;
+import com.amilesend.discogs.model.inventory.ChangeInventoryRequest;
+import com.amilesend.discogs.model.inventory.ChangeInventoryResponse;
+import com.amilesend.discogs.model.inventory.DeleteInventoryRequest;
+import com.amilesend.discogs.model.inventory.DeleteInventoryResponse;
+import com.amilesend.discogs.model.inventory.GetUploadRequest;
+import com.amilesend.discogs.model.inventory.GetUploadResponse;
+import com.amilesend.discogs.model.inventory.GetUploadsRequest;
+import com.amilesend.discogs.model.inventory.GetUploadsResponse;
+import com.amilesend.discogs.model.inventory.type.UploadInformation;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.HttpUrl;
+import okhttp3.Request;
+
+import java.io.IOException;
+import java.nio.file.Path;
+
+import static com.amilesend.client.connection.Connection.Headers.CONTENT_TYPE;
+import static com.amilesend.client.connection.file.TransferFileUtil.fetchMimeTypeFromFile;
+
+/**
+ * The Discogs Inventory Upload API.
+ * &lt;br/&gt;
+ * &lt;a href=&quot;https://www.discogs.com/developers#page:inventory-upload&quot;&gt;API Documentation&lt;/a&gt;
+ *
+ * @see ApiBase
+ */
+@Api
+<span class="fc" id="L56">@Slf4j</span>
+public class InventoryUploadApi extends ApiBase {
+    private static final String UPLOAD_FILE_FIELD_NAME = &quot;upload&quot;;
+    private static final String INVENTORY_UPLOAD_SUB_PATH = &quot;/inventory/upload&quot;;
+
+    /**
+     * Creates a new {@code InventoryUploadApi} object.
+     *
+     * @param connection the underlying client connection
+     */
+    public InventoryUploadApi(final DiscogsConnection connection) {
+<span class="fc" id="L67">        super(connection);</span>
+<span class="fc" id="L68">    }</span>
+
+    /**
+     * Adds items from a CSV file to a user's inventory.
+     *
+     * @param request the request
+     * @return the response
+     * @see AddInventoryRequest
+     * @see AddInventoryResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L79" title="All 2 branches covered.">    public AddInventoryResponse addInventory(@NonNull final AddInventoryRequest request) {</span>
+<span class="fc" id="L80">        final HttpUrl httpUrl = buildHttpUrl(INVENTORY_UPLOAD_SUB_PATH + &quot;/add&quot;, request);</span>
+
+<span class="fc" id="L82">        final UploadInformation uploadInfo =</span>
+<span class="fc" id="L83">                uploadInternal(httpUrl, request.getInventoryCsvFile(), request.getTransferProgressCallback());</span>
+
+<span class="fc" id="L85">        return AddInventoryResponse.builder()</span>
+<span class="fc" id="L86">                .filename(uploadInfo.getFilename())</span>
+<span class="fc" id="L87">                .location(uploadInfo.getLocation())</span>
+<span class="fc" id="L88">                .build();</span>
+    }
+
+    /**
+     * Change items from a CSV file within a user's inventory.
+     *
+     * @param request the request
+     * @return the response
+     * @see ChangeInventoryRequest
+     * @see ChangeInventoryResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L100" title="All 2 branches covered.">    public ChangeInventoryResponse changeInventory(@NonNull final ChangeInventoryRequest request) {</span>
+<span class="fc" id="L101">        final HttpUrl httpUrl = buildHttpUrl(INVENTORY_UPLOAD_SUB_PATH + &quot;/change&quot;, request);</span>
+
+<span class="fc" id="L103">        final UploadInformation uploadInfo =</span>
+<span class="fc" id="L104">                uploadInternal(httpUrl, request.getInventoryCsvFile(), request.getTransferProgressCallback());</span>
+
+<span class="fc" id="L106">        return ChangeInventoryResponse.builder()</span>
+<span class="fc" id="L107">                .filename(uploadInfo.getFilename())</span>
+<span class="fc" id="L108">                .location(uploadInfo.getLocation())</span>
+<span class="fc" id="L109">                .build();</span>
+    }
+
+    /**
+     * Delete items from a user's inventory for the given CSV-formatted list of releases.
+     *
+     * @param request the request
+     * @return the response
+     * @see DeleteInventoryRequest
+     * @see DeleteInventoryResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L121" title="All 2 branches covered.">    public DeleteInventoryResponse deleteInventory(@NonNull final DeleteInventoryRequest request) {</span>
+<span class="fc" id="L122">        final HttpUrl httpUrl = buildHttpUrl(INVENTORY_UPLOAD_SUB_PATH + &quot;/delete&quot;, request);</span>
+
+<span class="fc" id="L124">        final UploadInformation uploadInfo =</span>
+<span class="fc" id="L125">                uploadInternal(httpUrl, request.getInventoryCsvFile(), request.getTransferProgressCallback());</span>
+
+<span class="fc" id="L127">        return DeleteInventoryResponse.builder()</span>
+<span class="fc" id="L128">                .filename(uploadInfo.getFilename())</span>
+<span class="fc" id="L129">                .location(uploadInfo.getLocation())</span>
+<span class="fc" id="L130">                .build();</span>
+    }
+
+    private UploadInformation uploadInternal(
+            final HttpUrl httpUrl,
+            final Path filePath,
+            final TransferProgressCallback callback) {
+        try {
+<span class="fc" id="L138">            final ProgressReportingRequestBody requestBody = ProgressReportingRequestBody.multiPartBuilder()</span>
+<span class="fc" id="L139">                    .fieldName(UPLOAD_FILE_FIELD_NAME)</span>
+<span class="fc" id="L140">                    .contentType(fetchMimeTypeFromFile(filePath))</span>
+<span class="fc" id="L141">                    .callback(callback)</span>
+<span class="fc" id="L142">                    .file(filePath)</span>
+<span class="fc" id="L143">                    .build();</span>
+
+<span class="fc" id="L145">            final DiscogsConnection connection = getConnection();</span>
+<span class="fc" id="L146">            final Request httpRequest = connection.newRequestBuilder()</span>
+<span class="fc" id="L147">                    .url(httpUrl)</span>
+<span class="fc" id="L148">                    .addHeader(CONTENT_TYPE, requestBody.contentType().toString())</span>
+<span class="fc" id="L149">                    .post(requestBody)</span>
+<span class="fc" id="L150">                    .build();</span>
+<span class="fc" id="L151">            final UploadInformation uploadInfo =</span>
+<span class="fc" id="L152">                    connection.upload(httpRequest, filePath.getFileName().toString());</span>
+<span class="fc" id="L153">            return AddInventoryResponse.builder()</span>
+<span class="fc" id="L154">                    .filename(uploadInfo.getFilename())</span>
+<span class="fc" id="L155">                    .location(uploadInfo.getLocation())</span>
+<span class="fc" id="L156">                    .build();</span>
+<span class="nc" id="L157">        } catch (final IOException ex) {</span>
+<span class="nc" id="L158">            throw new RequestException(&quot;Error reading file to upload&quot;, ex);</span>
+        }
+    }
+
+    /**
+     * Gets the paginated list of uploads. Note: authentication is required.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetUploadsRequest
+     * @see GetUploadsResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L171" title="All 2 branches covered.">    public GetUploadsResponse getUploads(@NonNull final GetUploadsRequest request) {</span>
+<span class="fc" id="L172">        return executeGet(INVENTORY_UPLOAD_SUB_PATH, request, GetUploadsResponse.class);</span>
+    }
+
+    /**
+     * Gets information for a specific upload. Note: authentication is required.
+     *
+     * @param request the request
+     * @return the response
+     * @see GetUploadRequest
+     * @see GetUploadResponse
+     */
+    @AuthenticationRequired
+<span class="fc bfc" id="L184" title="All 2 branches covered.">    public GetUploadResponse getUpload(@NonNull final GetUploadRequest request) {</span>
+<span class="fc" id="L185">        final String subPath = new StringBuilder(INVENTORY_UPLOAD_SUB_PATH)</span>
+<span class="fc" id="L186">                .append(&quot;/&quot;)</span>
+<span class="fc" id="L187">                .append(request.getUploadId())</span>
+<span class="fc" id="L188">                .toString();</span>
+<span class="fc" id="L189">        return executeGet(subPath, request, GetUploadResponse.class);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

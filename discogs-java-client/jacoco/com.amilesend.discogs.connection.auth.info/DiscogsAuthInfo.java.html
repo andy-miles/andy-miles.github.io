@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiscogsAuthInfo.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection.auth.info</a> &gt; <span class="el_source">DiscogsAuthInfo.java</span></div><h1>DiscogsAuthInfo.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.connection.auth.info;
+
+import com.amilesend.client.connection.auth.AuthInfo;
+import com.amilesend.discogs.parse.GsonFactory;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
+
+/**
+ * Defines the base interface for Discogs authorization information.
+ *
+ * Per the &lt;a href=&quot;https://www.discogs.com/developers#page:authentication,header:authentication-discogs-auth-flow&quot;&gt;
+ * Discogs API documentation&lt;/a&gt;, the following table outlines the authorization types:
+ * &lt;br/&gt;
+ * &lt;table&gt;
+ *     &lt;tr&gt;
+ *         &lt;th&gt;Type&lt;/th&gt;
+ *         &lt;th&gt;Rate Limit Tier&lt;/th&gt;
+ *         &lt;th&gt;Image URLs&lt;/th&gt;
+ *         &lt;td&gt;Auth as User&lt;/td&gt;
+ *     &lt;/tr&gt;
+ *     &lt;tr&gt;
+ *         &lt;td&gt;{@link Type#NO_AUTH_LIMITED}&lt;/td&gt;
+ *         &lt;td&gt;Low&lt;/td&gt;
+ *         &lt;td&gt;N&lt;/td&gt;
+ *         &lt;td&gt;N&lt;/td&gt;
+ *     &lt;/tr&gt;
+ *     &lt;tr&gt;
+ *         &lt;td&gt;{@link Type#KEY_SECRET}&lt;/td&gt;
+ *         &lt;td&gt;High&lt;/td&gt;
+ *         &lt;td&gt;Y&lt;/td&gt;
+ *         &lt;td&gt;N&lt;/td&gt;
+ *     &lt;/tr&gt;
+ *     &lt;tr&gt;
+ *         &lt;td&gt;{@link Type#OAUTH_1_0_A}&lt;/td&gt;
+ *         &lt;td&gt;High&lt;/td&gt;
+ *         &lt;td&gt;Y&lt;/td&gt;
+ *         &lt;td&gt;Y&lt;/td&gt;
+ *     &lt;/tr&gt;
+ *     &lt;tr&gt;
+ *         &lt;td&gt;{@link Type#TOKEN}&lt;/td&gt;
+ *         &lt;td&gt;High&lt;/td&gt;
+ *         &lt;td&gt;Y&lt;/td&gt;
+ *         &lt;td&gt;Y&lt;/td&gt;
+ *     &lt;/tr&gt;
+ * &lt;/table&gt;
+ */
+public interface DiscogsAuthInfo extends AuthInfo {
+    String DEFINED = &quot;**********&quot;;
+
+    /**
+     * Deserializes the given {@code authInfoJson} string to a new {@code AuthInfo} object.
+     *
+     * @param authInfoJson the JSON-formatted auth info
+     * @return the new {@code AuthInfo} object
+     * @throws JsonSyntaxException if there is an error while deserializing the JSON string
+     */
+    static DiscogsAuthInfo fromJson(final String authInfoJson) {
+<span class="nc" id="L75">        final Gson gson = GsonFactory.getGsonForAuthentication();</span>
+<span class="nc" id="L76">        return gson.fromJson(authInfoJson, DiscogsAuthInfo.class);</span>
+    }
+
+    /**
+     * Serializes this {@code AuthInfo} to a JSON formatted string.
+     *
+     * @return the JSON formatted {@code AuthInfo}
+     */
+    default String toJson() {
+<span class="nc" id="L85">        final Gson gson = GsonFactory.getGsonForAuthentication();</span>
+<span class="nc" id="L86">        return gson.toJson(this);</span>
+    }
+
+    /**
+     * Gets the {@code AuthInfo} type.
+     *
+     * @return the type
+     * @see Type
+     */
+    Type getType();
+
+    /** Defines the supported authorization types. */
+<span class="fc" id="L98">    enum Type {</span>
+        /** No credentials. */
+<span class="fc" id="L100">        NO_AUTH_LIMITED,</span>
+        /** Consumer key and secret pair. */
+<span class="fc" id="L102">        KEY_SECRET,</span>
+        /** OAuth 1.0a token and secret. */
+<span class="fc" id="L104">        OAUTH_1_0_A,</span>
+        /** Personal access token. */
+<span class="fc" id="L106">        TOKEN;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

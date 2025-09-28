@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AuthManagerFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection.auth</a> &gt; <span class="el_source">AuthManagerFactory.java</span></div><h1>AuthManagerFactory.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.connection.auth;
+
+import com.amilesend.client.connection.auth.AuthManager;
+import com.amilesend.client.connection.auth.NoOpAuthManager;
+import com.amilesend.discogs.connection.auth.info.KeySecretAuthInfo;
+import com.amilesend.discogs.connection.auth.info.OAuthInfo;
+import com.amilesend.discogs.connection.auth.info.TokenAuthInfo;
+import com.amilesend.discogs.connection.auth.oauth.OAuthReceiver;
+import okhttp3.OkHttpClient;
+
+/**
+ * Factory used to vend {@link AuthManager} instances used for Discogs.
+ *
+ * @see AuthManager
+ */
+<span class="fc" id="L33">public class AuthManagerFactory {</span>
+    /**
+     * Creates a new auth manager for unauthenticated requests.
+     *
+     * @return the no-op auth manager
+     * @see NoOpAuthManager
+     */
+    public NoOpAuthManager newUnauthenticatedAuthManager() {
+<span class="fc" id="L41">        return new NoOpAuthManager();</span>
+    }
+
+    /**
+     * Creates a new auth manager for a user-supplied key and secret.
+     *
+     * @param authInfo the auth info containing the key and secret
+     * @return the key-secret-based auth manager
+     * @see KeySecretAuthInfo
+     * @see KeySecretAuthManager
+     */
+    public KeySecretAuthManager newUserAuthenticatedAuthManager(final KeySecretAuthInfo authInfo) {
+<span class="fc" id="L53">        return new KeySecretAuthManager(authInfo);</span>
+    }
+
+    /**
+     * Creates a new auth manager for a user-supplied access token and secret.
+     *
+     * @param authInfo the auth info containing the token and secret
+     * @return the token-based auth manager
+     * @see TokenAuthInfo
+     * @see TokenAuthManager
+     */
+    public TokenAuthManager newTokenAuthenticatedAuthManager(final TokenAuthInfo authInfo) {
+<span class="fc" id="L65">        return new TokenAuthManager(authInfo);</span>
+    }
+
+    /**
+     * Creates a new OAuth-based auth manager to execute the OAuth flow to acquire the OAuth access token.
+     *
+     * @param httpClient the configured OkHttp client connection
+     * @param appCredentials the application credentials in the form of a key and secret
+     * @param userAgent the user agent identifier
+     * @param receiverPort the port of the OAuth callback listener is listening on
+     * @return the OAuth-based auth manager
+     * @see KeySecretAuthInfo
+     * @see OAuthManager
+     */
+    public OAuthManager newOAuthAuthManager(
+            final OkHttpClient httpClient,
+            final KeySecretAuthInfo appCredentials,
+            final String userAgent,
+            final int receiverPort) {
+<span class="nc" id="L84">        return newOAuthAuthManagerWithExistingToken(httpClient, appCredentials, userAgent, receiverPort, null);</span>
+    }
+
+    /**
+     * Creates a new OAuth-based auth manager for an existing persisted OAuth token.
+     *
+     * @param httpClient the configured OkHttp client connection
+     * @param appCredentials the application credentials in the form of a key and secret
+     * @param userAgent the user agent identifier
+     * @param receiverPort the port of the OAuth callback listener is listening on
+     * @param authInfo the OAuth token information
+     * @return the OAuth-based auth manager
+     * @see KeySecretAuthInfo
+     * @see OAuthInfo
+     * @see OAuthManager
+     */
+    public OAuthManager newOAuthAuthManagerWithExistingToken(
+            final OkHttpClient httpClient,
+            final KeySecretAuthInfo appCredentials,
+            final String userAgent,
+            final int receiverPort,
+            final OAuthInfo authInfo) {
+<span class="nc" id="L106">        final OAuthReceiver receiver = OAuthReceiver.builder()</span>
+<span class="nc" id="L107">                .port(receiverPort)</span>
+<span class="nc" id="L108">                .build();</span>
+<span class="nc" id="L109">        return OAuthManager.builder()</span>
+<span class="nc" id="L110">                .httpClient(httpClient)</span>
+<span class="nc" id="L111">                .oAuthReceiver(receiver)</span>
+<span class="nc" id="L112">                .appCredentials(appCredentials)</span>
+<span class="nc" id="L113">                .userAgent(userAgent)</span>
+<span class="nc" id="L114">                .oAuthToken(authInfo)</span>
+<span class="nc" id="L115">                .build();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>

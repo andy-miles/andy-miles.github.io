@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PaginatedResponseBase.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.model</a> &gt; <span class="el_source">PaginatedResponseBase.java</span></div><h1>PaginatedResponseBase.java</h1><pre class="source lang-java linenums">/*
+ * discogs-java-client - A Java SDK to access the Discogs API
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.discogs.model;
+
+import com.amilesend.client.parse.parser.BasicParser;
+import com.amilesend.client.parse.strategy.GsonExclude;
+import com.amilesend.client.util.StringUtils;
+import com.amilesend.discogs.connection.DiscogsConnection;
+import lombok.Builder;
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
+import okhttp3.HttpUrl;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * Defines a paginated response with a limited set of results.
+ *
+ * @param &lt;T&gt; The response implementation type
+ */
+@SuperBuilder
+@Data
+public abstract class PaginatedResponseBase&lt;T&gt; {
+    /** The underlying API connection used to navigate response pages. */
+    @GsonExclude
+    private final DiscogsConnection connection;
+    /**
+     * The pagination information.
+     *
+     * @see Pagination
+     */
+    private final Pagination pagination;
+
+    /** Defines the method to return the implementation class type. */
+    public abstract Class&lt;T&gt; getType();
+
+    /**
+     * Gets the first page.
+     *
+     * @return the first page, or {@code null} if no pages exist
+     */
+    public T getFirst() {
+<span class="fc" id="L60">       return navigatePage(getPagination().getFirstUrl());</span>
+    }
+
+    /**
+     * Determines if there is a first page available for navigation.
+     *
+     * @return {@code true} if there is a first page; else, {@code false}
+     */
+    public boolean hasFirst() {
+<span class="fc" id="L69">        return Objects.nonNull(getPagination().getFirstUrl());</span>
+    }
+
+    /**
+     * Gets the previous page.
+     *
+     * @return the previous page, or {@code null} if no pages exist
+     */
+    public T getPrevious() {
+<span class="fc" id="L78">        return navigatePage(getPagination().getPreviousUrl());</span>
+    }
+
+    /**
+     * Determines if there is a previous page available for navigation.
+     *
+     * @return {@code true} if there is a previous page; else, {@code false}
+     */
+    public boolean hasPrevious() {
+<span class="fc" id="L87">        return Objects.nonNull(getPagination().getPreviousUrl());</span>
+    }
+
+    /**
+     * Gets the next page.
+     *
+     * @return the next page, or {@code null} if no pages exist
+     */
+    public T getNext() {
+<span class="fc" id="L96">        return navigatePage(getPagination().getNextUrl());</span>
+    }
+
+    /**
+     * Determines if there is a next page available for navigation.
+     *
+     * @return {@code true} if there is a next page; else, {@code false}
+     */
+    public boolean hasNext() {
+<span class="fc" id="L105">        return Objects.nonNull(getPagination().getNextUrl());</span>
+    }
+
+    /**
+     * Gets the last page.
+     *
+     * @return the last page, or {@code null} if no pages exist
+     */
+    public T getLast() {
+<span class="fc" id="L114">        return navigatePage(getPagination().getLastUrl());</span>
+    }
+
+    /**
+     * Determines if there is a last page available for navigation.
+     *
+     * @return {@code true} if there is a last page; else, {@code false}
+     */
+    public boolean hasLast() {
+<span class="fc" id="L123">        return Objects.nonNull(getPagination().getLastUrl());</span>
+    }
+
+    // Helper method to navigate pages
+    private T navigatePage(final String url) {
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (StringUtils.isBlank(url)) {</span>
+<span class="fc" id="L129">            return null;</span>
+        }
+
+<span class="fc" id="L132">        return connection.execute(</span>
+<span class="fc" id="L133">                connection.newRequestBuilder()</span>
+<span class="fc" id="L134">                        .url(HttpUrl.parse(url))</span>
+<span class="fc" id="L135">                        .build(),</span>
+<span class="fc" id="L136">                new BasicParser&lt;&gt;(getType()));</span>
+    }
+
+    /** Describes the pagination information for a response. */
+    @Builder
+    @Data
+    public static class Pagination {
+        /** The page number associated with the results. */
+        private final Integer page;
+        /** The total number of pages available. */
+        private final Integer pages;
+        /** The total number of items available. */
+        private final Integer items;
+        /** The number of items per page. */
+        private final Integer perPage;
+        /** The map of URLs used to navigate pages. */
+        @Builder.Default
+        private final Map&lt;String, String&gt; urls = Collections.emptyMap();
+
+        /**
+         * Gets the URL to navigate to the first page.
+         *
+         * @return the first page URL, or {@code null} if no pages exist
+         */
+        public String getFirstUrl() {
+<span class="fc" id="L161">            return urls.get(&quot;first&quot;);</span>
+        }
+
+        /**
+         * Gets the URL for the previous page.
+         *
+         * @return the previous page URL, or {@code null} if no pages exist
+         */
+        public String getPreviousUrl() {
+<span class="fc" id="L170">            return urls.get(&quot;prev&quot;);</span>
+        }
+
+        /**
+         * Gets the URL for the next page.
+         *
+         * @return the next page URL, or {@code null} if no pages exist
+         */
+        public String getNextUrl() {
+<span class="fc" id="L179">            return urls.get(&quot;next&quot;);</span>
+        }
+
+        /**
+         * Gets the URL for the last page.
+         *
+         * @return the last page URL, or {@code null} if no pages exist
+         */
+        public String getLastUrl() {
+<span class="fc" id="L188">            return urls.get(&quot;last&quot;);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
