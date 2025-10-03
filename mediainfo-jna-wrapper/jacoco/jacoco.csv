@@ -8,4 +8,4 @@ mediainfo-jna-wrapper,com.amilesend.mediainfo.lib,MediaInfoLibrary,2,102,1,1,0,1
 mediainfo-jna-wrapper,com.amilesend.mediainfo.util,Validate,39,25,8,6,12,8,7,5,3,2
 mediainfo-jna-wrapper,com.amilesend.mediainfo.util,StringUtils,0,34,0,10,0,8,0,7,0,2
 mediainfo-jna-wrapper,com.amilesend.mediainfo,MediaInfo,0,69,0,0,0,12,0,11,0,11
-mediainfo-jna-wrapper,com.amilesend.mediainfo,MediaInfoBase,0,208,1,27,0,56,1,21,0,8
+mediainfo-jna-wrapper,com.amilesend.mediainfo,MediaInfoBase,0,211,1,29,0,58,1,22,0,8

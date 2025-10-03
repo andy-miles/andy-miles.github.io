@@ -155,33 +155,37 @@ public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements Au
 <span class="fc" id="L155">        int read = -1;</span>
         do {
 <span class="fc" id="L157">            read = file.read(buffer);</span>
-<span class="fc" id="L158">            final int result = accessor.openBufferContinue(buffer, read);</span>
-<span class="fc bfc" id="L159" title="All 2 branches covered.">            if ((result &amp; 8) == Status.Finalized.getValue()) {</span>
-<span class="fc" id="L160">                break;</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (read &lt; 0) {</span>
+<span class="fc" id="L159">                break;</span>
             }
 
-<span class="fc" id="L163">            final long gotoPos = accessor.openBufferContinueGotoGet();</span>
-<span class="fc bfc" id="L164" title="All 2 branches covered.">            if (gotoPos &gt;= Status.None.getValue()) {</span>
-<span class="fc" id="L165">                file.seek(gotoPos);</span>
-<span class="fc" id="L166">                accessor.openBufferInit(file.length(), gotoPos);</span>
+<span class="fc" id="L162">            final int result = accessor.openBufferContinue(buffer, read);</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">            if ((result &amp; 8) == Status.Finalized.getValue()) {</span>
+<span class="fc" id="L164">                break;</span>
             }
-<span class="pc bpc" id="L168" title="1 of 2 branches missed.">        } while (read &gt; 0);</span>
 
-<span class="fc" id="L170">        accessor.openBufferFinalize();</span>
-<span class="fc" id="L171">        return true;</span>
+<span class="fc" id="L167">            final long gotoPos = accessor.openBufferContinueGotoGet();</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">            if (gotoPos &gt;= Status.None.getValue()) {</span>
+<span class="fc" id="L169">                file.seek(gotoPos);</span>
+<span class="fc" id="L170">                accessor.openBufferInit(file.length(), gotoPos);</span>
+            }
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        } while (read &gt; 0);</span>
+
+<span class="fc" id="L174">        accessor.openBufferFinalize();</span>
+<span class="fc" id="L175">        return true;</span>
     }
 
     @VisibleForTesting
     boolean preferOpenViaBuffer(final String path) {
-<span class="fc bfc" id="L176" title="All 4 branches covered.">        if (Platform.isWindows() &amp;&amp; path.length() &gt; MAX_FILENAME_LENGTH_WIN) {</span>
-<span class="fc" id="L177">            return true;</span>
-        }
-
-<span class="fc bfc" id="L180" title="All 4 branches covered.">        if (Platform.isMac() &amp;&amp; !US_ASCII.newEncoder().canEncode(path)) {</span>
+<span class="fc bfc" id="L180" title="All 4 branches covered.">        if (Platform.isWindows() &amp;&amp; path.length() &gt; MAX_FILENAME_LENGTH_WIN) {</span>
 <span class="fc" id="L181">            return true;</span>
         }
 
-<span class="fc" id="L184">        return false;</span>
+<span class="fc bfc" id="L184" title="All 4 branches covered.">        if (Platform.isMac() &amp;&amp; !US_ASCII.newEncoder().canEncode(path)) {</span>
+<span class="fc" id="L185">            return true;</span>
+        }
+
+<span class="fc" id="L188">        return false;</span>
     }
 
     /**
@@ -191,17 +195,17 @@ public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements Au
      * @return the parsed Instant, or {@code null} if the time value is blank
      */
     public static Instant parseTime(final String time) {
-<span class="fc bfc" id="L194" title="All 2 branches covered.">        if (StringUtils.isBlank(time)) {</span>
-<span class="fc" id="L195">            return null;</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (StringUtils.isBlank(time)) {</span>
+<span class="fc" id="L199">            return null;</span>
         }
 
         try {
-<span class="fc" id="L199">            return ZonedDateTime.parse(time, DATE_TIME_FORMATTER).toInstant();</span>
-<span class="fc" id="L200">        } catch (final DateTimeParseException ex) {</span>
-<span class="fc" id="L201">            log.debug(&quot;Timestamp does not match pattern: \&quot;zzz uuuu-MM-dd HH:mm:ss\&quot;&quot;);</span>
+<span class="fc" id="L203">            return ZonedDateTime.parse(time, DATE_TIME_FORMATTER).toInstant();</span>
+<span class="fc" id="L204">        } catch (final DateTimeParseException ex) {</span>
+<span class="fc" id="L205">            log.debug(&quot;Timestamp does not match pattern: \&quot;zzz uuuu-MM-dd HH:mm:ss\&quot;&quot;);</span>
         }
 
-<span class="fc" id="L204">        return ZonedDateTime.parse(time, DATE_TIME_FORMATTER_ALT).toInstant();</span>
+<span class="fc" id="L208">        return ZonedDateTime.parse(time, DATE_TIME_FORMATTER_ALT).toInstant();</span>
     }
 
     /**
@@ -211,14 +215,14 @@ public abstract class MediaInfoBase&lt;T extends MediaInfoBase&gt; implements Au
      * @return the list of values
      */
     public static List&lt;String&gt; parseList(final String listValue) {
-<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (StringUtils.isBlank(listValue)) {</span>
-<span class="fc" id="L215">            return Collections.emptyList();</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">        if (StringUtils.isBlank(listValue)) {</span>
+<span class="fc" id="L219">            return Collections.emptyList();</span>
         }
 
-<span class="fc" id="L218">        return Arrays.stream(listValue.split(LIST_DELIMITER))</span>
-<span class="fc" id="L219">                .filter(StringUtils::isNotBlank)</span>
-<span class="fc" id="L220">                .map(String::trim)</span>
-<span class="fc" id="L221">                .collect(Collectors.toList());</span>
+<span class="fc" id="L222">        return Arrays.stream(listValue.split(LIST_DELIMITER))</span>
+<span class="fc" id="L223">                .filter(StringUtils::isNotBlank)</span>
+<span class="fc" id="L224">                .map(String::trim)</span>
+<span class="fc" id="L225">                .collect(Collectors.toList());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.13.202504020838</span></div></body></html>
