@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProgressTrackingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.connection.file</a> &gt; <span class="el_source">ProgressTrackingInputStream.java</span></div><h1>ProgressTrackingInputStream.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.connection.file;
+
+import com.amilesend.client.util.VisibleForTesting;
+import lombok.NonNull;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
+/** Tracking input stream to monitor the amount of bytes read. */
+public class ProgressTrackingInputStream extends InputStream {
+    private static final int DEFAULT_BUFFER_SIZE = 16384;
+
+    /** The counter keeping track of the number of bytes transferred between IO sinks. */
+<span class="fc" id="L33">    private final AtomicLong bytesTransferred = new AtomicLong(0L);</span>
+
+    /** The delegate input stream that is being tracked. */
+    @NonNull
+    private final InputStream delegate;
+    /**
+     * The callback to notify.
+     *
+     * @see TransferProgressCallback
+     */
+    private final Optional&lt;TransferProgressCallback&gt; callback;
+    /** The total number of bytes to transfer. */
+    private final long totalBytes;
+
+    /**
+     * Creates a new {@code ProgressTrackingInputStream} object.
+     *
+     * @param delegate the delegate input stream
+     * @param callback the callback to notify
+     * @param totalBytes the total bytes to read
+     */
+    public ProgressTrackingInputStream(
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">            @NonNull final InputStream delegate,</span>
+            final TransferProgressCallback callback,
+<span class="fc" id="L57">            final long totalBytes) {</span>
+<span class="fc" id="L58">        this.delegate = delegate;</span>
+<span class="fc" id="L59">        this.callback = Optional.ofNullable(callback);</span>
+<span class="fc" id="L60">        this.totalBytes = totalBytes;</span>
+<span class="fc" id="L61">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L65">        delegate.close();</span>
+<span class="fc" id="L66">    }</span>
+
+    @Override
+    public int read() throws IOException {
+        try {
+<span class="fc" id="L71">            final int byteValue = delegate.read();</span>
+<span class="fc" id="L72">            addProgressAndNotify(1L);</span>
+<span class="fc" id="L73">            return byteValue;</span>
+<span class="fc" id="L74">        } catch (final IOException ex) {</span>
+<span class="fc" id="L75">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L76">            throw ex;</span>
+        }
+    }
+
+    @Override
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">    public int read(@NonNull final byte[] b) throws IOException {</span>
+        try {
+<span class="fc" id="L83">            final int bytesRead = delegate.read(b);</span>
+<span class="fc" id="L84">            addProgressAndNotify(bytesRead);</span>
+<span class="fc" id="L85">            return bytesRead;</span>
+<span class="fc" id="L86">        } catch (final IOException ex) {</span>
+<span class="fc" id="L87">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L88">            throw ex;</span>
+        }
+    }
+
+    @Override
+    public int read(final byte[] b, final int off, final int len) throws IOException {
+        try {
+<span class="fc" id="L95">            final int bytesRead = delegate.read(b, off, len);</span>
+<span class="fc" id="L96">            addProgressAndNotify(bytesRead);</span>
+<span class="fc" id="L97">            return bytesRead;</span>
+<span class="fc" id="L98">        } catch (final IOException ex) {</span>
+<span class="fc" id="L99">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L100">            throw ex;</span>
+        }
+    }
+
+    @Override
+    public byte[] readAllBytes() throws IOException {
+        try {
+<span class="fc" id="L107">            final byte[] data = delegate.readAllBytes();</span>
+<span class="fc" id="L108">            addProgressAndNotify(data.length);</span>
+<span class="fc" id="L109">            return data;</span>
+<span class="fc" id="L110">        } catch (final IOException ex) {</span>
+<span class="fc" id="L111">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L112">            throw ex;</span>
+        }
+    }
+
+    @Override
+    public byte[] readNBytes(final int len) throws IOException {
+        try {
+<span class="fc" id="L119">            final byte[] data = delegate.readNBytes(len);</span>
+<span class="fc" id="L120">            addProgressAndNotify(data.length);</span>
+<span class="fc" id="L121">            return data;</span>
+<span class="fc" id="L122">        } catch (final IOException ex) {</span>
+<span class="fc" id="L123">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L124">            throw ex;</span>
+        }
+    }
+
+    @Override
+    public int readNBytes(final byte[] b, final int off, final int len) throws IOException {
+        try {
+<span class="fc" id="L131">            final int bytesRead = delegate.readNBytes(b, off, len);</span>
+<span class="fc" id="L132">            addProgressAndNotify(bytesRead);</span>
+<span class="fc" id="L133">            return bytesRead;</span>
+<span class="fc" id="L134">        } catch (final IOException ex) {</span>
+<span class="fc" id="L135">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L136">            throw ex;</span>
+        }
+    }
+
+    @Override
+    public long skip(final long n) throws IOException {
+        try {
+<span class="fc" id="L143">            final long numSkippedBytes = delegate.skip(n);</span>
+<span class="fc" id="L144">            addProgressAndNotify(numSkippedBytes);</span>
+<span class="fc" id="L145">            return numSkippedBytes;</span>
+<span class="fc" id="L146">        } catch (final IOException ex) {</span>
+<span class="fc" id="L147">            callback.ifPresent(c -&gt; c.onFailure(ex));</span>
+<span class="fc" id="L148">            throw ex;</span>
+        }
+    }
+
+    @VisibleForTesting
+    void addProgressAndNotify(final long bytesRead) {
+<span class="fc" id="L154">        final long totalBytesRead = bytesTransferred.addAndGet(bytesRead);</span>
+<span class="fc" id="L155">        callback.ifPresent(c -&gt; c.onUpdate(totalBytesRead, totalBytes));</span>
+
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        if (totalBytesRead &gt;= totalBytes) {</span>
+<span class="fc" id="L158">            callback.ifPresent(c -&gt; c.onComplete(totalBytesRead));</span>
+        }
+<span class="fc" id="L160">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

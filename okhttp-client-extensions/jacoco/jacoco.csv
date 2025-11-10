@@ -30,6 +30,7 @@ okhttp-client-extensions,com.amilesend.client.connection.file,TransferFileUtil,0
 okhttp-client-extensions,com.amilesend.client.connection.file,ProgressReportingRequestBody,0,89,0,4,0,23,0,9,0,7
 okhttp-client-extensions,com.amilesend.client.connection.file,LogProgressCallback,0,227,0,4,0,43,0,11,0,9
 okhttp-client-extensions,com.amilesend.client.connection.file,ProgressReportingRequestBody.Builder,0,86,0,2,0,23,0,9,0,8
+okhttp-client-extensions,com.amilesend.client.connection.file,ProgressTrackingInputStream,10,222,2,4,0,57,2,20,0,19
 okhttp-client-extensions,com.amilesend.client.connection.file,TrackingSink,10,72,2,8,2,19,3,5,1,2
 okhttp-client-extensions,com.amilesend.client.connection.auth,AuthManager,4,0,0,0,1,0,1,0,1,0
 okhttp-client-extensions,com.amilesend.client.connection.auth,NoOpAuthManager,2,12,0,0,1,4,1,4,1,4
