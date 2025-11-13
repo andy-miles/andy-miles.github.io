@@ -8,7 +8,7 @@ tvmaze-java-client,com.amilesend.tvmaze.client.api,ApiBase,2,97,3,9,0,23,3,9,0,6
 tvmaze-java-client,com.amilesend.tvmaze.client.api,ShowsApi,26,421,5,5,3,101,5,22,0,22
 tvmaze-java-client,com.amilesend.tvmaze.client.api,PeopleApi,28,164,4,4,4,35,4,10,0,10
 tvmaze-java-client,com.amilesend.tvmaze.client.api,SearchApi.ShowLookupIdType,0,24,0,0,0,4,0,1,0,1
-tvmaze-java-client,com.amilesend.tvmaze.client,TvMaze,33,36,0,0,10,6,1,6,1,6
+tvmaze-java-client,com.amilesend.tvmaze.client,TvMaze,36,36,0,0,10,6,1,6,1,6
 tvmaze-java-client,com.amilesend.tvmaze.client.model,CastCredit.EmbeddedType,0,11,0,0,0,2,0,1,0,1
 tvmaze-java-client,com.amilesend.tvmaze.client.model,AlternateList.EmbeddedType,0,11,0,0,0,2,0,1,0,1
 tvmaze-java-client,com.amilesend.tvmaze.client.model,Show,10,102,3,7,3,26,3,12,0,10

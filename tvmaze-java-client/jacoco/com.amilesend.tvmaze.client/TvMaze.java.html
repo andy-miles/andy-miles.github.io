@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TvMaze.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client</a> &gt; <span class="el_source">TvMaze.java</span></div><h1>TvMaze.java</h1><pre class="source lang-java linenums">/*
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang=""><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TvMaze.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tvmaze-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.tvmaze.client</a> &gt; <span class="el_source">TvMaze.java</span></div><h1>TvMaze.java</h1><pre class="source lang-java linenums">/*
  * tvmaze-java-client - A client to access the TVMaze API
  * Copyright © 2024-2025 Andy Miles (andy.miles@amilesend.com)
  *
@@ -20,6 +20,7 @@ package com.amilesend.tvmaze.client;
 import com.amilesend.client.connection.Connection;
 import com.amilesend.client.connection.DefaultConnectionBuilder;
 import com.amilesend.client.connection.auth.NoOpAuthManager;
+import com.amilesend.client.connection.retry.NoRetryStrategy;
 import com.amilesend.tvmaze.client.api.EpisodesApi;
 import com.amilesend.tvmaze.client.api.PeopleApi;
 import com.amilesend.tvmaze.client.api.ScheduleApi;
@@ -37,22 +38,23 @@ import okhttp3.OkHttpClient;
  */
 @RequiredArgsConstructor
 public class TvMaze {
-    public static final String USER_AGENT = &quot;TvMazeJavaClient/2.0&quot;;
+    public static final String USER_AGENT = &quot;TvMazeJavaClient/2.2&quot;;
     public static final String API_URL = &quot;https://api.tvmaze.com&quot;;
 
     private final Connection&lt;GsonFactory&gt; connection;
 
     /** Creates a new {@code TvMaze} object that is configured with the default settings. */
-<span class="nc" id="L46">    public TvMaze() {</span>
-<span class="nc" id="L47">        connection = new DefaultConnectionBuilder()</span>
-<span class="nc" id="L48">                .httpClient(new OkHttpClient())</span>
-<span class="nc" id="L49">                .baseUrl(API_URL)</span>
-<span class="nc" id="L50">                .userAgent(USER_AGENT)</span>
-<span class="nc" id="L51">                .authManager(new NoOpAuthManager())</span>
-<span class="nc" id="L52">                .gsonFactory(new GsonFactory())</span>
-<span class="nc" id="L53">                .isGzipContentEncodingEnabled(true)</span>
-<span class="nc" id="L54">                .build();</span>
-<span class="nc" id="L55">    }</span>
+    public TvMaze() {
+<span class="nc" id="L48">        this(new DefaultConnectionBuilder()</span>
+<span class="nc" id="L49">                .httpClient(new OkHttpClient())</span>
+<span class="nc" id="L50">                .baseUrl(API_URL)</span>
+<span class="nc" id="L51">                .userAgent(USER_AGENT)</span>
+<span class="nc" id="L52">                .authManager(new NoOpAuthManager())</span>
+<span class="nc" id="L53">                .gsonFactory(new GsonFactory())</span>
+<span class="nc" id="L54">                .isGzipContentEncodingEnabled(true)</span>
+<span class="nc" id="L55">                .retryStrategy(new NoRetryStrategy())</span>
+<span class="nc" id="L56">                .build());</span>
+<span class="nc" id="L57">    }</span>
 
     /**
      * Gets a new {@link SearchApi} object used to interact with the Search API. See
@@ -62,7 +64,7 @@ public class TvMaze {
      * @see SearchApi
      */
     public SearchApi getSearchApi() {
-<span class="fc" id="L65">        return new SearchApi(connection);</span>
+<span class="fc" id="L67">        return new SearchApi(connection);</span>
     }
 
     /**
@@ -73,7 +75,7 @@ public class TvMaze {
      * @see ScheduleApi
      */
     public ScheduleApi getScheduleApi() {
-<span class="fc" id="L76">        return new ScheduleApi(connection);</span>
+<span class="fc" id="L78">        return new ScheduleApi(connection);</span>
     }
 
     /**
@@ -84,7 +86,7 @@ public class TvMaze {
      * @see ShowsApi
      */
     public ShowsApi getShowsApi() {
-<span class="fc" id="L87">        return new ShowsApi(connection);</span>
+<span class="fc" id="L89">        return new ShowsApi(connection);</span>
     }
 
     /**
@@ -95,7 +97,7 @@ public class TvMaze {
      * @see EpisodesApi
      */
     public EpisodesApi getEpisodesApi() {
-<span class="fc" id="L98">        return new EpisodesApi(connection);</span>
+<span class="fc" id="L100">        return new EpisodesApi(connection);</span>
     }
 
     /**
@@ -106,7 +108,7 @@ public class TvMaze {
      * @see PeopleApi
      */
     public PeopleApi getPeopleApi() {
-<span class="fc" id="L109">        return new PeopleApi(connection);</span>
+<span class="fc" id="L111">        return new PeopleApi(connection);</span>
     }
 
     /**
@@ -117,7 +119,7 @@ public class TvMaze {
      * @see UpdatesApi
      */
     public UpdatesApi getUpdatesApi() {
-<span class="fc" id="L120">        return new UpdatesApi(connection);</span>
+<span class="fc" id="L122">        return new UpdatesApi(connection);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
