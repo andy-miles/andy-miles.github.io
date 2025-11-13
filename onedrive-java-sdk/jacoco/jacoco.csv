@@ -34,8 +34,8 @@ onedrive-java-sdk,com.amilesend.onedrive.resource.drive,Drive,1,278,5,25,0,69,5,
 onedrive-java-sdk,com.amilesend.onedrive,BusinessOneDrive,0,299,0,2,0,92,0,16,0,15
 onedrive-java-sdk,com.amilesend.onedrive,OneDrive,0,115,0,2,0,29,0,9,0,8
 onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager.CredentialConfig,15,0,0,0,3,0,1,0,1,0
-onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager.Builder,0,71,0,2,0,26,0,13,0,12
-onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager,2,349,1,27,0,86,1,26,0,13
+onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager.Builder,10,71,0,2,4,26,2,13,2,12
+onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager,2,372,1,27,0,90,1,28,0,15
 onedrive-java-sdk,com.amilesend.onedrive,OneDriveException,0,5,0,0,0,2,0,1,0,1
 onedrive-java-sdk,com.amilesend.onedrive.resource.site.request,CreateListItemRequest,0,10,0,0,0,3,0,2,0,2
 onedrive-java-sdk,com.amilesend.onedrive.resource.activities,ItemActionSet,5,136,13,13,2,24,13,2,0,2
@@ -59,10 +59,8 @@ onedrive-java-sdk,com.amilesend.onedrive.connection.http,OkHttpClientBuilder.Cre
 onedrive-java-sdk,com.amilesend.onedrive.connection.http,OkHttpClientBuilder,0,201,1,15,0,58,1,21,0,14
 onedrive-java-sdk,com.amilesend.onedrive.resource.item.type,Permission,0,28,0,0,0,11,0,1,0,1
 onedrive-java-sdk,com.amilesend.onedrive.resource.item.type,SpecialFolder.Type,0,51,0,0,0,7,0,1,0,1
-onedrive-java-sdk,com.amilesend.onedrive.connection,OneDriveConnection.new Callback() {...},23,71,5,5,0,14,5,3,0,3
-onedrive-java-sdk,com.amilesend.onedrive.connection,OneDriveConnection.new Callback() {...},20,105,4,4,0,23,4,3,0,3
-onedrive-java-sdk,com.amilesend.onedrive.connection,OneDriveConnectionBuilder,11,168,2,4,4,55,3,13,1,12
-onedrive-java-sdk,com.amilesend.onedrive.connection,OneDriveConnection,11,248,2,24,1,53,2,19,0,8
+onedrive-java-sdk,com.amilesend.onedrive.connection,OneDriveConnectionBuilder,21,199,2,4,8,62,5,14,3,13
+onedrive-java-sdk,com.amilesend.onedrive.connection,OneDriveConnection,11,225,2,24,1,46,2,21,0,10
 onedrive-java-sdk,com.amilesend.onedrive.resource.site.type,ColumnDefinition,5,242,23,23,2,44,23,2,0,2
 onedrive-java-sdk,com.amilesend.onedrive.connection.auth,BusinessAccountAuthManager,15,363,3,25,0,100,3,21,0,10
 onedrive-java-sdk,com.amilesend.onedrive.connection.auth,PersonalAccountAuthManager,15,227,3,13,0,61,3,13,0,8

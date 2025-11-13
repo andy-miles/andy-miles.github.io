@@ -17,6 +17,8 @@
  */
 package com.amilesend.onedrive;
 
+import com.amilesend.client.connection.retry.NoRetryStrategy;
+import com.amilesend.client.connection.retry.RetryStrategy;
 import com.amilesend.client.util.StringUtils;
 import com.amilesend.client.util.Validate;
 import com.amilesend.client.util.VisibleForTesting;
@@ -44,7 +46,10 @@ import java.io.InputStreamReader;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import static com.amilesend.onedrive.connection.OneDriveConnectionBuilder.DEFAULT_NUM_THREADS;
 import static com.amilesend.onedrive.connection.auth.oauth.OAuthReceiver.browse;
 
 /**
@@ -75,12 +80,12 @@ import static com.amilesend.onedrive.connection.auth.oauth.OAuthReceiver.browse;
  * (e.g., configuring your own SSL cert verification, proxy, and/or connection timeouts), you can configure the client
  * with the provided {@link OkHttpClientBuilder}, or alternatively with OkHttp's builder: {@link OkHttpClient.Builder}.
  */
-<span class="fc" id="L78">@Slf4j</span>
+<span class="fc" id="L83">@Slf4j</span>
 public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements AutoCloseable {
     private static final int DEFAULT_RECEIVER_PORT = 8890;
     private static final String DEFAULT_CALLBACK_PATH = &quot;/Callback&quot;;
     private static final String DEFAULT_REDIRECT_URL = &quot;http://localhost:8890&quot; + DEFAULT_CALLBACK_PATH;
-<span class="fc" id="L83">    private static final List&lt;String&gt; DEFAULT_SCOPES = List.of(&quot;Files.ReadWrite.All&quot;, &quot;offline_access&quot;, &quot;User.Read&quot;);</span>
+<span class="fc" id="L88">    private static final List&lt;String&gt; DEFAULT_SCOPES = List.of(&quot;Files.ReadWrite.All&quot;, &quot;offline_access&quot;, &quot;User.Read&quot;);</span>
     private static final String DEFAULT_USER_AUTH_KEY = &quot;DefaultUser&quot;;
 
     /** The store used to persist user auth token state. */
@@ -105,6 +110,11 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
     private String redirectUrl;
     /** The callback path for the OAUTH redirect receiver. */
     private String callbackPath;
+    /** The retry strategy. */
+    private RetryStrategy retryStrategy;
+    /** The thread pool. */
+    private ExecutorService threadPool;
+    /** The onedrive class type. */
     private final Class&lt;? extends OneDrive&gt; onedriveType;
     @Setter(AccessLevel.PACKAGE)
     @VisibleForTesting
@@ -116,7 +126,7 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
      * @return the builder
      */
     public static Builder builder() {
-<span class="fc" id="L119">        return new Builder(OneDrive.class);</span>
+<span class="fc" id="L129">        return new Builder(OneDrive.class);</span>
     }
 
     /**
@@ -128,7 +138,7 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
      * @see BusinessOneDrive
      */
     public static Builder builder(final Class&lt;? extends OneDrive&gt; onedriveType) {
-<span class="fc" id="L131">        return new Builder(onedriveType);</span>
+<span class="fc" id="L141">        return new Builder(onedriveType);</span>
     }
 
     /**
@@ -136,28 +146,32 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
      *
      * @param builder the builder
      */
-<span class="fc" id="L139">    private OneDriveFactoryStateManager(final Builder builder) {</span>
-<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        this.onedriveType = builder.onedriveType == null ? OneDrive.class : builder.onedriveType;</span>
-<span class="fc bfc" id="L141" title="All 2 branches covered.">        this.httpClient = builder.httpClient == null ? new OkHttpClientBuilder().build() : builder.httpClient;</span>
-<span class="fc" id="L142">        this.userAgent = builder.userAgent;</span>
-<span class="fc bfc" id="L143" title="All 2 branches covered.">        this.stateGson = builder.stateGson == null</span>
-<span class="fc" id="L144">                ? GsonFactory.getInstanceForStateManager()</span>
-<span class="fc" id="L145">                : builder.stateGson;</span>
-<span class="fc bfc" id="L146" title="All 2 branches covered.">        this.redirectUrl = StringUtils.isBlank(builder.redirectUrl) ? DEFAULT_REDIRECT_URL : builder.redirectUrl;</span>
-<span class="fc bfc" id="L147" title="All 2 branches covered.">        this.callbackPath = builder.callbackPath == null ? DEFAULT_CALLBACK_PATH : builder.callbackPath;</span>
-<span class="fc bfc" id="L148" title="All 2 branches covered.">        this.scopes = builder.scopes == null ? DEFAULT_SCOPES : builder.scopes;</span>
-<span class="fc" id="L149">        this.credentialConfig = builder.credentialConfig;</span>
-<span class="fc bfc" id="L150" title="All 2 branches covered.">        this.receiverPort = builder.receiverPort == null ? DEFAULT_RECEIVER_PORT : builder.receiverPort.intValue();</span>
-<span class="fc bfc" id="L151" title="All 4 branches covered.">        Validate.isTrue(builder.stateFile != null || builder.authInfoStore != null,</span>
+<span class="fc" id="L149">    private OneDriveFactoryStateManager(final Builder builder) {</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        this.onedriveType = builder.onedriveType == null ? OneDrive.class : builder.onedriveType;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        this.httpClient = builder.httpClient == null ? new OkHttpClientBuilder().build() : builder.httpClient;</span>
+<span class="fc" id="L152">        this.userAgent = builder.userAgent;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        this.stateGson = builder.stateGson == null</span>
+<span class="fc" id="L154">                ? GsonFactory.getInstanceForStateManager()</span>
+<span class="fc" id="L155">                : builder.stateGson;</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        this.redirectUrl = StringUtils.isBlank(builder.redirectUrl) ? DEFAULT_REDIRECT_URL : builder.redirectUrl;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        this.callbackPath = builder.callbackPath == null ? DEFAULT_CALLBACK_PATH : builder.callbackPath;</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        this.scopes = builder.scopes == null ? DEFAULT_SCOPES : builder.scopes;</span>
+<span class="fc" id="L159">        this.credentialConfig = builder.credentialConfig;</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        this.receiverPort = builder.receiverPort == null ? DEFAULT_RECEIVER_PORT : builder.receiverPort.intValue();</span>
+<span class="fc bfc" id="L161" title="All 4 branches covered.">        Validate.isTrue(builder.stateFile != null || builder.authInfoStore != null,</span>
                 &quot;Either stateFile or authInfoStore must be defined&quot;);
-<span class="fc" id="L153">        this.authInfoStore = Optional.ofNullable(builder.authInfoStore)</span>
-<span class="fc" id="L154">                .orElseGet(() -&gt; new SingleUserFileBasedAuthInfoStore(builder.stateFile));</span>
-<span class="fc" id="L155">    }</span>
+<span class="fc" id="L163">        this.authInfoStore = Optional.ofNullable(builder.authInfoStore)</span>
+<span class="fc" id="L164">                .orElseGet(() -&gt; new SingleUserFileBasedAuthInfoStore(builder.stateFile));</span>
+<span class="fc" id="L165">        this.retryStrategy = Optional.ofNullable(builder.retryStrategy)</span>
+<span class="fc" id="L166">                .orElseGet(() -&gt; new NoRetryStrategy());</span>
+<span class="fc" id="L167">        this.threadPool = Optional.ofNullable(builder.threadPool)</span>
+<span class="fc" id="L168">                .orElseGet(() -&gt; Executors.newFixedThreadPool(DEFAULT_NUM_THREADS));</span>
+<span class="fc" id="L169">    }</span>
 
     @Override
     public void close() throws Exception {
-<span class="fc" id="L159">        saveState();</span>
-<span class="fc" id="L160">    }</span>
+<span class="fc" id="L173">        saveState();</span>
+<span class="fc" id="L174">    }</span>
 
     /**
      * Obtains an authenticated {@link OneDrive} instance.
@@ -167,11 +181,11 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
      */
     public T getInstance() throws OneDriveException {
         try {
-<span class="fc" id="L170">            final T oneDrive = fetchOneDrive();</span>
-<span class="fc" id="L171">            log.info(&quot;OneDrive logged in user: {}&quot;, oneDrive.getUserDisplayName());</span>
-<span class="fc" id="L172">            return oneDrive;</span>
-<span class="fc" id="L173">        } catch (final OAuthReceiverException ex) {</span>
-<span class="fc" id="L174">            throw new OneDriveException(&quot;Error while obtaining OneDrive instance&quot;, ex);</span>
+<span class="fc" id="L184">            final T oneDrive = fetchOneDrive();</span>
+<span class="fc" id="L185">            log.info(&quot;OneDrive logged in user: {}&quot;, oneDrive.getUserDisplayName());</span>
+<span class="fc" id="L186">            return oneDrive;</span>
+<span class="fc" id="L187">        } catch (final OAuthReceiverException ex) {</span>
+<span class="fc" id="L188">            throw new OneDriveException(&quot;Error while obtaining OneDrive instance&quot;, ex);</span>
         }
     }
 
@@ -181,49 +195,49 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
      * @throws OneDriveException if unable to save the authentication information
      */
     public void saveState() throws OneDriveException {
-<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (onedrive == null) {</span>
-<span class="fc" id="L185">            return;</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (onedrive == null) {</span>
+<span class="fc" id="L199">            return;</span>
         }
 
         try {
-<span class="fc" id="L189">            authInfoStore.store(DEFAULT_USER_AUTH_KEY, onedrive.getAuthInfo());</span>
-<span class="fc" id="L190">        } catch (final AuthInfoStoreException ex) {</span>
-<span class="fc" id="L191">            throw new OneDriveException(&quot;Unable to save state: &quot; + ex.getMessage(), ex);</span>
-<span class="fc" id="L192">        }</span>
-<span class="fc" id="L193">    }</span>
+<span class="fc" id="L203">            authInfoStore.store(DEFAULT_USER_AUTH_KEY, onedrive.getAuthInfo());</span>
+<span class="fc" id="L204">        } catch (final AuthInfoStoreException ex) {</span>
+<span class="fc" id="L205">            throw new OneDriveException(&quot;Unable to save state: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L206">        }</span>
+<span class="fc" id="L207">    }</span>
 
     @VisibleForTesting
     T fetchOneDrive() throws OAuthReceiverException, OneDriveException {
-<span class="fc bfc" id="L197" title="All 2 branches covered.">        if (onedrive != null) {</span>
-<span class="fc" id="L198">            return onedrive;</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        if (onedrive != null) {</span>
+<span class="fc" id="L212">            return onedrive;</span>
         }
 
         try {
-<span class="fc" id="L202">            final CredentialConfig config = loadCredentialConfig();</span>
-<span class="fc" id="L203">            final Optional&lt;OneDriveAuthInfo&gt; authInfoOpt = loadState();</span>
-<span class="fc" id="L204">            final OneDriveConnectionBuilder connectionBuilder = OneDriveConnectionBuilder.newInstance()</span>
-<span class="fc" id="L205">                    .httpClient(httpClient)</span>
-<span class="fc" id="L206">                    .userAgent(userAgent)</span>
-<span class="fc" id="L207">                    .clientId(config.getClientId())</span>
-<span class="fc" id="L208">                    .clientSecret(config.getClientSecret())</span>
-<span class="fc" id="L209">                    .redirectUrl(redirectUrl);</span>
+<span class="fc" id="L216">            final CredentialConfig config = loadCredentialConfig();</span>
+<span class="fc" id="L217">            final Optional&lt;OneDriveAuthInfo&gt; authInfoOpt = loadState();</span>
+<span class="fc" id="L218">            final OneDriveConnectionBuilder connectionBuilder = OneDriveConnectionBuilder.newInstance()</span>
+<span class="fc" id="L219">                    .httpClient(httpClient)</span>
+<span class="fc" id="L220">                    .userAgent(userAgent)</span>
+<span class="fc" id="L221">                    .clientId(config.getClientId())</span>
+<span class="fc" id="L222">                    .clientSecret(config.getClientSecret())</span>
+<span class="fc" id="L223">                    .redirectUrl(redirectUrl);</span>
             OneDriveConnection connection;
             // If persisted state exists, use it to leverage the refresh token; otherwise, obtain the auth code
-<span class="fc bfc" id="L212" title="All 2 branches covered.">            if (authInfoOpt.isPresent()) {</span>
-<span class="fc" id="L213">                log.debug(&quot;Creating OneDriveConnection from persisted state&quot;);</span>
-<span class="fc" id="L214">                connection = connectionBuilder.build(authInfoOpt.get());</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">            if (authInfoOpt.isPresent()) {</span>
+<span class="fc" id="L227">                log.debug(&quot;Creating OneDriveConnection from persisted state&quot;);</span>
+<span class="fc" id="L228">                connection = connectionBuilder.build(authInfoOpt.get());</span>
             } else {
-<span class="fc" id="L216">                log.debug(&quot;No state found. Authenticating application for user&quot;);</span>
-<span class="fc" id="L217">                final String authCode = authenticate(config);</span>
-<span class="fc" id="L218">                connection = authorizeConnection(connectionBuilder, config, authCode);</span>
+<span class="fc" id="L230">                log.debug(&quot;No state found. Authenticating application for user&quot;);</span>
+<span class="fc" id="L231">                final String authCode = authenticate(config);</span>
+<span class="fc" id="L232">                connection = authorizeConnection(connectionBuilder, config, authCode);</span>
             }
 
-<span class="fc" id="L221">            onedrive = (T) onedriveType.getDeclaredConstructor(OneDriveConnection.class).newInstance(connection);</span>
-<span class="fc" id="L222">            saveState();</span>
-<span class="fc" id="L223">            return onedrive;</span>
-<span class="fc" id="L224">        } catch (final IOException | ReflectiveOperationException ex) {</span>
-<span class="fc" id="L225">            throw new OneDriveException(</span>
-<span class="fc" id="L226">                    &quot;An error occurred while fetching credential or auth state: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L235">            onedrive = (T) onedriveType.getDeclaredConstructor(OneDriveConnection.class).newInstance(connection);</span>
+<span class="fc" id="L236">            saveState();</span>
+<span class="fc" id="L237">            return onedrive;</span>
+<span class="fc" id="L238">        } catch (final IOException | ReflectiveOperationException ex) {</span>
+<span class="fc" id="L239">            throw new OneDriveException(</span>
+<span class="fc" id="L240">                    &quot;An error occurred while fetching credential or auth state: &quot; + ex.getMessage(), ex);</span>
         }
     }
 
@@ -232,56 +246,56 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
             final OneDriveConnectionBuilder connectionBuilder,
             final CredentialConfig config,
             final String authCode) {
-<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (onedriveType != BusinessOneDrive.class) {</span>
-<span class="fc" id="L236">            return connectionBuilder.build(authCode);</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (onedriveType != BusinessOneDrive.class) {</span>
+<span class="fc" id="L250">            return connectionBuilder.build(authCode);</span>
         }
 
-<span class="fc" id="L239">        final BusinessAccountAuthManager authManager = BusinessAccountAuthManager.builderWithAuthCode()</span>
-<span class="fc" id="L240">                .authCode(authCode)</span>
-<span class="fc" id="L241">                .clientId(config.getClientId())</span>
-<span class="fc" id="L242">                .clientSecret(config.getClientSecret())</span>
-<span class="fc" id="L243">                .httpClient(httpClient)</span>
-<span class="fc" id="L244">                .redirectUrl(redirectUrl)</span>
-<span class="fc" id="L245">                .buildWithAuthCode();</span>
+<span class="fc" id="L253">        final BusinessAccountAuthManager authManager = BusinessAccountAuthManager.builderWithAuthCode()</span>
+<span class="fc" id="L254">                .authCode(authCode)</span>
+<span class="fc" id="L255">                .clientId(config.getClientId())</span>
+<span class="fc" id="L256">                .clientSecret(config.getClientSecret())</span>
+<span class="fc" id="L257">                .httpClient(httpClient)</span>
+<span class="fc" id="L258">                .redirectUrl(redirectUrl)</span>
+<span class="fc" id="L259">                .buildWithAuthCode();</span>
 
         // Discover and authenticate with the first registered service
-<span class="fc" id="L248">        final List&lt;Service&gt; services = authManager.getServices();</span>
-<span class="fc" id="L249">        authManager.authenticateService(services.get(0));</span>
+<span class="fc" id="L262">        final List&lt;Service&gt; services = authManager.getServices();</span>
+<span class="fc" id="L263">        authManager.authenticateService(services.get(0));</span>
 
-<span class="fc" id="L251">        return connectionBuilder.authManager(authManager)</span>
-<span class="fc" id="L252">                .build(authManager.getAuthInfo());</span>
+<span class="fc" id="L265">        return connectionBuilder.authManager(authManager)</span>
+<span class="fc" id="L266">                .build(authManager.getAuthInfo());</span>
     }
 
     @VisibleForTesting
     Optional&lt;OneDriveAuthInfo&gt; loadState() throws OneDriveException {
         try {
-<span class="fc" id="L258">            return Optional.ofNullable(authInfoStore.retrieve(DEFAULT_USER_AUTH_KEY));</span>
-<span class="fc" id="L259">        } catch (final AuthInfoStoreException ex) {</span>
-<span class="fc" id="L260">            throw new OneDriveException(&quot;Unable to load state: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L272">            return Optional.ofNullable(authInfoStore.retrieve(DEFAULT_USER_AUTH_KEY));</span>
+<span class="fc" id="L273">        } catch (final AuthInfoStoreException ex) {</span>
+<span class="fc" id="L274">            throw new OneDriveException(&quot;Unable to load state: &quot; + ex.getMessage(), ex);</span>
         }
     }
 
     @VisibleForTesting
     CredentialConfig loadCredentialConfig() throws IOException {
-<span class="fc bfc" id="L266" title="All 2 branches covered.">        return credentialConfig == null</span>
-<span class="fc" id="L267">                ? CredentialConfig.loadDefaultCredentialConfigResource(stateGson)</span>
-<span class="fc" id="L268">                : credentialConfig;</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">        return credentialConfig == null</span>
+<span class="fc" id="L281">                ? CredentialConfig.loadDefaultCredentialConfigResource(stateGson)</span>
+<span class="fc" id="L282">                : credentialConfig;</span>
     }
 
     @VisibleForTesting
     String authenticate(final CredentialConfig config) throws OAuthReceiverException {
-<span class="fc" id="L273">        try (final OneDriveOAuthReceiver receiver = OneDriveOAuthReceiver.builder()</span>
-<span class="fc" id="L274">                .clientId(config.getClientId())</span>
-<span class="fc" id="L275">                .port(receiverPort)</span>
-<span class="fc" id="L276">                .callbackPath(callbackPath)</span>
-<span class="fc" id="L277">                .scopes(scopes)</span>
-<span class="fc" id="L278">                .build()</span>
-<span class="fc" id="L279">                .start()) {</span>
-<span class="fc" id="L280">            browse(receiver.getAuthCodeUri());</span>
+<span class="fc" id="L287">        try (final OneDriveOAuthReceiver receiver = OneDriveOAuthReceiver.builder()</span>
+<span class="fc" id="L288">                .clientId(config.getClientId())</span>
+<span class="fc" id="L289">                .port(receiverPort)</span>
+<span class="fc" id="L290">                .callbackPath(callbackPath)</span>
+<span class="fc" id="L291">                .scopes(scopes)</span>
+<span class="fc" id="L292">                .build()</span>
+<span class="fc" id="L293">                .start()) {</span>
+<span class="fc" id="L294">            browse(receiver.getAuthCodeUri());</span>
             // Obtain the authorization code in order to exchange it for an access token
-<span class="fc" id="L282">            final String authCode = receiver.waitForCode();</span>
-<span class="fc" id="L283">            log.debug(&quot;AuthCode: {}&quot;, authCode);</span>
-<span class="fc" id="L284">            return authCode;</span>
+<span class="fc" id="L296">            final String authCode = receiver.waitForCode();</span>
+<span class="fc" id="L297">            log.debug(&quot;AuthCode: {}&quot;, authCode);</span>
+<span class="fc" id="L298">            return authCode;</span>
         }
     }
 
@@ -315,6 +329,10 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
         private Path stateFile;
         /** The store used to persist and retrieve the auth state. */
         private AuthInfoStore authInfoStore;
+        /** The retry strategy. */
+        private RetryStrategy retryStrategy;
+        /** The thread pool for async operations. */
+        private ExecutorService threadPool;
 
         /**
          * Creates a new {@code Builder} for the give OneDrive type.
@@ -323,9 +341,9 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @see OneDrive
          * @see BusinessOneDrive
          */
-<span class="fc" id="L326">        private Builder(final Class&lt;? extends OneDrive&gt; onedriveType) {</span>
-<span class="fc" id="L327">            this.onedriveType = onedriveType;</span>
-<span class="fc" id="L328">        }</span>
+<span class="fc" id="L344">        private Builder(final Class&lt;? extends OneDrive&gt; onedriveType) {</span>
+<span class="fc" id="L345">            this.onedriveType = onedriveType;</span>
+<span class="fc" id="L346">        }</span>
 
         /**
          * Sets the http client.
@@ -334,8 +352,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder httpClient(final OkHttpClient httpClient) {
-<span class="fc" id="L337">            this.httpClient = httpClient;</span>
-<span class="fc" id="L338">            return this;</span>
+<span class="fc" id="L355">            this.httpClient = httpClient;</span>
+<span class="fc" id="L356">            return this;</span>
         }
 
         /**
@@ -345,8 +363,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder receiverPort(final Integer receiverPort) {
-<span class="fc" id="L348">            this.receiverPort = receiverPort;</span>
-<span class="fc" id="L349">            return this;</span>
+<span class="fc" id="L366">            this.receiverPort = receiverPort;</span>
+<span class="fc" id="L367">            return this;</span>
         }
 
         /**
@@ -356,8 +374,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder redirectUrl(final String redirectUrl) {
-<span class="fc" id="L359">            this.redirectUrl = redirectUrl;</span>
-<span class="fc" id="L360">            return this;</span>
+<span class="fc" id="L377">            this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L378">            return this;</span>
         }
 
         /**
@@ -367,8 +385,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder callbackPath(final String callbackPath) {
-<span class="fc" id="L370">            this.callbackPath = callbackPath;</span>
-<span class="fc" id="L371">            return this;</span>
+<span class="fc" id="L388">            this.callbackPath = callbackPath;</span>
+<span class="fc" id="L389">            return this;</span>
         }
 
         /**
@@ -378,8 +396,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder scopes(final List&lt;String&gt; scopes) {
-<span class="fc" id="L381">            this.scopes = scopes;</span>
-<span class="fc" id="L382">            return this;</span>
+<span class="fc" id="L399">            this.scopes = scopes;</span>
+<span class="fc" id="L400">            return this;</span>
         }
 
         /**
@@ -389,8 +407,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder stateGson(final Gson stateGson) {
-<span class="fc" id="L392">            this.stateGson = stateGson;</span>
-<span class="fc" id="L393">            return this;</span>
+<span class="fc" id="L410">            this.stateGson = stateGson;</span>
+<span class="fc" id="L411">            return this;</span>
         }
 
         /**
@@ -400,8 +418,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder credentialConfig(final CredentialConfig credentialConfig) {
-<span class="fc" id="L403">            this.credentialConfig = credentialConfig;</span>
-<span class="fc" id="L404">            return this;</span>
+<span class="fc" id="L421">            this.credentialConfig = credentialConfig;</span>
+<span class="fc" id="L422">            return this;</span>
         }
 
         /**
@@ -411,8 +429,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder stateFile(final Path stateFile) {
-<span class="fc" id="L414">            this.stateFile = stateFile;</span>
-<span class="fc" id="L415">            return this;</span>
+<span class="fc" id="L432">            this.stateFile = stateFile;</span>
+<span class="fc" id="L433">            return this;</span>
         }
 
         /**
@@ -422,8 +440,8 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder authInfoStore(final AuthInfoStore authInfoStore) {
-<span class="fc" id="L425">            this.authInfoStore = authInfoStore;</span>
-<span class="fc" id="L426">            return this;</span>
+<span class="fc" id="L443">            this.authInfoStore = authInfoStore;</span>
+<span class="fc" id="L444">            return this;</span>
         }
 
         /**
@@ -433,8 +451,30 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return this builder
          */
         public Builder userAgent(final String userAgent) {
-<span class="fc" id="L436">            this.userAgent = userAgent;</span>
-<span class="fc" id="L437">            return this;</span>
+<span class="fc" id="L454">            this.userAgent = userAgent;</span>
+<span class="fc" id="L455">            return this;</span>
+        }
+
+        /**
+         * Sets the retry strategy for the underlying client connection.
+         *
+         * @param retryStrategy the retry strategy
+         * @return this builder
+         */
+        public Builder retryStrategy(final RetryStrategy retryStrategy) {
+<span class="nc" id="L465">            this.retryStrategy = retryStrategy;</span>
+<span class="nc" id="L466">            return this;</span>
+        }
+
+        /**
+         * Sets the executor service to manage threads for async operations.
+         *
+         * @param threadPool the thread pool
+         * @return this builder
+         */
+        public Builder threadPool(final ExecutorService threadPool) {
+<span class="nc" id="L476">            this.threadPool = threadPool;</span>
+<span class="nc" id="L477">            return this;</span>
         }
 
         /**
@@ -443,9 +483,9 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
          * @return a new {@code OneDriveFactoryStateManager}
          */
         public OneDriveFactoryStateManager build() {
-<span class="fc bfc" id="L446" title="All 2 branches covered.">            return BusinessOneDrive.class.equals(onedriveType)</span>
-<span class="fc" id="L447">                    ? new OneDriveFactoryStateManager&lt;BusinessOneDrive&gt;(this)</span>
-<span class="fc" id="L448">                    : new OneDriveFactoryStateManager&lt;&gt;(this);</span>
+<span class="fc bfc" id="L486" title="All 2 branches covered.">            return BusinessOneDrive.class.equals(onedriveType)</span>
+<span class="fc" id="L487">                    ? new OneDriveFactoryStateManager&lt;BusinessOneDrive&gt;(this)</span>
+<span class="fc" id="L488">                    : new OneDriveFactoryStateManager&lt;&gt;(this);</span>
         }
     }
 
@@ -477,9 +517,9 @@ public class OneDriveFactoryStateManager&lt;T extends OneDrive&gt; implements Au
         private String clientSecret;
 
         public static CredentialConfig loadDefaultCredentialConfigResource(final Gson gson) throws IOException {
-<span class="nc" id="L480">            try (final InputStreamReader isr = new InputStreamReader(</span>
-<span class="nc" id="L481">                    CredentialConfig.class.getResourceAsStream(DEFAULT_RESOURCE_CONFIG_PATH))) {</span>
-<span class="nc" id="L482">                return gson.fromJson(isr, CredentialConfig.class);</span>
+<span class="nc" id="L520">            try (final InputStreamReader isr = new InputStreamReader(</span>
+<span class="nc" id="L521">                    CredentialConfig.class.getResourceAsStream(DEFAULT_RESOURCE_CONFIG_PATH))) {</span>
+<span class="nc" id="L522">                return gson.fromJson(isr, CredentialConfig.class);</span>
             }
         }
     }

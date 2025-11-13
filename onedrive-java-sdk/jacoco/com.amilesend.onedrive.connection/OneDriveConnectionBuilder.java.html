@@ -17,6 +17,8 @@
  */
 package com.amilesend.onedrive.connection;
 
+import com.amilesend.client.connection.retry.NoRetryStrategy;
+import com.amilesend.client.connection.retry.RetryStrategy;
 import com.amilesend.client.util.Validate;
 import com.amilesend.client.util.VisibleForTesting;
 import com.amilesend.onedrive.connection.auth.OneDriveAuthInfo;
@@ -27,15 +29,23 @@ import com.amilesend.onedrive.parse.GsonFactory;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 /** Builder to configure and return a new {@link OneDriveConnection} instance. */
 public class OneDriveConnectionBuilder {
+<span class="fc" id="L37">    public static final int DEFAULT_NUM_THREADS = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);</span>
+
+    private final GsonFactory gsonFactory;
+
     private String clientId;
     private String clientSecret;
     private String redirectUrl;
     private String userAgent;
-<span class="fc" id="L36">    private OkHttpClient httpClient = new OkHttpClientBuilder().build();</span>
+<span class="fc" id="L45">    private OkHttpClient httpClient = new OkHttpClientBuilder().build();</span>
     private OneDriveAuthManager authManager;
-    private final GsonFactory gsonFactory;
+<span class="fc" id="L47">    private RetryStrategy retryStrategy = new NoRetryStrategy();</span>
+<span class="fc" id="L48">    private ExecutorService threadPool = Executors.newFixedThreadPool(DEFAULT_NUM_THREADS);</span>
 
     /**
      * Creates a new {@code OneDriveConnectionBuilder} instance.
@@ -43,13 +53,13 @@ public class OneDriveConnectionBuilder {
      * @return the builder
      */
     public static OneDriveConnectionBuilder newInstance() {
-<span class="fc" id="L46">        return new OneDriveConnectionBuilder(new GsonFactory());</span>
+<span class="fc" id="L56">        return new OneDriveConnectionBuilder(new GsonFactory());</span>
     }
 
     @VisibleForTesting
-<span class="fc bfc" id="L50" title="All 2 branches covered.">    OneDriveConnectionBuilder(@NonNull final GsonFactory gsonFactory) {</span>
-<span class="fc" id="L51">        this.gsonFactory = gsonFactory;</span>
-<span class="fc" id="L52">    }</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">    OneDriveConnectionBuilder(@NonNull final GsonFactory gsonFactory) {</span>
+<span class="fc" id="L61">        this.gsonFactory = gsonFactory;</span>
+<span class="fc" id="L62">    }</span>
 
     /**
      * Sets the user-agent string that is included in requests.
@@ -58,8 +68,8 @@ public class OneDriveConnectionBuilder {
      * @return this builder
      */
     public OneDriveConnectionBuilder userAgent(final String userAgent) {
-<span class="fc" id="L61">        this.userAgent = userAgent;</span>
-<span class="fc" id="L62">        return this;</span>
+<span class="fc" id="L71">        this.userAgent = userAgent;</span>
+<span class="fc" id="L72">        return this;</span>
     }
 
     /**
@@ -69,8 +79,8 @@ public class OneDriveConnectionBuilder {
      * @return this builder
      */
     public OneDriveConnectionBuilder httpClient(final OkHttpClient httpClient) {
-<span class="fc" id="L72">        this.httpClient = httpClient;</span>
-<span class="fc" id="L73">        return this;</span>
+<span class="fc" id="L82">        this.httpClient = httpClient;</span>
+<span class="fc" id="L83">        return this;</span>
     }
 
     /**
@@ -80,8 +90,8 @@ public class OneDriveConnectionBuilder {
      * @return this builder
      */
     public OneDriveConnectionBuilder clientId(final String clientId) {
-<span class="fc" id="L83">        this.clientId = clientId;</span>
-<span class="fc" id="L84">        return this;</span>
+<span class="fc" id="L93">        this.clientId = clientId;</span>
+<span class="fc" id="L94">        return this;</span>
     }
 
     /**
@@ -91,8 +101,8 @@ public class OneDriveConnectionBuilder {
      * @return this builder
      */
     public OneDriveConnectionBuilder clientSecret(final String clientSecret) {
-<span class="fc" id="L94">        this.clientSecret = clientSecret;</span>
-<span class="fc" id="L95">        return this;</span>
+<span class="fc" id="L104">        this.clientSecret = clientSecret;</span>
+<span class="fc" id="L105">        return this;</span>
     }
 
     /**
@@ -102,8 +112,8 @@ public class OneDriveConnectionBuilder {
      * @return this builder
      */
     public OneDriveConnectionBuilder redirectUrl(final String redirectUrl) {
-<span class="fc" id="L105">        this.redirectUrl = redirectUrl;</span>
-<span class="fc" id="L106">        return this;</span>
+<span class="fc" id="L115">        this.redirectUrl = redirectUrl;</span>
+<span class="fc" id="L116">        return this;</span>
     }
 
     /**
@@ -113,8 +123,31 @@ public class OneDriveConnectionBuilder {
      * @return this builder
      */
     public OneDriveConnectionBuilder authManager(final OneDriveAuthManager authManager) {
-<span class="nc" id="L116">        this.authManager = authManager;</span>
-<span class="nc" id="L117">        return this;</span>
+<span class="nc" id="L126">        this.authManager = authManager;</span>
+<span class="nc" id="L127">        return this;</span>
+    }
+
+    /**
+     * The {@link RetryStrategy} used for the underyling client connection.
+     *
+     * @param retryStrategy the retry strategy
+     * @return this builder
+     * @see RetryStrategy
+     */
+    public OneDriveConnectionBuilder retryStrategy (final RetryStrategy retryStrategy) {
+<span class="nc" id="L138">        this.retryStrategy = retryStrategy;</span>
+<span class="nc" id="L139">        return this;</span>
+    }
+
+    /**
+     * The executor service to manage async operations for the client.
+     *
+     * @param threadPool the thread pool
+     * @return this builder
+     */
+    public OneDriveConnectionBuilder threadPool(final ExecutorService threadPool) {
+<span class="nc" id="L149">        this.threadPool = threadPool;</span>
+<span class="nc" id="L150">        return this;</span>
     }
 
     /**
@@ -124,15 +157,17 @@ public class OneDriveConnectionBuilder {
      * @return the connection
      */
     public OneDriveConnection build(final String authCode) {
-<span class="fc" id="L127">        final OneDriveAuthManager authManager = getAuthManagerOrDefault(httpClient, authCode);</span>
-<span class="fc" id="L128">        return OneDriveConnection.builder()</span>
-<span class="fc" id="L129">                .httpClient(httpClient)</span>
-<span class="fc" id="L130">                .authManager(authManager)</span>
-<span class="fc" id="L131">                .gsonFactory(gsonFactory)</span>
-<span class="fc" id="L132">                .baseUrl(authManager.getAuthenticatedEndpoint())</span>
-<span class="fc" id="L133">                .userAgent(userAgent)</span>
-<span class="fc" id="L134">                .isGzipContentEncodingEnabled(true)</span>
-<span class="fc" id="L135">                .build();</span>
+<span class="fc" id="L160">        final OneDriveAuthManager authManager = getAuthManagerOrDefault(httpClient, authCode);</span>
+<span class="fc" id="L161">        return OneDriveConnection.builder()</span>
+<span class="fc" id="L162">                .httpClient(httpClient)</span>
+<span class="fc" id="L163">                .authManager(authManager)</span>
+<span class="fc" id="L164">                .gsonFactory(gsonFactory)</span>
+<span class="fc" id="L165">                .baseUrl(authManager.getAuthenticatedEndpoint())</span>
+<span class="fc" id="L166">                .userAgent(userAgent)</span>
+<span class="fc" id="L167">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L168">                .retryStrategy(retryStrategy)</span>
+<span class="fc" id="L169">                .threadPool(threadPool)</span>
+<span class="fc" id="L170">                .build();</span>
     }
 
     /**
@@ -142,51 +177,53 @@ public class OneDriveConnectionBuilder {
      * @return the connection
      */
     public OneDriveConnection build(final OneDriveAuthInfo authInfo) {
-<span class="fc" id="L145">        final OneDriveAuthManager authManager = getAuthManagerOrDefault(httpClient, authInfo);</span>
-<span class="fc" id="L146">        return OneDriveConnection.builder()</span>
-<span class="fc" id="L147">                .httpClient(httpClient)</span>
-<span class="fc" id="L148">                .authManager(authManager)</span>
-<span class="fc" id="L149">                .gsonFactory(gsonFactory)</span>
-<span class="fc" id="L150">                .baseUrl(authManager.getAuthenticatedEndpoint())</span>
-<span class="fc" id="L151">                .userAgent(userAgent)</span>
-<span class="fc" id="L152">                .isGzipContentEncodingEnabled(true)</span>
-<span class="fc" id="L153">                .build();</span>
+<span class="fc" id="L180">        final OneDriveAuthManager authManager = getAuthManagerOrDefault(httpClient, authInfo);</span>
+<span class="fc" id="L181">        return OneDriveConnection.builder()</span>
+<span class="fc" id="L182">                .httpClient(httpClient)</span>
+<span class="fc" id="L183">                .authManager(authManager)</span>
+<span class="fc" id="L184">                .gsonFactory(gsonFactory)</span>
+<span class="fc" id="L185">                .baseUrl(authManager.getAuthenticatedEndpoint())</span>
+<span class="fc" id="L186">                .userAgent(userAgent)</span>
+<span class="fc" id="L187">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L188">                .retryStrategy(retryStrategy)</span>
+<span class="fc" id="L189">                .threadPool(threadPool)</span>
+<span class="fc" id="L190">                .build();</span>
     }
 
     private OneDriveAuthManager getAuthManagerOrDefault(final OkHttpClient httpClient, final String authCode) {
-<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (authManager != null) {</span>
-<span class="nc" id="L158">            return authManager;</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (authManager != null) {</span>
+<span class="nc" id="L195">            return authManager;</span>
         }
 
-<span class="fc" id="L161">        validateRequiredParametersForAuth();</span>
-<span class="fc" id="L162">        return PersonalAccountAuthManager.builderWithAuthCode()</span>
-<span class="fc" id="L163">                .httpClient(httpClient)</span>
-<span class="fc" id="L164">                .clientId(clientId)</span>
-<span class="fc" id="L165">                .clientSecret(clientSecret)</span>
-<span class="fc" id="L166">                .redirectUrl(redirectUrl)</span>
-<span class="fc" id="L167">                .authCode(authCode)</span>
-<span class="fc" id="L168">                .buildWithAuthCode();</span>
+<span class="fc" id="L198">        validateRequiredParametersForAuth();</span>
+<span class="fc" id="L199">        return PersonalAccountAuthManager.builderWithAuthCode()</span>
+<span class="fc" id="L200">                .httpClient(httpClient)</span>
+<span class="fc" id="L201">                .clientId(clientId)</span>
+<span class="fc" id="L202">                .clientSecret(clientSecret)</span>
+<span class="fc" id="L203">                .redirectUrl(redirectUrl)</span>
+<span class="fc" id="L204">                .authCode(authCode)</span>
+<span class="fc" id="L205">                .buildWithAuthCode();</span>
     }
 
     private OneDriveAuthManager getAuthManagerOrDefault(final OkHttpClient httpClient, final OneDriveAuthInfo authInfo) {
-<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (authManager != null) {</span>
-<span class="nc" id="L173">            return authManager;</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        if (authManager != null) {</span>
+<span class="nc" id="L210">            return authManager;</span>
         }
 
-<span class="fc" id="L176">        validateRequiredParametersForAuth();</span>
-<span class="fc" id="L177">        return PersonalAccountAuthManager.builderWithAuthInfo()</span>
-<span class="fc" id="L178">                .httpClient(httpClient)</span>
-<span class="fc" id="L179">                .clientId(clientId)</span>
-<span class="fc" id="L180">                .clientSecret(clientSecret)</span>
-<span class="fc" id="L181">                .redirectUrl(redirectUrl)</span>
-<span class="fc" id="L182">                .authInfo(authInfo)</span>
-<span class="fc" id="L183">                .buildWithAuthInfo();</span>
+<span class="fc" id="L213">        validateRequiredParametersForAuth();</span>
+<span class="fc" id="L214">        return PersonalAccountAuthManager.builderWithAuthInfo()</span>
+<span class="fc" id="L215">                .httpClient(httpClient)</span>
+<span class="fc" id="L216">                .clientId(clientId)</span>
+<span class="fc" id="L217">                .clientSecret(clientSecret)</span>
+<span class="fc" id="L218">                .redirectUrl(redirectUrl)</span>
+<span class="fc" id="L219">                .authInfo(authInfo)</span>
+<span class="fc" id="L220">                .buildWithAuthInfo();</span>
     }
 
     private void validateRequiredParametersForAuth() {
-<span class="fc" id="L187">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
-<span class="fc" id="L188">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
-<span class="fc" id="L189">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
-<span class="fc" id="L190">    }</span>
+<span class="fc" id="L224">        Validate.notBlank(clientId, &quot;clientId must not be blank&quot;);</span>
+<span class="fc" id="L225">        Validate.notBlank(clientSecret, &quot;clientSecret must not be blank&quot;);</span>
+<span class="fc" id="L226">        Validate.notBlank(redirectUrl, &quot;redirectUrl must not be blank&quot;);</span>
+<span class="fc" id="L227">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
