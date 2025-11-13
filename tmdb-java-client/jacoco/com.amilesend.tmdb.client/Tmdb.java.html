@@ -19,6 +19,7 @@ package com.amilesend.tmdb.client;
 
 import com.amilesend.client.connection.Connection;
 import com.amilesend.client.connection.DefaultConnectionBuilder;
+import com.amilesend.client.connection.retry.NoRetryStrategy;
 import com.amilesend.tmdb.client.api.AccountApi;
 import com.amilesend.tmdb.client.api.AuthenticationApi;
 import com.amilesend.tmdb.client.api.CertificationsApi;
@@ -60,7 +61,7 @@ import okhttp3.OkHttpClient;
  */
 public class Tmdb {
     public static final String API_URL = &quot;https://api.themoviedb.org/3&quot;;
-    public static final String USER_AGENT = &quot;TMDBJavaClient/3.2&quot;;
+    public static final String USER_AGENT = &quot;TMDBJavaClient/3.4&quot;;
 
     @Getter
     private final Connection connection;
@@ -71,8 +72,8 @@ public class Tmdb {
      * @param readAccessToken the authenticated read access token
      */
     public Tmdb(final String readAccessToken) {
-<span class="nc" id="L74">       this(readAccessToken, USER_AGENT);</span>
-<span class="nc" id="L75">    }</span>
+<span class="nc" id="L75">       this(readAccessToken, USER_AGENT);</span>
+<span class="nc" id="L76">    }</span>
 
     /**
      * Creates a new {@code Tmdb} object that is configured with the default settings.
@@ -80,26 +81,27 @@ public class Tmdb {
      * @param readAccessToken the authenticated read access token
      * @param userAgent the user agent to define in requests made to the service
      */
-<span class="nc" id="L83">    public Tmdb(final String readAccessToken, final String userAgent) {</span>
-<span class="nc" id="L84">        final TokenAuthInfo authInfo = new TokenAuthInfo(readAccessToken);</span>
-<span class="nc" id="L85">        connection = new DefaultConnectionBuilder()</span>
-<span class="nc" id="L86">                .userAgent(userAgent)</span>
-<span class="nc" id="L87">                .baseUrl(API_URL)</span>
-<span class="nc" id="L88">                .httpClient(new OkHttpClient.Builder().build())</span>
-<span class="nc" id="L89">                .authManager(new TokenAuthManager(authInfo))</span>
-<span class="nc" id="L90">                .gsonFactory(new GsonFactory())</span>
-<span class="nc" id="L91">                .isGzipContentEncodingEnabled(false)</span>
-<span class="nc" id="L92">                .build();</span>
-<span class="nc" id="L93">    }</span>
+<span class="nc" id="L84">    public Tmdb(final String readAccessToken, final String userAgent) {</span>
+<span class="nc" id="L85">        final TokenAuthInfo authInfo = new TokenAuthInfo(readAccessToken);</span>
+<span class="nc" id="L86">        connection = new DefaultConnectionBuilder()</span>
+<span class="nc" id="L87">                .userAgent(userAgent)</span>
+<span class="nc" id="L88">                .baseUrl(API_URL)</span>
+<span class="nc" id="L89">                .httpClient(new OkHttpClient.Builder().build())</span>
+<span class="nc" id="L90">                .authManager(new TokenAuthManager(authInfo))</span>
+<span class="nc" id="L91">                .gsonFactory(new GsonFactory())</span>
+<span class="nc" id="L92">                .isGzipContentEncodingEnabled(false)</span>
+<span class="nc" id="L93">                .retryStrategy(new NoRetryStrategy())</span>
+<span class="nc" id="L94">                .build();</span>
+<span class="nc" id="L95">    }</span>
 
     /**
      * Creates a new {@code Tmdb} object for the given {@link Connection}.
      *
      * @param connection the connection
      */
-<span class="fc" id="L100">    public Tmdb(final Connection connection) {</span>
-<span class="fc" id="L101">        this.connection = connection;</span>
-<span class="fc" id="L102">    }</span>
+<span class="fc" id="L102">    public Tmdb(final Connection connection) {</span>
+<span class="fc" id="L103">        this.connection = connection;</span>
+<span class="fc" id="L104">    }</span>
 
     /**
      * Gets a new {@link AccountApi} instance for the TMDB connection.
@@ -108,7 +110,7 @@ public class Tmdb {
      * @see AccountApi
      */
     public AccountApi getAccountApi() {
-<span class="fc" id="L111">        return new AccountApi(connection);</span>
+<span class="fc" id="L113">        return new AccountApi(connection);</span>
     }
 
     /**
@@ -118,7 +120,7 @@ public class Tmdb {
      * @see AuthenticationApi
      */
     public AuthenticationApi getAuthenticationApi() {
-<span class="fc" id="L121">        return new AuthenticationApi(connection);</span>
+<span class="fc" id="L123">        return new AuthenticationApi(connection);</span>
     }
 
     /**
@@ -128,7 +130,7 @@ public class Tmdb {
      * @see CertificationsApi
      */
     public CertificationsApi getCertificationsApi() {
-<span class="fc" id="L131">        return new CertificationsApi(connection);</span>
+<span class="fc" id="L133">        return new CertificationsApi(connection);</span>
     }
 
     /**
@@ -138,7 +140,7 @@ public class Tmdb {
      * @see ChangesApi
      */
     public ChangesApi getChangesApi() {
-<span class="fc" id="L141">        return new ChangesApi(connection);</span>
+<span class="fc" id="L143">        return new ChangesApi(connection);</span>
     }
 
     /**
@@ -148,7 +150,7 @@ public class Tmdb {
      * @see CollectionsApi
      */
     public CollectionsApi getCollectionsApi() {
-<span class="fc" id="L151">        return new CollectionsApi(connection);</span>
+<span class="fc" id="L153">        return new CollectionsApi(connection);</span>
     }
 
     /**
@@ -158,7 +160,7 @@ public class Tmdb {
      * @see CompaniesApi
      */
     public CompaniesApi getCompaniesApi() {
-<span class="fc" id="L161">        return new CompaniesApi(connection);</span>
+<span class="fc" id="L163">        return new CompaniesApi(connection);</span>
     }
 
     /**
@@ -168,7 +170,7 @@ public class Tmdb {
      * @see ConfigurationApi
      */
     public ConfigurationApi getConfigurationApi() {
-<span class="fc" id="L171">        return new ConfigurationApi(connection);</span>
+<span class="fc" id="L173">        return new ConfigurationApi(connection);</span>
     }
 
     /**
@@ -178,7 +180,7 @@ public class Tmdb {
      * @see CreditsApi
      */
     public CreditsApi getCreditsApi() {
-<span class="fc" id="L181">        return new CreditsApi(connection);</span>
+<span class="fc" id="L183">        return new CreditsApi(connection);</span>
     }
 
     /**
@@ -188,7 +190,7 @@ public class Tmdb {
      * @see DiscoverApi
      */
     public DiscoverApi getDiscoverApi() {
-<span class="fc" id="L191">        return new DiscoverApi(connection);</span>
+<span class="fc" id="L193">        return new DiscoverApi(connection);</span>
     }
 
     /**
@@ -198,7 +200,7 @@ public class Tmdb {
      * @see FindApi
      */
     public FindApi getFindApi() {
-<span class="fc" id="L201">        return new FindApi(connection);</span>
+<span class="fc" id="L203">        return new FindApi(connection);</span>
     }
 
     /**
@@ -208,7 +210,7 @@ public class Tmdb {
      * @see GenresApi
      */
     public GenresApi getGenresApi() {
-<span class="fc" id="L211">        return new GenresApi(connection);</span>
+<span class="fc" id="L213">        return new GenresApi(connection);</span>
     }
 
     /**
@@ -218,7 +220,7 @@ public class Tmdb {
      * @see GuestSessionsApi
      */
     public GuestSessionsApi getGuestSessionsApi() {
-<span class="fc" id="L221">        return new GuestSessionsApi(connection);</span>
+<span class="fc" id="L223">        return new GuestSessionsApi(connection);</span>
     }
 
     /**
@@ -228,7 +230,7 @@ public class Tmdb {
      * @see KeywordsApi
      */
     public KeywordsApi getKeywordsApi() {
-<span class="fc" id="L231">        return new KeywordsApi(connection);</span>
+<span class="fc" id="L233">        return new KeywordsApi(connection);</span>
     }
 
     /**
@@ -238,7 +240,7 @@ public class Tmdb {
      * @see ListsApi
      */
     public ListsApi getListsApi() {
-<span class="fc" id="L241">        return new ListsApi(connection);</span>
+<span class="fc" id="L243">        return new ListsApi(connection);</span>
     }
 
     /**
@@ -248,7 +250,7 @@ public class Tmdb {
      * @see MovieListsApi
      */
     public MovieListsApi getMovieListsApi() {
-<span class="fc" id="L251">        return new MovieListsApi(connection);</span>
+<span class="fc" id="L253">        return new MovieListsApi(connection);</span>
     }
 
     /**
@@ -258,7 +260,7 @@ public class Tmdb {
      * @see MoviesApi
      */
     public MoviesApi getMoviesApi() {
-<span class="fc" id="L261">        return new MoviesApi(connection);</span>
+<span class="fc" id="L263">        return new MoviesApi(connection);</span>
     }
 
     /**
@@ -268,7 +270,7 @@ public class Tmdb {
      * @see NetworksApi
      */
     public NetworksApi getNetworksApi() {
-<span class="fc" id="L271">        return new NetworksApi(connection);</span>
+<span class="fc" id="L273">        return new NetworksApi(connection);</span>
     }
 
     /**
@@ -278,7 +280,7 @@ public class Tmdb {
      * @see PeopleApi
      */
     public PeopleApi getPeopleApi() {
-<span class="fc" id="L281">        return new PeopleApi(connection);</span>
+<span class="fc" id="L283">        return new PeopleApi(connection);</span>
     }
 
     /**
@@ -288,7 +290,7 @@ public class Tmdb {
      * @see PeopleListsApi
      */
     public PeopleListsApi getPeopleListsApi() {
-<span class="fc" id="L291">        return new PeopleListsApi(connection);</span>
+<span class="fc" id="L293">        return new PeopleListsApi(connection);</span>
     }
 
     /**
@@ -298,7 +300,7 @@ public class Tmdb {
      * @see ReviewsApi
      */
     public ReviewsApi getReviewsApi() {
-<span class="fc" id="L301">        return new ReviewsApi(connection);</span>
+<span class="fc" id="L303">        return new ReviewsApi(connection);</span>
     }
 
     /**
@@ -308,7 +310,7 @@ public class Tmdb {
      * @see SearchApi
      */
     public SearchApi getSearchApi() {
-<span class="fc" id="L311">        return new SearchApi(connection);</span>
+<span class="fc" id="L313">        return new SearchApi(connection);</span>
     }
 
     /**
@@ -318,7 +320,7 @@ public class Tmdb {
      * @see TrendingApi
      */
     public TrendingApi getTrendingApi() {
-<span class="fc" id="L321">        return new TrendingApi(connection);</span>
+<span class="fc" id="L323">        return new TrendingApi(connection);</span>
     }
 
     /**
@@ -328,7 +330,7 @@ public class Tmdb {
      * @see TvEpisodeGroupsApi
      */
     public TvEpisodeGroupsApi getTvEpisodeGroupsApi() {
-<span class="fc" id="L331">        return new TvEpisodeGroupsApi(connection);</span>
+<span class="fc" id="L333">        return new TvEpisodeGroupsApi(connection);</span>
     }
 
     /**
@@ -338,7 +340,7 @@ public class Tmdb {
      * @see TvEpisodesApi
      */
     public TvEpisodesApi getTvEpisodesApi() {
-<span class="fc" id="L341">        return new TvEpisodesApi(connection);</span>
+<span class="fc" id="L343">        return new TvEpisodesApi(connection);</span>
     }
 
     /**
@@ -348,7 +350,7 @@ public class Tmdb {
      * @see TvSeasonsApi
      */
     public TvSeasonsApi getTvSeasonsApi() {
-<span class="fc" id="L351">        return new TvSeasonsApi(connection);</span>
+<span class="fc" id="L353">        return new TvSeasonsApi(connection);</span>
     }
 
     /**
@@ -358,7 +360,7 @@ public class Tmdb {
      * @see TvSeriesApi
      */
     public TvSeriesApi getTvSeriesApi() {
-<span class="fc" id="L361">        return new TvSeriesApi(connection);</span>
+<span class="fc" id="L363">        return new TvSeriesApi(connection);</span>
     }
 
     /**
@@ -368,7 +370,7 @@ public class Tmdb {
      * @see TvSeriesListsApi
      */
     public TvSeriesListsApi getTvSeriesListsApi() {
-<span class="fc" id="L371">        return new TvSeriesListsApi(connection);</span>
+<span class="fc" id="L373">        return new TvSeriesListsApi(connection);</span>
     }
 
     /**
@@ -378,7 +380,7 @@ public class Tmdb {
      * @see WatchProvidersApi
      */
     public WatchProvidersApi getWatchProvidersApi() {
-<span class="fc" id="L381">        return new WatchProvidersApi(connection);</span>
+<span class="fc" id="L383">        return new WatchProvidersApi(connection);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

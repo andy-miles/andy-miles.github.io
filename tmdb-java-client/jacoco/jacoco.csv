@@ -46,7 +46,7 @@ tmdb-java-client,com.amilesend.tmdb.client.model.watch,GetMovieProvidersRequest,
 tmdb-java-client,com.amilesend.tmdb.client.model.tv.episodes.groups.type,TvEpisodeGroupType,14,88,0,0,5,17,1,2,1,2
 tmdb-java-client,com.amilesend.tmdb.client.model.trending.type,GetTrendingRequestBase,0,14,0,0,0,3,0,1,0,1
 tmdb-java-client,com.amilesend.tmdb.client.model.trending.type,TimeWindow,0,31,0,0,0,6,0,2,0,2
-tmdb-java-client,com.amilesend.tmdb.client,Tmdb,45,174,0,0,13,31,2,29,2,29
+tmdb-java-client,com.amilesend.tmdb.client,Tmdb,50,174,0,0,14,31,2,29,2,29
 tmdb-java-client,com.amilesend.tmdb.client.model.people,GetChangesRequest,1,15,1,1,0,3,1,1,0,1
 tmdb-java-client,com.amilesend.tmdb.client.model.discover.filter,RegionFilter,9,61,3,3,3,13,3,2,0,2
 tmdb-java-client,com.amilesend.tmdb.client.model.discover.filter,FilterQueryBuilder,3,41,0,0,0,8,1,3,1,3
