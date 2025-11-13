@@ -18,9 +18,10 @@
 package com.amilesend.client.connection;
 
 import com.amilesend.client.connection.auth.AuthManager;
+import com.amilesend.client.connection.retry.RetriableCallResponse;
+import com.amilesend.client.connection.retry.RetryStrategy;
 import com.amilesend.client.parse.GsonFactoryBase;
 import com.amilesend.client.parse.parser.GsonParser;
-import com.amilesend.client.util.StringUtils;
 import com.amilesend.client.util.VisibleForTesting;
 import com.google.gson.JsonParseException;
 import lombok.Getter;
@@ -35,6 +36,7 @@ import okhttp3.Response;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import static com.amilesend.client.connection.Connection.Headers.ACCEPT;
@@ -45,16 +47,16 @@ import static com.amilesend.client.connection.Connection.Headers.USER_AGENT;
 /** Wraps an {@link OkHttpClient} that manages parsing responses to corresponding POJO types. */
 @SuperBuilder
 @Getter
-<span class="fc" id="L48">@Slf4j</span>
+<span class="fc" id="L50">@Slf4j</span>
 public class Connection&lt;G extends GsonFactoryBase&gt; {
     public static final String FORM_DATA_CONTENT_TYPE = &quot;application/x-www-form-urlencoded&quot;;
-<span class="fc" id="L51">    public static final MediaType FORM_DATA_MEDIA_TYPE = MediaType.parse(FORM_DATA_CONTENT_TYPE);</span>
+<span class="fc" id="L53">    public static final MediaType FORM_DATA_MEDIA_TYPE = MediaType.parse(FORM_DATA_CONTENT_TYPE);</span>
     public static final String JSON_CONTENT_TYPE = &quot;application/json; charset=utf-8&quot;;
-<span class="fc" id="L53">    public static final MediaType JSON_MEDIA_TYPE = MediaType.parse(JSON_CONTENT_TYPE);</span>
+<span class="fc" id="L55">    public static final MediaType JSON_MEDIA_TYPE = MediaType.parse(JSON_CONTENT_TYPE);</span>
 
     protected static final String THROTTLED_RETRY_AFTER_HEADER = &quot;Retry-After&quot;;
     protected static final String GZIP_ENCODING = &quot;gzip&quot;;
-<span class="fc" id="L57">    protected static final Long DEFAULT_RETRY_AFTER_SECONDS = Long.valueOf(10L);</span>
+<span class="fc" id="L59">    protected static final Long DEFAULT_RETRY_AFTER_SECONDS = Long.valueOf(10L);</span>
     protected static final int THROTTLED_RESPONSE_CODE = 429;
 
     /** The underlying http client. */
@@ -72,7 +74,11 @@ public class Connection&lt;G extends GsonFactoryBase&gt; {
     /** The user agent to include in request headers. */
     @NonNull
     private final String userAgent;
+    /** Flag indicator that the response is GZIP encoded. */
     private final boolean isGzipContentEncodingEnabled;
+    /** The retry strategy to use. */
+    @NonNull
+    private final RetryStrategy retryStrategy;
 
     /**
      * Creates a new {@link Request.Builder} with pre-configured headers for request that expect a JSON-formatted
@@ -81,14 +87,14 @@ public class Connection&lt;G extends GsonFactoryBase&gt; {
      * @return the request builder
      */
     public Request.Builder newRequestBuilder() {
-<span class="fc" id="L84">        final Request.Builder requestBuilder = new Request.Builder()</span>
-<span class="fc" id="L85">                .addHeader(USER_AGENT, userAgent)</span>
-<span class="fc" id="L86">                .addHeader(ACCEPT, JSON_CONTENT_TYPE);</span>
-<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (isGzipContentEncodingEnabled) {</span>
-<span class="fc" id="L88">            requestBuilder.addHeader(ACCEPT_ENCODING, GZIP_ENCODING);</span>
+<span class="fc" id="L90">        final Request.Builder requestBuilder = new Request.Builder()</span>
+<span class="fc" id="L91">                .addHeader(USER_AGENT, userAgent)</span>
+<span class="fc" id="L92">                .addHeader(ACCEPT, JSON_CONTENT_TYPE);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (isGzipContentEncodingEnabled) {</span>
+<span class="fc" id="L94">            requestBuilder.addHeader(ACCEPT_ENCODING, GZIP_ENCODING);</span>
         }
 
-<span class="fc" id="L91">        return authManager.addAuthentication(requestBuilder);</span>
+<span class="fc" id="L97">        return authManager.addAuthentication(requestBuilder);</span>
     }
 
     /**
@@ -100,20 +106,20 @@ public class Connection&lt;G extends GsonFactoryBase&gt; {
      * @param &lt;T&gt; the POJO resource type
      * @throws ConnectionException if an error occurred during the transaction
      */
-<span class="fc bfc" id="L103" title="All 4 branches covered.">    public &lt;T&gt; T execute(@NonNull final Request request, @NonNull final GsonParser&lt;T&gt; parser)</span>
+<span class="fc bfc" id="L109" title="All 4 branches covered.">    public &lt;T&gt; T execute(@NonNull final Request request, @NonNull final GsonParser&lt;T&gt; parser)</span>
             throws ConnectionException {
         try {
-<span class="fc" id="L106">            try (final Response response = execute(request)) {</span>
+<span class="fc" id="L112">            try (final Response response = execute(request)) {</span>
                 final InputStream responseBodyInputStream =
-<span class="fc bfc" id="L108" title="All 2 branches covered.">                        &quot;gzip&quot;.equals(response.header(CONTENT_ENCODING))</span>
-<span class="fc" id="L109">                                ? new GZIPInputStream(response.body().byteStream())</span>
-<span class="fc" id="L110">                                : response.body().byteStream();</span>
-<span class="fc" id="L111">                return parser.parse(gsonFactory.getInstance(this), responseBodyInputStream);</span>
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                        &quot;gzip&quot;.equals(response.header(CONTENT_ENCODING))</span>
+<span class="fc" id="L115">                                ? new GZIPInputStream(response.body().byteStream())</span>
+<span class="fc" id="L116">                                : response.body().byteStream();</span>
+<span class="fc" id="L117">                return parser.parse(gsonFactory.getInstance(this), responseBodyInputStream);</span>
             }
-<span class="nc" id="L113">        } catch (final IOException ex) {</span>
-<span class="nc" id="L114">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
-<span class="fc" id="L115">        } catch (final JsonParseException ex) {</span>
-<span class="fc" id="L116">            throw new ResponseParseException(&quot;Error parsing response: &quot; + ex.getMessage(), ex);</span>
+<span class="nc" id="L119">        } catch (final IOException ex) {</span>
+<span class="nc" id="L120">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L121">        } catch (final JsonParseException ex) {</span>
+<span class="fc" id="L122">            throw new ResponseParseException(&quot;Error parsing response: &quot; + ex.getMessage(), ex);</span>
         }
     }
 
@@ -125,40 +131,51 @@ public class Connection&lt;G extends GsonFactoryBase&gt; {
      * @return the HTTP response
      * @throws ConnectionException if an error occurred during the transaction
      */
-<span class="fc bfc" id="L128" title="All 2 branches covered.">    public Response execute(@NonNull final Request request) throws ConnectionException {</span>
-        try {
-<span class="fc" id="L130">            final Response response = httpClient.newCall(request).execute();</span>
-<span class="fc" id="L131">            validateResponseCode(response);</span>
-<span class="fc" id="L132">            return response;</span>
-<span class="fc" id="L133">        } catch (final IOException ex) {</span>
-<span class="fc" id="L134">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">    public Response execute(@NonNull final Request request) throws ConnectionException {</span>
+<span class="pc" id="L135">        final RetriableCallResponse response = retryStrategy.invoke(() -&gt; httpClient.newCall(request).execute());</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (response.isSuccess()) {</span>
+<span class="fc" id="L137">            return response.getResponse();</span>
         }
+
+<span class="fc" id="L140">        final List&lt;Exception&gt; thrownExceptions = response.getExceptions();</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (thrownExceptions.isEmpty()) {</span>
+<span class="nc" id="L142">            throw new ConnectionException(&quot;Error executing request (no exception provided)&quot;);</span>
+        }
+
+<span class="fc" id="L145">        final Exception lastThrownException = response.getExceptions().get(response.getExceptions().size() - 1);</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (IOException.class.isInstance(lastThrownException)) {</span>
+<span class="fc" id="L147">            throw new RequestException(</span>
+<span class="fc" id="L148">                    &quot;Unable to execute request: &quot; + lastThrownException.getMessage(),</span>
+                    lastThrownException);
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        } else if (ConnectionException.class.isInstance(lastThrownException)) {</span>
+<span class="nc" id="L151">            throw (ConnectionException) lastThrownException;</span>
+        }
+
+<span class="nc" id="L154">        throw new ConnectionException(&quot;Error executing request: &quot; + lastThrownException.getCause(), lastThrownException);</span>
     }
 
+    /**
+     * Validates the response code.
+     *
+     * @param response the response to validate
+     * @deprecated use {@link RetryStrategy#validateResponseCode(Response)} instead
+     */
+    @Deprecated
     protected void validateResponseCode(final Response response) {
-<span class="fc" id="L139">        final int code = response.code();</span>
-<span class="fc bfc" id="L140" title="All 2 branches covered.">        if (code == THROTTLED_RESPONSE_CODE) {</span>
-<span class="fc" id="L141">            final Long retryAfterSeconds = extractRetryAfterHeaderValue(response);</span>
-<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            final String msg = retryAfterSeconds != null</span>
-<span class="fc" id="L143">                    ? &quot;Request throttled. Retry after &quot; + retryAfterSeconds + &quot; seconds&quot;</span>
-<span class="pc" id="L144">                    : &quot;Request throttled&quot;;</span>
-<span class="fc" id="L145">            throw new ThrottledException(msg, retryAfterSeconds);</span>
-        }
+<span class="nc" id="L165">        retryStrategy.validateResponseCode(response);</span>
+<span class="nc" id="L166">    }</span>
 
-<span class="fc" id="L148">        final boolean isRequestError = String.valueOf(code).startsWith(&quot;4&quot;);</span>
-<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (isRequestError) {</span>
-<span class="fc" id="L150">            throw new RequestException(&quot;Error with request (&quot; + code + &quot;): &quot; + response);</span>
-<span class="pc bpc" id="L151" title="1 of 2 branches missed.">        } else if (!response.isSuccessful()) {</span>
-<span class="fc" id="L152">            throw new ResponseException(&quot;Unsuccessful response (&quot; + code + &quot;): &quot; + response);</span>
-        }
-<span class="nc" id="L154">    }</span>
-
+    /**
+     * Extracts the retry after value from a throttled response header (if it exists).
+     *
+     * @param response the response
+     * @return the retry after value in seconds
+     * @deprecated use {@link RetryStrategy#extractRetryAfterHeaderValue(Response)} instead
+     */
+    @Deprecated
     @VisibleForTesting
     protected Long extractRetryAfterHeaderValue(final Response response) {
-<span class="fc" id="L158">        final String retryAfterHeaderValue = response.header(THROTTLED_RETRY_AFTER_HEADER);</span>
-<span class="fc bfc" id="L159" title="All 2 branches covered.">        return StringUtils.isNotBlank(retryAfterHeaderValue)</span>
-<span class="fc" id="L160">                ? Long.valueOf(retryAfterHeaderValue)</span>
-<span class="fc" id="L161">                : DEFAULT_RETRY_AFTER_SECONDS;</span>
+<span class="nc" id="L178">        return retryStrategy.extractRetryAfterHeaderValue(response);</span>
     }
 
     @UtilityClass

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RetryStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.connection.retry</a> &gt; <span class="el_source">RetryStrategy.java</span></div><h1>RetryStrategy.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.connection.retry;
+
+import com.amilesend.client.connection.RequestException;
+import com.amilesend.client.connection.ResponseException;
+import com.amilesend.client.connection.ThrottledException;
+import com.amilesend.client.util.StringUtils;
+import okhttp3.Response;
+
+/**
+ * Defines the interface for a retry strategy that enables different approaches to determine how and when
+ * to retry an invocation.
+ */
+public interface RetryStrategy {
+    /** The HTTP header for the number of seconds to wait for a retry when an invocation is throttled. */
+    String THROTTLED_RETRY_AFTER_HEADER = &quot;Retry-After&quot;;
+    /** The default amount of seconds to wait for a throttled response. */
+<span class="fc" id="L34">    Long DEFAULT_RETRY_AFTER_SECONDS = Long.valueOf(1L);</span>
+    /** The throttled HTTP response code. */
+    int THROTTLED_RESPONSE_CODE = 429;
+
+    /**
+     * Executes the strategy to invoke the {@link RetriableCallResponse} call.
+     *
+     * @param retriable the call to invoke
+     * @return the response
+     */
+    RetriableCallResponse invoke(Retriable retriable);
+
+    /**
+     * Validates the response code for a response.
+     *
+     * @param response the response to evaluate
+     * @throws ThrottledException if a response was throttled
+     * @throws RequestException if a response contains a 400-based response code value
+     * @throws ResponseException if a response contains a non 400-based response code value
+     */
+    default void validateResponseCode(final Response response) {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (response.isSuccessful()) {</span>
+<span class="fc" id="L56">            return;</span>
+        }
+
+<span class="fc" id="L59">        final int code = response.code();</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        final boolean isRequestError = (code / 100 == 4);</span>
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (!isRequestError) {</span>
+<span class="fc" id="L63">            throw new ResponseException(&quot;Unsuccessful response (&quot; + code + &quot;): &quot; + response);</span>
+        }
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (code == THROTTLED_RESPONSE_CODE) {</span>
+<span class="fc" id="L67">            final Long retryAfterSeconds = extractRetryAfterHeaderValue(response);</span>
+<span class="fc" id="L68">            final String msg = &quot;Request throttled. Retry after &quot; + retryAfterSeconds + &quot; seconds&quot;;</span>
+<span class="fc" id="L69">            throw new ThrottledException(msg, retryAfterSeconds);</span>
+        }
+
+<span class="fc" id="L72">        throw new RequestException(&quot;Error with request (&quot; + code + &quot;): &quot; + response);</span>
+    }
+
+    /**
+     * Extracts the defined throttle retry value from the response header, or the default if none is defined.
+     *
+     * @param response the response
+     * @return the amount of time in seconds to wait before the next retry
+     */
+    default Long extractRetryAfterHeaderValue(final Response response) {
+<span class="fc" id="L82">        final String retryAfterHeaderValue = response.header(THROTTLED_RETRY_AFTER_HEADER);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        return StringUtils.isNotBlank(retryAfterHeaderValue)</span>
+<span class="fc" id="L84">                ? Long.valueOf(retryAfterHeaderValue)</span>
+<span class="fc" id="L85">                : DEFAULT_RETRY_AFTER_SECONDS;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

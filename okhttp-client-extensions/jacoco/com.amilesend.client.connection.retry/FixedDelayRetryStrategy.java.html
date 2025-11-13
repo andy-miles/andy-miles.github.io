@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FixedDelayRetryStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.connection.retry</a> &gt; <span class="el_source">FixedDelayRetryStrategy.java</span></div><h1>FixedDelayRetryStrategy.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.connection.retry;
+
+import com.amilesend.client.connection.ResponseException;
+import com.amilesend.client.connection.ThrottledException;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.Response;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * A fixed-delay retry strategy.
+ *
+ * @see RetryStrategy
+ */
+@Builder
+<span class="fc" id="L37">@Slf4j</span>
+public class FixedDelayRetryStrategy implements RetryStrategy {
+    /** The maximum number of attempts to make. Default: 3 */
+    @Builder.Default
+    private final int maxAttempts = 3;
+    /** The delay in milliseconds to make between invocations. */
+    @Builder.Default
+    private final long delayMs = 500L;
+    /** The maximum amount of jitter in milliseconds to apply per retry. Default: 100 */
+    @Builder.Default
+    private final long maxJitterMs = 100L;
+
+    @Override
+<span class="fc bfc" id="L50" title="All 2 branches covered.">    public RetriableCallResponse invoke(@NonNull final Retriable retriable) {</span>
+<span class="fc" id="L51">        int attempts = 0;</span>
+<span class="fc" id="L52">        final List&lt;Exception&gt; exceptions = new ArrayList&lt;&gt;(maxAttempts);</span>
+
+        do {
+            try {
+<span class="fc" id="L56">                ++attempts;</span>
+<span class="fc" id="L57">                final Response response = retriable.call();</span>
+<span class="fc" id="L58">                validateResponseCode(response);</span>
+<span class="fc" id="L59">                return RetriableCallResponse.builder()</span>
+<span class="fc" id="L60">                        .response(response)</span>
+<span class="fc" id="L61">                        .exceptions(exceptions)</span>
+<span class="fc" id="L62">                        .attempts(attempts)</span>
+<span class="fc" id="L63">                        .build();</span>
+<span class="fc" id="L64">            } catch (final IOException | ThrottledException | ResponseException ex) {</span>
+<span class="fc" id="L65">                exceptions.add(ex);</span>
+
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                if (attempts &gt;= maxAttempts) {</span>
+<span class="fc" id="L68">                    return RetriableCallResponse.builder()</span>
+<span class="fc" id="L69">                            .attempts(attempts)</span>
+<span class="fc" id="L70">                            .exceptions(exceptions)</span>
+<span class="fc" id="L71">                            .build();</span>
+                }
+
+                try {
+<span class="fc" id="L75">                    final long delay = calculateDelay(ex);</span>
+<span class="fc" id="L76">                    log.debug(&quot;Delaying next retry by {} ms&quot;, delay);</span>
+<span class="fc" id="L77">                    Thread.sleep(delay);</span>
+<span class="nc" id="L78">                } catch (final InterruptedException iex) {</span>
+<span class="nc" id="L79">                    exceptions.add(ex);</span>
+<span class="nc" id="L80">                    Thread.currentThread().interrupt();</span>
+<span class="nc" id="L81">                    return RetriableCallResponse.builder()</span>
+<span class="nc" id="L82">                            .attempts(attempts)</span>
+<span class="nc" id="L83">                            .exceptions(exceptions)</span>
+<span class="nc" id="L84">                            .build();</span>
+<span class="fc" id="L85">                }</span>
+<span class="fc" id="L86">            } catch (final Exception ex) {</span>
+<span class="fc" id="L87">                exceptions.add(ex);</span>
+<span class="fc" id="L88">                return RetriableCallResponse.builder()</span>
+<span class="fc" id="L89">                        .attempts(attempts)</span>
+<span class="fc" id="L90">                        .exceptions(exceptions)</span>
+<span class="fc" id="L91">                        .build();</span>
+<span class="fc" id="L92">            }</span>
+        } while (true);
+    }
+
+    protected long calculateDelay(final Exception thrown) {
+<span class="fc" id="L97">        final long jitter = (long)(Math.random() * maxJitterMs);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        if (ThrottledException.class.isInstance(thrown)) {</span>
+<span class="fc" id="L99">            return ((ThrottledException) thrown).getRetryAfterSeconds() * 1000L + jitter;</span>
+        }
+
+<span class="fc" id="L102">        return delayMs + jitter;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

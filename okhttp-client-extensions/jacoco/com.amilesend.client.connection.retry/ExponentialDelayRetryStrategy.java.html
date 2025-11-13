@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExponentialDelayRetryStrategy.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.connection.retry</a> &gt; <span class="el_source">ExponentialDelayRetryStrategy.java</span></div><h1>ExponentialDelayRetryStrategy.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.connection.retry;
+
+import com.amilesend.client.connection.ResponseException;
+import com.amilesend.client.connection.ThrottledException;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.Response;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * An exponential-delay-based retry strategy.
+ *
+ * @see RetryStrategy
+ */
+@Builder
+<span class="fc" id="L37">@Slf4j</span>
+public class ExponentialDelayRetryStrategy implements RetryStrategy {
+    /** The maximum number of attempts to make. Default: 3 */
+    @Builder.Default
+    private final int maxAttempts = 3;
+    /** The maximum amount of jitter in milliseconds to apply per retry. Default: 100 */
+    @Builder.Default
+    private final long maxJitterMs = 100L;
+    /** The base delay in milliseconds to apply per retry. Default: 1000 */
+    @Builder.Default
+    private final long baseDelayMs = 500L;
+    /** The maximum total delay across all retries. Default: 5000 */
+    @Builder.Default
+    private final long maxTotalDelayMs = 3000L;
+
+    @Override
+<span class="fc bfc" id="L53" title="All 2 branches covered.">    public RetriableCallResponse invoke(@NonNull final Retriable retriable) {</span>
+<span class="fc" id="L54">        int attempts = 0;</span>
+<span class="fc" id="L55">        final List&lt;Exception&gt; exceptions = new ArrayList&lt;&gt;(maxAttempts);</span>
+<span class="fc" id="L56">        long totalTimeMs = 0L;</span>
+
+        do {
+            try {
+<span class="fc" id="L60">                ++attempts;</span>
+<span class="fc" id="L61">                final Response response = retriable.call();</span>
+<span class="fc" id="L62">                validateResponseCode(response);</span>
+<span class="fc" id="L63">                return RetriableCallResponse.builder()</span>
+<span class="fc" id="L64">                        .response(response)</span>
+<span class="fc" id="L65">                        .exceptions(exceptions)</span>
+<span class="fc" id="L66">                        .attempts(attempts)</span>
+<span class="fc" id="L67">                        .build();</span>
+<span class="fc" id="L68">            } catch (final IOException | ThrottledException | ResponseException ex) {</span>
+<span class="fc" id="L69">                exceptions.add(ex);</span>
+<span class="fc" id="L70">                final long delay = calculateDelay(attempts, ex);</span>
+<span class="fc" id="L71">                totalTimeMs += delay;</span>
+
+<span class="fc bfc" id="L73" title="All 6 branches covered.">                if (attempts &gt;= maxAttempts | totalTimeMs &gt;= maxTotalDelayMs) {</span>
+<span class="fc" id="L74">                    return RetriableCallResponse.builder()</span>
+<span class="fc" id="L75">                            .attempts(attempts)</span>
+<span class="fc" id="L76">                            .exceptions(exceptions)</span>
+<span class="fc" id="L77">                            .build();</span>
+                }
+
+                try {
+<span class="fc" id="L81">                    log.debug(&quot;Delaying next retry by {} ms&quot;, delay);</span>
+<span class="fc" id="L82">                    Thread.sleep(delay);</span>
+<span class="nc" id="L83">                } catch (final InterruptedException iex) {</span>
+<span class="nc" id="L84">                    exceptions.add(ex);</span>
+<span class="nc" id="L85">                    Thread.currentThread().interrupt();</span>
+<span class="nc" id="L86">                    return RetriableCallResponse.builder()</span>
+<span class="nc" id="L87">                            .attempts(attempts)</span>
+<span class="nc" id="L88">                            .exceptions(exceptions)</span>
+<span class="nc" id="L89">                            .build();</span>
+<span class="fc" id="L90">                }</span>
+<span class="fc" id="L91">            } catch (final Exception ex) {</span>
+<span class="fc" id="L92">                exceptions.add(ex);</span>
+<span class="fc" id="L93">                return RetriableCallResponse.builder()</span>
+<span class="fc" id="L94">                        .attempts(attempts)</span>
+<span class="fc" id="L95">                        .exceptions(exceptions)</span>
+<span class="fc" id="L96">                        .build();</span>
+<span class="fc" id="L97">            }</span>
+        } while (true);
+    }
+
+    protected long calculateDelay(final int attemptNum, final Exception thrown) {
+<span class="fc" id="L102">        final long jitter = (long)(Math.random() * maxJitterMs);</span>
+<span class="fc" id="L103">        long delayWithoutJitter = (long) Math.pow(baseDelayMs * 2, attemptNum);</span>
+
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (ThrottledException.class.isInstance(thrown)) {</span>
+<span class="fc" id="L106">            final long delayFromHeader = ((ThrottledException) thrown).getRetryAfterSeconds() * 1000L;</span>
+<span class="fc" id="L107">            delayWithoutJitter = Math.max(delayWithoutJitter, delayFromHeader);</span>
+        }
+
+<span class="fc" id="L110">        return delayWithoutJitter + jitter;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
