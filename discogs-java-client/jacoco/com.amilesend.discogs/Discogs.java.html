@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Discogs.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs</a> &gt; <span class="el_source">Discogs.java</span></div><h1>Discogs.java</h1><pre class="source lang-java linenums">/*
- * discogs-java-client - A Java SDK to access the Discogs API
+ * discogs-java-client - A Java client to access the Discogs API
  * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -41,7 +41,6 @@ import lombok.RequiredArgsConstructor;
 import okhttp3.OkHttpClient;
 
 import java.util.Objects;
-import java.util.Optional;
 
 import static com.amilesend.discogs.connection.DiscogsConnection.DEFAULT_BASE_URL;
 
@@ -64,16 +63,16 @@ public class Discogs {
      * @return the Discogs instance
      */
     public static Discogs newUnauthenticatedInstance(final String userAgent) {
-<span class="fc" id="L67">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
+<span class="fc" id="L66">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
 
-<span class="fc" id="L69">        return new Discogs(new DiscogsConnectionBuilder()</span>
-<span class="fc" id="L70">                .httpClient(new OkHttpClientBuilder().build())</span>
-<span class="fc" id="L71">                .authManager(new AuthManagerFactory().newUnauthenticatedAuthManager())</span>
-<span class="fc" id="L72">                .baseUrl(DEFAULT_BASE_URL)</span>
-<span class="fc" id="L73">                .gsonFactory(new GsonFactory())</span>
-<span class="fc" id="L74">                .isGzipContentEncodingEnabled(true)</span>
-<span class="fc" id="L75">                .userAgent(userAgent)</span>
-<span class="fc" id="L76">                .build());</span>
+<span class="fc" id="L68">        return new Discogs(new DiscogsConnectionBuilder()</span>
+<span class="fc" id="L69">                .httpClient(new OkHttpClientBuilder().build())</span>
+<span class="fc" id="L70">                .authManager(new AuthManagerFactory().newUnauthenticatedAuthManager())</span>
+<span class="fc" id="L71">                .baseUrl(DEFAULT_BASE_URL)</span>
+<span class="fc" id="L72">                .gsonFactory(new GsonFactory())</span>
+<span class="fc" id="L73">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L74">                .userAgent(userAgent)</span>
+<span class="fc" id="L75">                .build());</span>
     }
 
     /**
@@ -88,19 +87,19 @@ public class Discogs {
             final String key,
             final String secret,
             final String userAgent) {
-<span class="fc" id="L91">        Validate.notBlank(key, &quot;key must not be blank&quot;);</span>
-<span class="fc" id="L92">        Validate.notBlank(secret, &quot;secret must not be blank&quot;);</span>
-<span class="fc" id="L93">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
+<span class="fc" id="L90">        Validate.notBlank(key, &quot;key must not be blank&quot;);</span>
+<span class="fc" id="L91">        Validate.notBlank(secret, &quot;secret must not be blank&quot;);</span>
+<span class="fc" id="L92">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
 
-<span class="fc" id="L95">        return new Discogs(new DiscogsConnectionBuilder()</span>
-<span class="fc" id="L96">                .httpClient(new OkHttpClientBuilder().build())</span>
-<span class="fc" id="L97">                .authManager(new AuthManagerFactory()</span>
-<span class="fc" id="L98">                        .newUserAuthenticatedAuthManager(new KeySecretAuthInfo(key, secret)))</span>
-<span class="fc" id="L99">                .baseUrl(DEFAULT_BASE_URL)</span>
-<span class="fc" id="L100">                .gsonFactory(new GsonFactory())</span>
-<span class="fc" id="L101">                .isGzipContentEncodingEnabled(true)</span>
-<span class="fc" id="L102">                .userAgent(userAgent)</span>
-<span class="fc" id="L103">                .build());</span>
+<span class="fc" id="L94">        return new Discogs(new DiscogsConnectionBuilder()</span>
+<span class="fc" id="L95">                .httpClient(new OkHttpClientBuilder().build())</span>
+<span class="fc" id="L96">                .authManager(new AuthManagerFactory()</span>
+<span class="fc" id="L97">                        .newUserAuthenticatedAuthManager(new KeySecretAuthInfo(key, secret)))</span>
+<span class="fc" id="L98">                .baseUrl(DEFAULT_BASE_URL)</span>
+<span class="fc" id="L99">                .gsonFactory(new GsonFactory())</span>
+<span class="fc" id="L100">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L101">                .userAgent(userAgent)</span>
+<span class="fc" id="L102">                .build());</span>
     }
 
     /**
@@ -111,18 +110,18 @@ public class Discogs {
      * @return the Discogs instance
      */
     public static Discogs newTokenAuthenticatedInstance(final String token, final String userAgent) {
-<span class="fc" id="L114">        Validate.notBlank(token, &quot;token must not be blank&quot;);</span>
-<span class="fc" id="L115">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
+<span class="fc" id="L113">        Validate.notBlank(token, &quot;token must not be blank&quot;);</span>
+<span class="fc" id="L114">        Validate.notBlank(userAgent, &quot;userAgent must not be blank&quot;);</span>
 
-<span class="fc" id="L117">        return new Discogs(new DiscogsConnectionBuilder()</span>
-<span class="fc" id="L118">                .httpClient(new OkHttpClientBuilder().build())</span>
-<span class="fc" id="L119">                .authManager(new AuthManagerFactory()</span>
-<span class="fc" id="L120">                        .newTokenAuthenticatedAuthManager(new TokenAuthInfo(token)))</span>
-<span class="fc" id="L121">                .baseUrl(DEFAULT_BASE_URL)</span>
-<span class="fc" id="L122">                .gsonFactory(new GsonFactory())</span>
-<span class="fc" id="L123">                .isGzipContentEncodingEnabled(true)</span>
-<span class="fc" id="L124">                .userAgent(userAgent)</span>
-<span class="fc" id="L125">                .build());</span>
+<span class="fc" id="L116">        return new Discogs(new DiscogsConnectionBuilder()</span>
+<span class="fc" id="L117">                .httpClient(new OkHttpClientBuilder().build())</span>
+<span class="fc" id="L118">                .authManager(new AuthManagerFactory()</span>
+<span class="fc" id="L119">                        .newTokenAuthenticatedAuthManager(new TokenAuthInfo(token)))</span>
+<span class="fc" id="L120">                .baseUrl(DEFAULT_BASE_URL)</span>
+<span class="fc" id="L121">                .gsonFactory(new GsonFactory())</span>
+<span class="fc" id="L122">                .isGzipContentEncodingEnabled(true)</span>
+<span class="fc" id="L123">                .userAgent(userAgent)</span>
+<span class="fc" id="L124">                .build());</span>
     }
 
     /**
@@ -138,7 +137,7 @@ public class Discogs {
             final KeySecretAuthInfo appKeySecret,
             final String userAgent,
             final int oAuthReceiverPort) {
-<span class="nc" id="L141">        return newOAuthInstance(appKeySecret, userAgent, oAuthReceiverPort, null);</span>
+<span class="nc" id="L140">        return newOAuthInstance(appKeySecret, userAgent, oAuthReceiverPort, null);</span>
     }
 
     /**
@@ -156,27 +155,27 @@ public class Discogs {
             final String userAgent,
             final int oAuthReceiverPort,
             final OAuthInfo oAuthToken) {
-<span class="nc" id="L159">        final OkHttpClient httpClient = new OkHttpClientBuilder().build();</span>
-<span class="nc bnc" id="L160" title="All 2 branches missed.">        final OAuthManager authManager = Objects.isNull(oAuthToken)</span>
-<span class="nc" id="L161">                ? new AuthManagerFactory().newOAuthAuthManager(</span>
+<span class="nc" id="L158">        final OkHttpClient httpClient = new OkHttpClientBuilder().build();</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        final OAuthManager authManager = Objects.isNull(oAuthToken)</span>
+<span class="nc" id="L160">                ? new AuthManagerFactory().newOAuthAuthManager(</span>
                         httpClient,
                         appKeySecret,
                         userAgent,
                         oAuthReceiverPort)
-<span class="nc" id="L166">                : new AuthManagerFactory().newOAuthAuthManagerWithExistingToken(</span>
+<span class="nc" id="L165">                : new AuthManagerFactory().newOAuthAuthManagerWithExistingToken(</span>
                         httpClient,
                         appKeySecret,
                         userAgent,
                         oAuthReceiverPort,
                         oAuthToken);
-<span class="nc" id="L172">        return new Discogs(new DiscogsConnectionBuilder()</span>
-<span class="nc" id="L173">                .userAgent(userAgent)</span>
-<span class="nc" id="L174">                .gsonFactory(new GsonFactory())</span>
-<span class="nc" id="L175">                .authManager(authManager)</span>
-<span class="nc" id="L176">                .baseUrl(DEFAULT_BASE_URL)</span>
-<span class="nc" id="L177">                .isGzipContentEncodingEnabled(true)</span>
-<span class="nc" id="L178">                .httpClient(httpClient)</span>
-<span class="nc" id="L179">                .build());</span>
+<span class="nc" id="L171">        return new Discogs(new DiscogsConnectionBuilder()</span>
+<span class="nc" id="L172">                .userAgent(userAgent)</span>
+<span class="nc" id="L173">                .gsonFactory(new GsonFactory())</span>
+<span class="nc" id="L174">                .authManager(authManager)</span>
+<span class="nc" id="L175">                .baseUrl(DEFAULT_BASE_URL)</span>
+<span class="nc" id="L176">                .isGzipContentEncodingEnabled(true)</span>
+<span class="nc" id="L177">                .httpClient(httpClient)</span>
+<span class="nc" id="L178">                .build());</span>
     }
 
     /**
@@ -186,7 +185,7 @@ public class Discogs {
      * @see UserIdentityApi
      */
     public UserIdentityApi getUserIdentityApi() {
-<span class="fc" id="L189">        return new UserIdentityApi(connection);</span>
+<span class="fc" id="L188">        return new UserIdentityApi(connection);</span>
     }
 
     /**
@@ -196,7 +195,7 @@ public class Discogs {
      * @see DatabaseApi
      */
     public DatabaseApi getDatabaseApi() {
-<span class="fc" id="L199">        return new DatabaseApi(connection);</span>
+<span class="fc" id="L198">        return new DatabaseApi(connection);</span>
     }
 
     /**
@@ -206,7 +205,7 @@ public class Discogs {
      * @see MarketplaceApi
      */
     public MarketplaceApi getMarketplaceApi() {
-<span class="fc" id="L209">        return new MarketplaceApi(connection);</span>
+<span class="fc" id="L208">        return new MarketplaceApi(connection);</span>
     }
 
     /**
@@ -216,7 +215,7 @@ public class Discogs {
      * @see UserIdentityApi
      */
     public UserCollectionApi getUserCollectionApi() {
-<span class="fc" id="L219">        return new UserCollectionApi(connection);</span>
+<span class="fc" id="L218">        return new UserCollectionApi(connection);</span>
     }
 
     /**
@@ -226,7 +225,7 @@ public class Discogs {
      * @see UserWantListApi
      */
     public UserWantListApi getUserWantListApi() {
-<span class="fc" id="L229">        return new UserWantListApi(connection);</span>
+<span class="fc" id="L228">        return new UserWantListApi(connection);</span>
     }
 
     /**
@@ -236,7 +235,7 @@ public class Discogs {
      * @see UserListsApi
      */
     public UserListsApi getUserListsApi() {
-<span class="fc" id="L239">        return new UserListsApi(connection);</span>
+<span class="fc" id="L238">        return new UserListsApi(connection);</span>
     }
 
     /**
@@ -246,7 +245,7 @@ public class Discogs {
      * @see InventoryExportApi
      */
     public InventoryExportApi getInventoryExportApi() {
-<span class="fc" id="L249">        return new InventoryExportApi(connection);</span>
+<span class="fc" id="L248">        return new InventoryExportApi(connection);</span>
     }
 
     /**
@@ -256,7 +255,7 @@ public class Discogs {
      * @see InventoryUploadApi
      */
     public InventoryUploadApi getInventoryUploadApi() {
-<span class="fc" id="L259">        return new InventoryUploadApi(connection);</span>
+<span class="fc" id="L258">        return new InventoryUploadApi(connection);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

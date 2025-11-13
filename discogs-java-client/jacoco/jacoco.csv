@@ -153,5 +153,5 @@ discogs-java-client,com.amilesend.discogs.model.wantlist,GetWantListRequest,5,10
 discogs-java-client,com.amilesend.discogs.model.wantlist,DeleteReleaseFormWantListRequest,0,16,0,2,0,3,0,2,0,1
 discogs-java-client,com.amilesend.discogs.model.wantlist,AddReleaseToWantListRequest,5,30,1,3,0,6,1,2,0,1
 discogs-java-client,com.amilesend.discogs.connection,RandomAlphaNumericStringGenerator,9,33,0,2,3,7,1,3,1,2
-discogs-java-client,com.amilesend.discogs.connection,DiscogsConnectionBuilder,1,81,2,2,0,22,2,5,0,5
-discogs-java-client,com.amilesend.discogs.connection,DiscogsConnection,16,256,2,22,2,61,3,20,1,10
+discogs-java-client,com.amilesend.discogs.connection,DiscogsConnectionBuilder,1,86,2,2,0,23,2,5,0,5
+discogs-java-client,com.amilesend.discogs.connection,DiscogsConnection,16,251,2,22,2,60,3,20,1,10

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiscogsConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">discogs-java-client</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.discogs.connection</a> &gt; <span class="el_source">DiscogsConnection.java</span></div><h1>DiscogsConnection.java</h1><pre class="source lang-java linenums">/*
- * discogs-java-client - A Java SDK to access the Discogs API
+ * discogs-java-client - A Java client to access the Discogs API
  * Copyright © 2025 Andy Miles (andy.miles@amilesend.com)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -132,7 +132,7 @@ public class DiscogsConnection extends Connection&lt;GsonFactory&gt; {
 <span class="fc bfc" id="L132" title="All 2 branches covered.">            @NonNull final TransferProgressCallback callback) throws ConnectionException {</span>
 <span class="fc" id="L133">        authVerifier.checkIfAuthenticated(getAuthManager());</span>
 
-<span class="fc" id="L135">        try (final Response response = getHttpClient().newCall(request).execute()) {</span>
+<span class="fc" id="L135">        try (final Response response = super.execute(request)) {</span>
 <span class="fc" id="L136">            final String fileName = parseFileNameFromContentDisposition(response.header(CONTENT_DISPOSITION));</span>
 <span class="fc" id="L137">            final long sizeBytes = Optional.of(response)</span>
 <span class="fc" id="L138">                            .map(r -&gt; r.header(CONTENT_LENGTH))</span>
@@ -187,18 +187,16 @@ public class DiscogsConnection extends Connection&lt;GsonFactory&gt; {
             final Path downloadPath,
             final long sizeBytes,
             final TransferProgressCallback callback) throws IOException {
-<span class="fc" id="L190">        validateResponseCode(response);</span>
+<span class="fc" id="L190">        final long totalBytes = TransferFileWriter.builder()</span>
+<span class="fc" id="L191">                .output(downloadPath)</span>
+<span class="fc" id="L192">                .callback(callback)</span>
+<span class="fc" id="L193">                .build()</span>
+<span class="fc" id="L194">                .write(response.body().source(), sizeBytes);</span>
 
-<span class="fc" id="L192">        final long totalBytes = TransferFileWriter.builder()</span>
-<span class="fc" id="L193">                .output(downloadPath)</span>
-<span class="fc" id="L194">                .callback(callback)</span>
-<span class="fc" id="L195">                .build()</span>
-<span class="fc" id="L196">                .write(response.body().source(), sizeBytes);</span>
-
-<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
-<span class="nc" id="L199">            log.debug(&quot;Downloaded [{}] bytes to [{}]&quot;, totalBytes, downloadPath);</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">        if (log.isDebugEnabled()) {</span>
+<span class="nc" id="L197">            log.debug(&quot;Downloaded [{}] bytes to [{}]&quot;, totalBytes, downloadPath);</span>
         }
-<span class="fc" id="L201">        return totalBytes;</span>
+<span class="fc" id="L199">        return totalBytes;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
