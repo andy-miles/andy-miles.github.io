@@ -35,7 +35,7 @@ onedrive-java-sdk,com.amilesend.onedrive,BusinessOneDrive,0,299,0,2,0,92,0,16,0,
 onedrive-java-sdk,com.amilesend.onedrive,OneDrive,0,115,0,2,0,29,0,9,0,8
 onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager.CredentialConfig,15,0,0,0,3,0,1,0,1,0
 onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager.Builder,10,71,0,2,4,26,2,13,2,12
-onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager,2,372,1,27,0,90,1,28,0,15
+onedrive-java-sdk,com.amilesend.onedrive,OneDriveFactoryStateManager,2,378,1,27,0,92,1,28,0,15
 onedrive-java-sdk,com.amilesend.onedrive,OneDriveException,0,5,0,0,0,2,0,1,0,1
 onedrive-java-sdk,com.amilesend.onedrive.resource.site.request,CreateListItemRequest,0,10,0,0,0,3,0,2,0,2
 onedrive-java-sdk,com.amilesend.onedrive.resource.activities,ItemActionSet,5,136,13,13,2,24,13,2,0,2
