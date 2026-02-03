@@ -1,4 +1,26 @@
-<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mediainfo-jna-wrapper</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.mediainfo.util</a> &gt; <span class="el_source">StringUtils.java</span></div><h1>StringUtils.java</h1><pre class="source lang-java linenums">package com.amilesend.mediainfo.util;
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">mediainfo-jna-wrapper</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.mediainfo.util</a> &gt; <span class="el_source">StringUtils.java</span></div><h1>StringUtils.java</h1><pre class="source lang-java linenums">/*
+ * The MIT License
+ * Copyright © 2024-2026 Andy Miles
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the &quot;Software&quot;), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED &quot;AS IS&quot;, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+package com.amilesend.mediainfo.util;
 
 import lombok.experimental.UtilityClass;
 
@@ -16,18 +38,18 @@ public class StringUtils {
      * @return {@code true} if blank; else, {@code false}
      */
     public static boolean isBlank(final CharSequence cs) {
-<span class="fc bfc" id="L19" title="All 4 branches covered.">        if (Objects.isNull(cs) || cs.length() == 0) {</span>
-<span class="fc" id="L20">            return true;</span>
+<span class="fc bfc" id="L41" title="All 4 branches covered.">        if (Objects.isNull(cs) || cs.length() == 0) {</span>
+<span class="fc" id="L42">            return true;</span>
         }
 
-<span class="fc bfc" id="L23" title="All 2 branches covered.">        for (int i = 0; i &lt; cs.length(); ++i) {</span>
-<span class="fc" id="L24">            final char c = cs.charAt(i);</span>
-<span class="fc bfc" id="L25" title="All 2 branches covered.">            if (!Character.isWhitespace(c)) {</span>
-<span class="fc" id="L26">                return false;</span>
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        for (int i = 0; i &lt; cs.length(); ++i) {</span>
+<span class="fc" id="L46">            final char c = cs.charAt(i);</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">            if (!Character.isWhitespace(c)) {</span>
+<span class="fc" id="L48">                return false;</span>
             }
         }
 
-<span class="fc" id="L30">        return true;</span>
+<span class="fc" id="L52">        return true;</span>
     }
 
     /**
@@ -37,7 +59,7 @@ public class StringUtils {
      * @return {@code true} if not blank; else, {@code false}
      */
     public static boolean isNotBlank(final CharSequence cs) {
-<span class="fc bfc" id="L40" title="All 2 branches covered.">        return !isBlank(cs);</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        return !isBlank(cs);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
