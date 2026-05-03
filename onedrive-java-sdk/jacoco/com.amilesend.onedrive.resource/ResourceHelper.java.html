@@ -17,6 +17,8 @@
  */
 package com.amilesend.onedrive.resource;
 
+import com.amilesend.client.util.Validate;
+import com.google.common.net.UrlEscapers;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -29,15 +31,45 @@ public class ResourceHelper {
      * @return {@code true} if both objects are defined (not {@code null}); else, {@code false}
      */
     public static boolean objectDefinedEquals(final Object thisObj, final Object thatObj) {
-<span class="fc bfc" id="L32" title="All 4 branches covered.">        if (thisObj == null &amp;&amp; thatObj == null) {</span>
-<span class="fc" id="L33">            return true;</span>
+<span class="fc bfc" id="L34" title="All 4 branches covered.">        if (thisObj == null &amp;&amp; thatObj == null) {</span>
+<span class="fc" id="L35">            return true;</span>
         }
 
-<span class="fc bfc" id="L36" title="All 4 branches covered.">        if (thisObj != null &amp;&amp; thatObj != null) {</span>
-<span class="fc" id="L37">            return true;</span>
+<span class="fc bfc" id="L38" title="All 4 branches covered.">        if (thisObj != null &amp;&amp; thatObj != null) {</span>
+<span class="fc" id="L39">            return true;</span>
         }
 
-<span class="fc" id="L40">        return false;</span>
+<span class="fc" id="L42">        return false;</span>
     }
+
+    /**
+     * Helper method to leverage guava's {@link UrlEscapers} to escape values used for URL path elements.
+     *
+     * @param value the value to escape
+     * @return the encoded value
+     */
+    public static String escapeValueForUrlPath(final String value) {
+<span class="fc" id="L52">        return UrlEscapers.urlPathSegmentEscaper().escape(value);</span>
+    }
+
+    /**
+     * Helper to validate filenames for specific characters.
+     * &lt;p&gt;
+     * &lt;a href=&quot;https://support.microsoft.com/en-us/office/restrictions-and-limitations-in-onedrive-and-sharepoint-64883a5d-228e-48f5-b3d2-eb39e07630fa&quot;&gt;
+     * API Documentation&lt;/a&gt;.
+     *
+     * @param filename
+     */
+    public static void validateFilename(final String filename) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;\&quot;&quot;), &quot;filename must not contain [\&quot;]&quot;);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;*&quot;), &quot;filename must not contain [*]&quot;);</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;:&quot;), &quot;filename must not contain [:]&quot;);</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;&lt;&quot;), &quot;filename must not contain [&lt;]&quot;);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;&gt;&quot;), &quot;filename must not contain [&gt;]&quot;);</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;?&quot;), &quot;filename must not contain [?]&quot;);</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;/&quot;), &quot;filename must not contain [/]&quot;);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;\\&quot;), &quot;filename must not contain [\\]&quot;);</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        Validate.isTrue(!filename.contains(&quot;|&quot;), &quot;filename must not contain [|]&quot;);</span>
+<span class="fc" id="L73">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

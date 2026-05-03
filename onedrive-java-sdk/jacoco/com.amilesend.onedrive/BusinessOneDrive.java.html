@@ -22,8 +22,6 @@ import com.amilesend.onedrive.connection.OneDriveConnection;
 import com.amilesend.onedrive.resource.Drive;
 import com.amilesend.onedrive.resource.Site;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +29,7 @@ import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_LIST_PA
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_PARSER;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.SITE_LIST_PARSER;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.SITE_PARSER;
+import static com.amilesend.onedrive.resource.ResourceHelper.escapeValueForUrlPath;
 import static com.amilesend.onedrive.resource.drive.Drive.DRIVES_URL_PATH_SUFFIX;
 import static com.amilesend.onedrive.resource.drive.Drive.DRIVE_URL_PATH_SUFFIX;
 import static com.amilesend.onedrive.resource.site.Site.SITE_BASE_URL_PATH;
@@ -57,8 +56,8 @@ public class BusinessOneDrive extends OneDrive {
      * @param connection the authenticated connection
      */
     public BusinessOneDrive(final OneDriveConnection connection) {
-<span class="fc" id="L60">        super(connection);</span>
-<span class="fc" id="L61">    }</span>
+<span class="fc" id="L59">        super(connection);</span>
+<span class="fc" id="L60">    }</span>
 
     //////////
     // Site
@@ -74,14 +73,14 @@ public class BusinessOneDrive extends OneDrive {
      * @see Site
      */
     public Site getRootSite() {
-<span class="fc" id="L77">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L78">        return new Site(connection.execute(</span>
-<span class="fc" id="L79">                connection.newRequestBuilder()</span>
-<span class="fc" id="L80">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L81">                                .append(SITE_BASE_URL_PATH)</span>
-<span class="fc" id="L82">                                .append(&quot;root&quot;)</span>
-<span class="fc" id="L83">                                .toString())</span>
-<span class="fc" id="L84">                        .build(),</span>
+<span class="fc" id="L76">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L77">        return new Site(connection.execute(</span>
+<span class="fc" id="L78">                connection.newRequestBuilder()</span>
+<span class="fc" id="L79">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L80">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L81">                                .append(&quot;root&quot;)</span>
+<span class="fc" id="L82">                                .toString())</span>
+<span class="fc" id="L83">                        .build(),</span>
                 SITE_PARSER));
     }
 
@@ -96,15 +95,15 @@ public class BusinessOneDrive extends OneDrive {
      * @see Site
      */
     public Site getSite(final String siteId) {
-<span class="fc" id="L99">        final String encodedSiteId = validateIdAndUrlEncode(siteId, &quot;siteId&quot;);</span>
-<span class="fc" id="L100">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L101">        return new Site(connection.execute(</span>
-<span class="fc" id="L102">                connection.newRequestBuilder()</span>
-<span class="fc" id="L103">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L104">                                .append(SITE_BASE_URL_PATH)</span>
-<span class="fc" id="L105">                                .append(encodedSiteId)</span>
-<span class="fc" id="L106">                                .toString())</span>
-<span class="fc" id="L107">                        .build(),</span>
+<span class="fc" id="L98">        final String encodedSiteId = validateIdAndUrlEncode(siteId, &quot;siteId&quot;);</span>
+<span class="fc" id="L99">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L100">        return new Site(connection.execute(</span>
+<span class="fc" id="L101">                connection.newRequestBuilder()</span>
+<span class="fc" id="L102">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L103">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L104">                                .append(encodedSiteId)</span>
+<span class="fc" id="L105">                                .toString())</span>
+<span class="fc" id="L106">                        .build(),</span>
                 SITE_PARSER));
     }
 
@@ -118,17 +117,17 @@ public class BusinessOneDrive extends OneDrive {
      * @return the site
      */
     public Site getSiteForGroup(final String groupId) {
-<span class="fc" id="L121">        final String encodedGroupId = validateIdAndUrlEncode(groupId, &quot;groupId&quot;);</span>
-<span class="fc" id="L122">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L123">        return new Site(connection.execute(</span>
-<span class="fc" id="L124">                connection.newRequestBuilder()</span>
-<span class="fc" id="L125">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L126">                                .append(GROUPS_BASE_URL_PATH)</span>
-<span class="fc" id="L127">                                .append(encodedGroupId)</span>
-<span class="fc" id="L128">                                .append(SITE_BASE_URL_PATH)</span>
-<span class="fc" id="L129">                                .append(&quot;root&quot;)</span>
-<span class="fc" id="L130">                                .toString())</span>
-<span class="fc" id="L131">                        .build(),</span>
+<span class="fc" id="L120">        final String encodedGroupId = validateIdAndUrlEncode(groupId, &quot;groupId&quot;);</span>
+<span class="fc" id="L121">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L122">        return new Site(connection.execute(</span>
+<span class="fc" id="L123">                connection.newRequestBuilder()</span>
+<span class="fc" id="L124">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L125">                                .append(GROUPS_BASE_URL_PATH)</span>
+<span class="fc" id="L126">                                .append(encodedGroupId)</span>
+<span class="fc" id="L127">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L128">                                .append(&quot;root&quot;)</span>
+<span class="fc" id="L129">                                .toString())</span>
+<span class="fc" id="L130">                        .build(),</span>
                 SITE_PARSER));
     }
 
@@ -142,18 +141,18 @@ public class BusinessOneDrive extends OneDrive {
      * @see Site
      */
     public List&lt;Site&gt; getRootSites() {
-<span class="fc" id="L145">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L146">        return connection.execute(</span>
-<span class="fc" id="L147">                connection.newRequestBuilder()</span>
-<span class="fc" id="L148">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L149">                                .append(SITE_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L150">                                .append(&quot;?select=siteCollection,webUrl&amp;filter=siteCollection/root%20ne%20null&quot;)</span>
-<span class="fc" id="L151">                                .toString())</span>
-<span class="fc" id="L152">                        .build(),</span>
+<span class="fc" id="L144">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L145">        return connection.execute(</span>
+<span class="fc" id="L146">                connection.newRequestBuilder()</span>
+<span class="fc" id="L147">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L148">                                .append(SITE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L149">                                .append(&quot;?select=siteCollection,webUrl&amp;filter=siteCollection/root%20ne%20null&quot;)</span>
+<span class="fc" id="L150">                                .toString())</span>
+<span class="fc" id="L151">                        .build(),</span>
                 SITE_LIST_PARSER)
-<span class="fc" id="L154">                .stream()</span>
-<span class="fc" id="L155">                .map(s -&gt; new Site(s))</span>
-<span class="fc" id="L156">                .collect(Collectors.toList());</span>
+<span class="fc" id="L153">                .stream()</span>
+<span class="fc" id="L154">                .map(s -&gt; new Site(s))</span>
+<span class="fc" id="L155">                .collect(Collectors.toList());</span>
     }
 
     /**
@@ -167,24 +166,24 @@ public class BusinessOneDrive extends OneDrive {
      * @see Site
      */
     public List&lt;Site&gt; searchForSite(final String query) {
-<span class="fc" id="L170">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
-<span class="fc bfc" id="L171" title="All 2 branches covered.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
+<span class="fc" id="L169">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
                 &quot;query length must be less than &quot; + MAX_QUERY_LENGTH);
 
-<span class="fc" id="L174">        final String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);</span>
-<span class="fc" id="L175">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L176">        return connection.execute(</span>
-<span class="fc" id="L177">                connection.newRequestBuilder()</span>
-<span class="fc" id="L178">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L179">                                .append(SITE_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L180">                                .append(&quot;?search=&quot;)</span>
-<span class="fc" id="L181">                                .append(encodedQuery)</span>
-<span class="fc" id="L182">                                .toString())</span>
-<span class="fc" id="L183">                        .build(),</span>
+<span class="fc" id="L173">        final String encodedQuery = escapeValueForUrlPath(query);</span>
+<span class="fc" id="L174">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L175">        return connection.execute(</span>
+<span class="fc" id="L176">                connection.newRequestBuilder()</span>
+<span class="fc" id="L177">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L178">                                .append(SITE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L179">                                .append(&quot;?search=&quot;)</span>
+<span class="fc" id="L180">                                .append(encodedQuery)</span>
+<span class="fc" id="L181">                                .toString())</span>
+<span class="fc" id="L182">                        .build(),</span>
                 SITE_LIST_PARSER)
-<span class="fc" id="L185">                .stream()</span>
-<span class="fc" id="L186">                .map(s -&gt; new Site(s))</span>
-<span class="fc" id="L187">                .collect(Collectors.toList());</span>
+<span class="fc" id="L184">                .stream()</span>
+<span class="fc" id="L185">                .map(s -&gt; new Site(s))</span>
+<span class="fc" id="L186">                .collect(Collectors.toList());</span>
     }
 
 
@@ -202,16 +201,16 @@ public class BusinessOneDrive extends OneDrive {
      * @return the drive
      */
     public Drive getDefaultDriveForGroup(final String groupId) {
-<span class="fc" id="L205">        final String encodedGroupId = validateIdAndUrlEncode(groupId, &quot;groupId&quot;);</span>
-<span class="fc" id="L206">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L207">        return new Drive(connection.execute(</span>
-<span class="fc" id="L208">                connection.newRequestBuilder()</span>
-<span class="fc" id="L209">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L210">                                .append(GROUPS_BASE_URL_PATH)</span>
-<span class="fc" id="L211">                                .append(encodedGroupId)</span>
-<span class="fc" id="L212">                                .append(DRIVE_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L213">                                .toString())</span>
-<span class="fc" id="L214">                        .build(),</span>
+<span class="fc" id="L204">        final String encodedGroupId = validateIdAndUrlEncode(groupId, &quot;groupId&quot;);</span>
+<span class="fc" id="L205">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L206">        return new Drive(connection.execute(</span>
+<span class="fc" id="L207">                connection.newRequestBuilder()</span>
+<span class="fc" id="L208">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L209">                                .append(GROUPS_BASE_URL_PATH)</span>
+<span class="fc" id="L210">                                .append(encodedGroupId)</span>
+<span class="fc" id="L211">                                .append(DRIVE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L212">                                .toString())</span>
+<span class="fc" id="L213">                        .build(),</span>
                 DRIVE_PARSER));
     }
 
@@ -225,16 +224,16 @@ public class BusinessOneDrive extends OneDrive {
      * @return the drive
      */
     public Drive getDefaultDriveForSite(final String siteId) {
-<span class="fc" id="L228">        final String encodedSiteId = validateIdAndUrlEncode(siteId, &quot;siteId&quot;);</span>
-<span class="fc" id="L229">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L230">        return new Drive(connection.execute(</span>
-<span class="fc" id="L231">                connection.newRequestBuilder()</span>
-<span class="fc" id="L232">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L233">                                .append(SITE_BASE_URL_PATH)</span>
-<span class="fc" id="L234">                                .append(encodedSiteId)</span>
-<span class="fc" id="L235">                                .append(DRIVE_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L236">                                .toString())</span>
-<span class="fc" id="L237">                        .build(),</span>
+<span class="fc" id="L227">        final String encodedSiteId = validateIdAndUrlEncode(siteId, &quot;siteId&quot;);</span>
+<span class="fc" id="L228">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L229">        return new Drive(connection.execute(</span>
+<span class="fc" id="L230">                connection.newRequestBuilder()</span>
+<span class="fc" id="L231">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L232">                                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L233">                                .append(encodedSiteId)</span>
+<span class="fc" id="L234">                                .append(DRIVE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L235">                                .toString())</span>
+<span class="fc" id="L236">                        .build(),</span>
                 DRIVE_PARSER));
     }
 
@@ -248,7 +247,7 @@ public class BusinessOneDrive extends OneDrive {
      * @return the list of drives
      */
     public List&lt;Drive&gt; getDrivesForSite(final String siteId) {
-<span class="fc" id="L251">        return getDrivesForId(siteId, &quot;siteId&quot;, &quot;/sites/&quot;);</span>
+<span class="fc" id="L250">        return getDrivesForId(siteId, &quot;siteId&quot;, &quot;/sites/&quot;);</span>
     }
 
     /**
@@ -261,7 +260,7 @@ public class BusinessOneDrive extends OneDrive {
      * @return the list of drives
      */
     public List&lt;Drive&gt; getDrivesForGroup(final String groupId) {
-<span class="fc" id="L264">        return getDrivesForId(groupId, &quot;groupId&quot;, &quot;/groups/&quot;);</span>
+<span class="fc" id="L263">        return getDrivesForId(groupId, &quot;groupId&quot;, &quot;/groups/&quot;);</span>
     }
 
     /**
@@ -274,24 +273,24 @@ public class BusinessOneDrive extends OneDrive {
      * @return the list of drives
      */
     public List&lt;Drive&gt; getDrivesForUser(final String userId) {
-<span class="fc" id="L277">        return getDrivesForId(userId, &quot;userId&quot;, &quot;/users/&quot;);</span>
+<span class="fc" id="L276">        return getDrivesForId(userId, &quot;userId&quot;, &quot;/users/&quot;);</span>
     }
 
     private List&lt;Drive&gt; getDrivesForId(final String id, final String idName, final String urlSubPath) {
-<span class="fc" id="L281">        final String encodedGroupId = validateIdAndUrlEncode(id, idName);</span>
-<span class="fc" id="L282">        final OneDriveConnection connection = getConnection();</span>
-<span class="fc" id="L283">        return connection.execute(</span>
-<span class="fc" id="L284">                        connection.newRequestBuilder()</span>
-<span class="fc" id="L285">                                .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L286">                                        .append(urlSubPath)</span>
-<span class="fc" id="L287">                                        .append(encodedGroupId)</span>
-<span class="fc" id="L288">                                        .append(DRIVES_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L289">                                        .toString())</span>
-<span class="fc" id="L290">                                .build(),</span>
+<span class="fc" id="L280">        final String encodedGroupId = validateIdAndUrlEncode(id, idName);</span>
+<span class="fc" id="L281">        final OneDriveConnection connection = getConnection();</span>
+<span class="fc" id="L282">        return connection.execute(</span>
+<span class="fc" id="L283">                        connection.newRequestBuilder()</span>
+<span class="fc" id="L284">                                .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L285">                                        .append(urlSubPath)</span>
+<span class="fc" id="L286">                                        .append(encodedGroupId)</span>
+<span class="fc" id="L287">                                        .append(DRIVES_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L288">                                        .toString())</span>
+<span class="fc" id="L289">                                .build(),</span>
                         DRIVE_LIST_PARSER)
-<span class="fc" id="L292">                .stream()</span>
-<span class="fc" id="L293">                .map(d -&gt; new Drive(d))</span>
-<span class="fc" id="L294">                .collect(Collectors.toList());</span>
+<span class="fc" id="L291">                .stream()</span>
+<span class="fc" id="L292">                .map(d -&gt; new Drive(d))</span>
+<span class="fc" id="L293">                .collect(Collectors.toList());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

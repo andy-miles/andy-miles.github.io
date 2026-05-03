@@ -33,8 +33,6 @@ import lombok.NonNull;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -43,6 +41,7 @@ import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PA
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_ITEM_PARSER;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.ITEM_ACTIVITY_LIST_PARSER;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.newSpecialDriveItemParser;
+import static com.amilesend.onedrive.resource.ResourceHelper.escapeValueForUrlPath;
 import static com.amilesend.onedrive.resource.ResourceHelper.objectDefinedEquals;
 
 /**
@@ -95,10 +94,10 @@ public class Drive extends BaseItem {
      * @return the list of activities
      */
     public List&lt;ItemActivity&gt; getActivities() {
-<span class="fc" id="L98">        return connection.execute(</span>
-<span class="fc" id="L99">                connection.newRequestBuilder()</span>
-<span class="fc" id="L100">                        .url(getActivitiesUrl(getId()))</span>
-<span class="fc" id="L101">                        .build(),</span>
+<span class="fc" id="L97">        return connection.execute(</span>
+<span class="fc" id="L98">                connection.newRequestBuilder()</span>
+<span class="fc" id="L99">                        .url(getActivitiesUrl(getId()))</span>
+<span class="fc" id="L100">                        .build(),</span>
                 ITEM_ACTIVITY_LIST_PARSER);
     }
 
@@ -110,10 +109,10 @@ public class Drive extends BaseItem {
      * @return the root folder drive item
      */
     public DriveItem getRootFolder() {
-<span class="fc" id="L113">        return connection.execute(</span>
-<span class="fc" id="L114">                connection.newRequestBuilder()</span>
-<span class="fc" id="L115">                        .url(connection.getBaseUrl() + ROOT_FOLDER_URL_PATH)</span>
-<span class="fc" id="L116">                        .build(),</span>
+<span class="fc" id="L112">        return connection.execute(</span>
+<span class="fc" id="L113">                connection.newRequestBuilder()</span>
+<span class="fc" id="L114">                        .url(connection.getBaseUrl() + ROOT_FOLDER_URL_PATH)</span>
+<span class="fc" id="L115">                        .build(),</span>
                 DRIVE_ITEM_PARSER);
     }
 
@@ -126,19 +125,19 @@ public class Drive extends BaseItem {
      * @return the list of drive item changes
      */
     public List&lt;DriveItem&gt; getChanges() {
-<span class="fc" id="L129">        final List&lt;DriveItem&gt; changes = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L128">        final List&lt;DriveItem&gt; changes = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L131">        DriveItemPage currentPage = null;</span>
+<span class="fc" id="L130">        DriveItemPage currentPage = null;</span>
         do {
-<span class="fc" id="L133">            currentPage = connection.execute(</span>
-<span class="fc" id="L134">                    connection.newRequestBuilder()</span>
-<span class="fc" id="L135">                            .url(getChangesUrl(currentPage))</span>
-<span class="fc" id="L136">                            .build(),</span>
+<span class="fc" id="L132">            currentPage = connection.execute(</span>
+<span class="fc" id="L133">                    connection.newRequestBuilder()</span>
+<span class="fc" id="L134">                            .url(getChangesUrl(currentPage))</span>
+<span class="fc" id="L135">                            .build(),</span>
                     DRIVE_ITEM_PAGE_PARSER);
-<span class="fc" id="L138">            changes.addAll(currentPage.getValue());</span>
-<span class="fc bfc" id="L139" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
+<span class="fc" id="L137">            changes.addAll(currentPage.getValue());</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
 
-<span class="fc" id="L141">        return changes;</span>
+<span class="fc" id="L140">        return changes;</span>
     }
 
     /**
@@ -151,24 +150,24 @@ public class Drive extends BaseItem {
      * @return the list of drive items associated with the query
      */
     public List&lt;DriveItem&gt; search(final String query) {
-<span class="fc" id="L154">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
-<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
+<span class="fc" id="L153">        Validate.notBlank(query, &quot;query must not be blank&quot;);</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        Validate.isTrue(query.length() &lt; MAX_QUERY_LENGTH,</span>
                 &quot;query length must be less than &quot; + MAX_QUERY_LENGTH);
 
-<span class="fc" id="L158">        final String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);</span>
-<span class="fc" id="L159">        final List&lt;DriveItem&gt; results = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L157">        final String encodedQuery = escapeValueForUrlPath(query);</span>
+<span class="fc" id="L158">        final List&lt;DriveItem&gt; results = new ArrayList&lt;&gt;();</span>
 
-<span class="fc" id="L161">        DriveItemPage currentPage = null;</span>
+<span class="fc" id="L160">        DriveItemPage currentPage = null;</span>
         do {
-<span class="fc" id="L163">            currentPage = connection.execute(</span>
-<span class="fc" id="L164">                    connection.newRequestBuilder()</span>
-<span class="fc" id="L165">                            .url(getSearchUrl(currentPage, encodedQuery))</span>
-<span class="fc" id="L166">                            .build(),</span>
+<span class="fc" id="L162">            currentPage = connection.execute(</span>
+<span class="fc" id="L163">                    connection.newRequestBuilder()</span>
+<span class="fc" id="L164">                            .url(getSearchUrl(currentPage, encodedQuery))</span>
+<span class="fc" id="L165">                            .build(),</span>
                     DRIVE_ITEM_PAGE_PARSER);
-<span class="fc" id="L168">            results.addAll(currentPage.getValue());</span>
-<span class="fc bfc" id="L169" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
+<span class="fc" id="L167">            results.addAll(currentPage.getValue());</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        } while (hasNextPage(currentPage));</span>
 
-<span class="fc" id="L171">        return results;</span>
+<span class="fc" id="L170">        return results;</span>
     }
 
     /**
@@ -178,72 +177,72 @@ public class Drive extends BaseItem {
      * @return the special folder drive item
      * @see SpecialFolder.Type
      */
-<span class="fc bfc" id="L181" title="All 2 branches covered.">    public SpecialDriveItem getSpecialFolder(@NonNull final SpecialFolder.Type type) {</span>
-<span class="fc" id="L182">        return connection.execute(</span>
-<span class="fc" id="L183">                connection.newRequestBuilder()</span>
-<span class="fc" id="L184">                        .url(getSpecialFolderUrl(type))</span>
-<span class="fc" id="L185">                        .build(),</span>
-<span class="fc" id="L186">                newSpecialDriveItemParser(type));</span>
+<span class="fc bfc" id="L180" title="All 2 branches covered.">    public SpecialDriveItem getSpecialFolder(@NonNull final SpecialFolder.Type type) {</span>
+<span class="fc" id="L181">        return connection.execute(</span>
+<span class="fc" id="L182">                connection.newRequestBuilder()</span>
+<span class="fc" id="L183">                        .url(getSpecialFolderUrl(type))</span>
+<span class="fc" id="L184">                        .build(),</span>
+<span class="fc" id="L185">                newSpecialDriveItemParser(type));</span>
     }
 
     @Override
     public boolean equals(final Object obj) {
-<span class="fc bfc" id="L191" title="All 2 branches covered.">        if (this == obj) {</span>
-<span class="fc" id="L192">            return true;</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L191">            return true;</span>
         }
 
-<span class="fc bfc" id="L195" title="All 4 branches covered.">        if (obj == null || getClass() != obj.getClass()) {</span>
-<span class="fc" id="L196">            return false;</span>
+<span class="fc bfc" id="L194" title="All 4 branches covered.">        if (obj == null || getClass() != obj.getClass()) {</span>
+<span class="fc" id="L195">            return false;</span>
         }
 
-<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (!super.equals(obj)) {</span>
-<span class="fc" id="L200">            return false;</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        if (!super.equals(obj)) {</span>
+<span class="fc" id="L199">            return false;</span>
         }
 
-<span class="fc" id="L203">        final Drive drive = (Drive) obj;</span>
-<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        return Objects.equals(getDriveType(), drive.getDriveType())</span>
-<span class="pc bpc" id="L205" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getOwner(), drive.getOwner())</span>
-<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getQuota(), drive.getQuota())</span>
-<span class="pc bpc" id="L207" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSharepointIds(), drive.getSharepointIds())</span>
-<span class="fc bfc" id="L208" title="All 2 branches covered.">                &amp;&amp; objectDefinedEquals(getSystem(), drive.getSystem());</span>
+<span class="fc" id="L202">        final Drive drive = (Drive) obj;</span>
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        return Objects.equals(getDriveType(), drive.getDriveType())</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getOwner(), drive.getOwner())</span>
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getQuota(), drive.getQuota())</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">                &amp;&amp; Objects.equals(getSharepointIds(), drive.getSharepointIds())</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">                &amp;&amp; objectDefinedEquals(getSystem(), drive.getSystem());</span>
     }
 
     @Override
     public int hashCode() {
-<span class="fc" id="L213">        return Objects.hash(</span>
-<span class="fc" id="L214">                super.hashCode(),</span>
-<span class="fc" id="L215">                getDriveType(),</span>
-<span class="fc" id="L216">                getOwner(),</span>
-<span class="fc" id="L217">                getQuota(),</span>
-<span class="fc" id="L218">                getSharepointIds(),</span>
-<span class="fc" id="L219">                Objects.nonNull(getSystem()));</span>
+<span class="fc" id="L212">        return Objects.hash(</span>
+<span class="fc" id="L213">                super.hashCode(),</span>
+<span class="fc" id="L214">                getDriveType(),</span>
+<span class="fc" id="L215">                getOwner(),</span>
+<span class="fc" id="L216">                getQuota(),</span>
+<span class="fc" id="L217">                getSharepointIds(),</span>
+<span class="fc" id="L218">                Objects.nonNull(getSystem()));</span>
     }
 
     private String getActivitiesUrl(final String driveId) {
-<span class="fc" id="L223">        return new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L224">                .append(DRIVE_BASE_URL_PATH)</span>
-<span class="fc" id="L225">                .append(URLEncoder.encode(driveId, StandardCharsets.UTF_8))</span>
-<span class="fc" id="L226">                .append(ACTIVITIES_URL_SUFFIX)</span>
-<span class="fc" id="L227">                .toString();</span>
+<span class="fc" id="L222">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L223">                .append(DRIVE_BASE_URL_PATH)</span>
+<span class="fc" id="L224">                .append(escapeValueForUrlPath(driveId))</span>
+<span class="fc" id="L225">                .append(ACTIVITIES_URL_SUFFIX)</span>
+<span class="fc" id="L226">                .toString();</span>
     }
 
     private String getChangesUrl(final DriveItemPage page) {
-<span class="fc bfc" id="L231" title="All 2 branches covered.">        return page == null ? connection.getBaseUrl() + CHANGES_URL_PATH : page.getNextLink();</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">        return page == null ? connection.getBaseUrl() + CHANGES_URL_PATH : page.getNextLink();</span>
     }
 
     private String getSearchUrl(final DriveItemPage page, final String searchQuery) {
-<span class="fc bfc" id="L235" title="All 2 branches covered.">        return page == null</span>
-<span class="fc" id="L236">                ? new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L237">                        .append(SEARCH_URL_PATH)</span>
-<span class="fc" id="L238">                        .append(&quot;(q='&quot;)</span>
-<span class="fc" id="L239">                        .append(URLEncoder.encode(searchQuery, StandardCharsets.UTF_8))</span>
-<span class="fc" id="L240">                        .append(&quot;')&quot;)</span>
-<span class="fc" id="L241">                        .toString()</span>
-<span class="fc" id="L242">                : page.getNextLink();</span>
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        return page == null</span>
+<span class="fc" id="L235">                ? new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L236">                        .append(SEARCH_URL_PATH)</span>
+<span class="fc" id="L237">                        .append(&quot;(q='&quot;)</span>
+<span class="fc" id="L238">                        .append(escapeValueForUrlPath(searchQuery))</span>
+<span class="fc" id="L239">                        .append(&quot;')&quot;)</span>
+<span class="fc" id="L240">                        .toString()</span>
+<span class="fc" id="L241">                : page.getNextLink();</span>
     }
 
     private String getSpecialFolderUrl(final SpecialFolder.Type type) {
-<span class="fc" id="L246">        return connection.getBaseUrl() + SPECIAL_FOLDER_URL_PATH + type.getId();</span>
+<span class="fc" id="L245">        return connection.getBaseUrl() + SPECIAL_FOLDER_URL_PATH + type.getId();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

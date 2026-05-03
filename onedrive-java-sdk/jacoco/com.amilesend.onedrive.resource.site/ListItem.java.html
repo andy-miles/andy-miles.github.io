@@ -33,8 +33,6 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import okhttp3.RequestBody;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -44,6 +42,7 @@ import static com.amilesend.onedrive.parse.resource.parser.Parsers.GET_COLUMN_VA
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemParser;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemVersionListParser;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.newListItemVersionParser;
+import static com.amilesend.onedrive.resource.ResourceHelper.escapeValueForUrlPath;
 import static com.amilesend.onedrive.resource.site.List.LIST_BASE_URL_PATH;
 import static com.amilesend.onedrive.resource.site.ListItemVersion.LIST_ITEM_VERSIONS_URL_SUFFIX;
 import static com.amilesend.onedrive.resource.site.ListItemVersion.LIST_ITEM_VERSION_BASE_URL_PATH;
@@ -103,12 +102,12 @@ public class ListItem extends BaseItem {
      * @see GetColumnValuesResponse
      */
     public GetColumnValuesResponse getColumnValues() {
-<span class="fc" id="L106">        return connection.execute(</span>
-<span class="fc" id="L107">                connection.newRequestBuilder()</span>
-<span class="fc" id="L108">                        .url(newStringBuilderForListItemUrl()</span>
-<span class="fc" id="L109">                                .append(&quot;?expand=fields&quot;)</span>
-<span class="fc" id="L110">                                .toString())</span>
-<span class="fc" id="L111">                        .build(),</span>
+<span class="fc" id="L105">        return connection.execute(</span>
+<span class="fc" id="L106">                connection.newRequestBuilder()</span>
+<span class="fc" id="L107">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L108">                                .append(&quot;?expand=fields&quot;)</span>
+<span class="fc" id="L109">                                .toString())</span>
+<span class="fc" id="L110">                        .build(),</span>
                 GET_COLUMN_VALUES_RESPONSE_PARSER);
     }
 
@@ -123,15 +122,15 @@ public class ListItem extends BaseItem {
      * @see GetColumnValuesResponse
      */
     public GetColumnValuesResponse getColumnValues(final java.util.List&lt;String&gt; columnsToSelect) {
-<span class="fc" id="L126">        final String selectedColumns = validateAndJoinColumns(columnsToSelect);</span>
-<span class="fc" id="L127">        return connection.execute(</span>
-<span class="fc" id="L128">                connection.newRequestBuilder()</span>
-<span class="fc" id="L129">                        .url(newStringBuilderForListItemUrl()</span>
-<span class="fc" id="L130">                                .append(&quot;?expand=fields(select=&quot;)</span>
-<span class="fc" id="L131">                                .append(selectedColumns)</span>
-<span class="fc" id="L132">                                .append(&quot;)&quot;)</span>
-<span class="fc" id="L133">                                .toString())</span>
-<span class="fc" id="L134">                        .build(),</span>
+<span class="fc" id="L125">        final String selectedColumns = validateAndJoinColumns(columnsToSelect);</span>
+<span class="fc" id="L126">        return connection.execute(</span>
+<span class="fc" id="L127">                connection.newRequestBuilder()</span>
+<span class="fc" id="L128">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L129">                                .append(&quot;?expand=fields(select=&quot;)</span>
+<span class="fc" id="L130">                                .append(selectedColumns)</span>
+<span class="fc" id="L131">                                .append(&quot;)&quot;)</span>
+<span class="fc" id="L132">                                .toString())</span>
+<span class="fc" id="L133">                        .build(),</span>
                 GET_COLUMN_VALUES_RESPONSE_PARSER);
     }
 
@@ -146,16 +145,16 @@ public class ListItem extends BaseItem {
      * @return the field value set containing all the columns and values
      */
     public Map&lt;String, Object&gt; updateColumnValues(final Map&lt;String, Object&gt; fields) {
-<span class="fc" id="L149">        Validate.notEmpty(fields, &quot;fields must not be blank&quot;);</span>
-<span class="fc" id="L150">        return connection.execute(</span>
-<span class="fc" id="L151">                connection.newWithBodyRequestBuilder()</span>
-<span class="fc" id="L152">                        .url(newStringBuilderForListItemUrl()</span>
-<span class="fc" id="L153">                                .append(&quot;/fields&quot;)</span>
-<span class="fc" id="L154">                                .toString())</span>
-<span class="fc" id="L155">                        .patch(RequestBody.create(</span>
-<span class="fc" id="L156">                                connection.getGsonFactory().getInstance(connection).toJson(fields),</span>
+<span class="fc" id="L148">        Validate.notEmpty(fields, &quot;fields must not be blank&quot;);</span>
+<span class="fc" id="L149">        return connection.execute(</span>
+<span class="fc" id="L150">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L151">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L152">                                .append(&quot;/fields&quot;)</span>
+<span class="fc" id="L153">                                .toString())</span>
+<span class="fc" id="L154">                        .patch(RequestBody.create(</span>
+<span class="fc" id="L155">                                connection.getGsonFactory().getInstance(connection).toJson(fields),</span>
                                 JSON_MEDIA_TYPE))
-<span class="fc" id="L158">                        .build(),</span>
+<span class="fc" id="L157">                        .build(),</span>
                 FIELD_VALUE_SET_PARSER);
     }
 
@@ -172,17 +171,17 @@ public class ListItem extends BaseItem {
      * @return the list item versions
      */
     public java.util.List&lt;ListItemVersion&gt; getListItemVersions() {
-<span class="fc" id="L175">        final String siteId = getSiteId();</span>
-<span class="fc" id="L176">        final String listId = getListId();</span>
-<span class="fc" id="L177">        final String listItemId = getId();</span>
+<span class="fc" id="L174">        final String siteId = getSiteId();</span>
+<span class="fc" id="L175">        final String listId = getListId();</span>
+<span class="fc" id="L176">        final String listItemId = getId();</span>
 
-<span class="fc" id="L179">        return connection.execute(</span>
-<span class="fc" id="L180">                connection.newRequestBuilder()</span>
-<span class="fc" id="L181">                        .url(newStringBuilderForListItemUrl()</span>
-<span class="fc" id="L182">                                .append(LIST_ITEM_VERSIONS_URL_SUFFIX)</span>
-<span class="fc" id="L183">                                .toString())</span>
-<span class="fc" id="L184">                        .build(),</span>
-<span class="fc" id="L185">                newListItemVersionListParser(siteId, listId, listItemId));</span>
+<span class="fc" id="L178">        return connection.execute(</span>
+<span class="fc" id="L179">                connection.newRequestBuilder()</span>
+<span class="fc" id="L180">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L181">                                .append(LIST_ITEM_VERSIONS_URL_SUFFIX)</span>
+<span class="fc" id="L182">                                .toString())</span>
+<span class="fc" id="L183">                        .build(),</span>
+<span class="fc" id="L184">                newListItemVersionListParser(siteId, listId, listItemId));</span>
     }
 
     /**
@@ -195,20 +194,20 @@ public class ListItem extends BaseItem {
      * @return the list item version
      */
     public ListItemVersion getVersion(final String versionId) {
-<span class="fc" id="L198">        Validate.notBlank(versionId, &quot;versionId must not be blank&quot;);</span>
+<span class="fc" id="L197">        Validate.notBlank(versionId, &quot;versionId must not be blank&quot;);</span>
 
-<span class="fc" id="L200">        final String siteId = getSiteId();</span>
-<span class="fc" id="L201">        final String listId = getListId();</span>
-<span class="fc" id="L202">        final String listItemId = getId();</span>
+<span class="fc" id="L199">        final String siteId = getSiteId();</span>
+<span class="fc" id="L200">        final String listId = getListId();</span>
+<span class="fc" id="L201">        final String listItemId = getId();</span>
 
-<span class="fc" id="L204">        return connection.execute(</span>
-<span class="fc" id="L205">                connection.newRequestBuilder()</span>
-<span class="fc" id="L206">                        .url(newStringBuilderForListItemUrl()</span>
-<span class="fc" id="L207">                                .append(LIST_ITEM_VERSION_BASE_URL_PATH)</span>
-<span class="fc" id="L208">                                .append(versionId)</span>
-<span class="fc" id="L209">                                .toString())</span>
-<span class="fc" id="L210">                        .build(),</span>
-<span class="fc" id="L211">                newListItemVersionParser(siteId, listId, listItemId));</span>
+<span class="fc" id="L203">        return connection.execute(</span>
+<span class="fc" id="L204">                connection.newRequestBuilder()</span>
+<span class="fc" id="L205">                        .url(newStringBuilderForListItemUrl()</span>
+<span class="fc" id="L206">                                .append(LIST_ITEM_VERSION_BASE_URL_PATH)</span>
+<span class="fc" id="L207">                                .append(versionId)</span>
+<span class="fc" id="L208">                                .toString())</span>
+<span class="fc" id="L209">                        .build(),</span>
+<span class="fc" id="L210">                newListItemVersionParser(siteId, listId, listItemId));</span>
     }
 
     //////////
@@ -224,14 +223,14 @@ public class ListItem extends BaseItem {
      * @return the updated list item
      */
     public ListItem update() {
-<span class="fc" id="L227">        final String siteId = getSiteId();</span>
-<span class="fc" id="L228">        final String listId = getListId();</span>
-<span class="fc" id="L229">        return connection.execute(</span>
-<span class="fc" id="L230">                connection.newWithBodyRequestBuilder()</span>
-<span class="fc" id="L231">                        .url(newStringBuilderForListItemUrl().toString())</span>
-<span class="fc" id="L232">                        .patch(RequestBody.create(toJson(), JSON_MEDIA_TYPE))</span>
-<span class="fc" id="L233">                        .build(),</span>
-<span class="fc" id="L234">                newListItemParser(siteId, listId));</span>
+<span class="fc" id="L226">        final String siteId = getSiteId();</span>
+<span class="fc" id="L227">        final String listId = getListId();</span>
+<span class="fc" id="L228">        return connection.execute(</span>
+<span class="fc" id="L229">                connection.newWithBodyRequestBuilder()</span>
+<span class="fc" id="L230">                        .url(newStringBuilderForListItemUrl().toString())</span>
+<span class="fc" id="L231">                        .patch(RequestBody.create(toJson(), JSON_MEDIA_TYPE))</span>
+<span class="fc" id="L232">                        .build(),</span>
+<span class="fc" id="L233">                newListItemParser(siteId, listId));</span>
     }
 
     /**
@@ -241,14 +240,14 @@ public class ListItem extends BaseItem {
      * API Documentation&lt;/a&gt;.
      */
     public void delete() {
-<span class="fc" id="L244">        connection.execute(</span>
-<span class="fc" id="L245">                connection.newRequestBuilder()</span>
-<span class="fc" id="L246">                        .url(newStringBuilderForListItemUrl().toString())</span>
-<span class="fc" id="L247">                        .delete()</span>
-<span class="fc" id="L248">                        .build());</span>
+<span class="fc" id="L243">        connection.execute(</span>
+<span class="fc" id="L244">                connection.newRequestBuilder()</span>
+<span class="fc" id="L245">                        .url(newStringBuilderForListItemUrl().toString())</span>
+<span class="fc" id="L246">                        .delete()</span>
+<span class="fc" id="L247">                        .build());</span>
         // Set the deleted state for this list item for consumers that still have reference to the object.
-<span class="fc" id="L250">        deleted = true;</span>
-<span class="fc" id="L251">    }</span>
+<span class="fc" id="L249">        deleted = true;</span>
+<span class="fc" id="L250">    }</span>
 
     /**
      * Gets the JSON representation of this list item.
@@ -257,34 +256,34 @@ public class ListItem extends BaseItem {
      */
     @VisibleForTesting
     String toJson() {
-<span class="fc" id="L260">        return connection.getGsonFactory().getInstance(connection).toJson(this);</span>
+<span class="fc" id="L259">        return connection.getGsonFactory().getInstance(connection).toJson(this);</span>
     }
 
     private String validateAndJoinColumns(final java.util.List&lt;String&gt; columns) {
-<span class="fc" id="L264">        Validate.notEmpty(columns, &quot;columns list must not be empty&quot;);</span>
-<span class="fc bfc" id="L265" title="All 2 branches covered.">        Validate.isTrue(columns.size() &lt;= MAX_SELECTED_COLUMNS,</span>
+<span class="fc" id="L263">        Validate.notEmpty(columns, &quot;columns list must not be empty&quot;);</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        Validate.isTrue(columns.size() &lt;= MAX_SELECTED_COLUMNS,</span>
                 &quot;cannot select more than &quot; + MAX_SELECTED_COLUMNS + &quot;columns&quot;);
 
-<span class="fc" id="L268">        final java.util.List&lt;String&gt; encodedColumns = new ArrayList&lt;&gt;(columns.size());</span>
-<span class="fc bfc" id="L269" title="All 2 branches covered.">        for (final String column : columns) {</span>
-<span class="fc" id="L270">            Validate.notNull(column, &quot;column name must not be null&quot;);</span>
-<span class="fc" id="L271">            Validate.isTrue(</span>
-<span class="fc bfc" id="L272" title="All 2 branches covered.">                    column.length() &lt; MAX_COLUMN_LENGTH,</span>
+<span class="fc" id="L267">        final java.util.List&lt;String&gt; encodedColumns = new ArrayList&lt;&gt;(columns.size());</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">        for (final String column : columns) {</span>
+<span class="fc" id="L269">            Validate.notNull(column, &quot;column name must not be null&quot;);</span>
+<span class="fc" id="L270">            Validate.isTrue(</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">                    column.length() &lt; MAX_COLUMN_LENGTH,</span>
                     &quot;column length must be &lt; &quot; + MAX_COLUMN_LENGTH);
-<span class="fc" id="L274">            encodedColumns.add(URLEncoder.encode(column, StandardCharsets.UTF_8));</span>
-<span class="fc" id="L275">        }</span>
+<span class="fc" id="L273">            encodedColumns.add(escapeValueForUrlPath(column));</span>
+<span class="fc" id="L274">        }</span>
 
-<span class="fc" id="L277">        return String.join(&quot;,&quot;, encodedColumns);</span>
+<span class="fc" id="L276">        return String.join(&quot;,&quot;, encodedColumns);</span>
     }
 
     private StringBuilder newStringBuilderForListItemUrl() {
-<span class="fc" id="L281">        return new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L282">                .append(SITE_BASE_URL_PATH)</span>
-<span class="fc" id="L283">                .append(getSiteId())</span>
-<span class="fc" id="L284">                .append(LIST_BASE_URL_PATH)</span>
-<span class="fc" id="L285">                .append(getListId())</span>
-<span class="fc" id="L286">                .append(LIST_ITEM_BASE_URL_PATH)</span>
-<span class="fc" id="L287">                .append(getId());</span>
+<span class="fc" id="L280">        return new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L281">                .append(SITE_BASE_URL_PATH)</span>
+<span class="fc" id="L282">                .append(getSiteId())</span>
+<span class="fc" id="L283">                .append(LIST_BASE_URL_PATH)</span>
+<span class="fc" id="L284">                .append(getListId())</span>
+<span class="fc" id="L285">                .append(LIST_ITEM_BASE_URL_PATH)</span>
+<span class="fc" id="L286">                .append(getId());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

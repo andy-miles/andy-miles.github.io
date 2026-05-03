@@ -29,14 +29,13 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_LIST_PARSER;
 import static com.amilesend.onedrive.parse.resource.parser.Parsers.DRIVE_PARSER;
+import static com.amilesend.onedrive.resource.ResourceHelper.escapeValueForUrlPath;
 import static com.amilesend.onedrive.resource.drive.Drive.DRIVES_BASE_URL_PATH;
 import static com.amilesend.onedrive.resource.drive.Drive.DRIVES_URL_PATH_SUFFIX;
 import static com.amilesend.onedrive.resource.drive.Drive.DRIVE_URL_PATH_SUFFIX;
@@ -52,7 +51,7 @@ import static com.amilesend.onedrive.resource.drive.Drive.DRIVE_URL_PATH_SUFFIX;
  *
  * @see OneDriveFactoryStateManager
  */
-<span class="fc" id="L55">@Slf4j</span>
+<span class="fc" id="L54">@Slf4j</span>
 @RequiredArgsConstructor
 public class OneDrive {
     protected static final int MAX_ID_LENGTH = 512;
@@ -68,10 +67,10 @@ public class OneDrive {
      * @see Drive
      */
     public Drive getUserDrive() {
-<span class="fc" id="L71">        return new Drive(connection.execute(</span>
-<span class="fc" id="L72">                connection.newRequestBuilder()</span>
-<span class="fc" id="L73">                        .url(connection.getBaseUrl() + DRIVE_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L74">                        .build(),</span>
+<span class="fc" id="L70">        return new Drive(connection.execute(</span>
+<span class="fc" id="L71">                connection.newRequestBuilder()</span>
+<span class="fc" id="L72">                        .url(connection.getBaseUrl() + DRIVE_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L73">                        .build(),</span>
                 DRIVE_PARSER));
     }
 
@@ -82,14 +81,14 @@ public class OneDrive {
      * @see Drive
      */
     public List&lt;Drive&gt; getAvailableDrives() {
-<span class="fc" id="L85">        return connection.execute(</span>
-<span class="fc" id="L86">                connection.newRequestBuilder()</span>
-<span class="fc" id="L87">                        .url(connection.getBaseUrl() + DRIVES_URL_PATH_SUFFIX)</span>
-<span class="fc" id="L88">                        .build(),</span>
+<span class="fc" id="L84">        return connection.execute(</span>
+<span class="fc" id="L85">                connection.newRequestBuilder()</span>
+<span class="fc" id="L86">                        .url(connection.getBaseUrl() + DRIVES_URL_PATH_SUFFIX)</span>
+<span class="fc" id="L87">                        .build(),</span>
                 DRIVE_LIST_PARSER)
-<span class="fc" id="L90">                .stream()</span>
-<span class="fc" id="L91">                .map(d -&gt; new Drive(d))</span>
-<span class="fc" id="L92">                .collect(Collectors.toList());</span>
+<span class="fc" id="L89">                .stream()</span>
+<span class="fc" id="L90">                .map(d -&gt; new Drive(d))</span>
+<span class="fc" id="L91">                .collect(Collectors.toList());</span>
     }
 
     /**
@@ -100,14 +99,14 @@ public class OneDrive {
      * @see Drive
      */
     public Drive getDrive(final String driveId) {
-<span class="fc" id="L103">        final String encodedDriveId = validateIdAndUrlEncode(driveId, &quot;driveId&quot;);</span>
-<span class="fc" id="L104">        return new Drive(connection.execute(</span>
-<span class="fc" id="L105">                connection.newRequestBuilder()</span>
-<span class="fc" id="L106">                        .url(new StringBuilder(connection.getBaseUrl())</span>
-<span class="fc" id="L107">                                .append(DRIVES_BASE_URL_PATH)</span>
-<span class="fc" id="L108">                                .append(encodedDriveId)</span>
-<span class="fc" id="L109">                                .toString())</span>
-<span class="fc" id="L110">                        .build(),</span>
+<span class="fc" id="L102">        final String encodedDriveId = validateIdAndUrlEncode(driveId, &quot;driveId&quot;);</span>
+<span class="fc" id="L103">        return new Drive(connection.execute(</span>
+<span class="fc" id="L104">                connection.newRequestBuilder()</span>
+<span class="fc" id="L105">                        .url(new StringBuilder(connection.getBaseUrl())</span>
+<span class="fc" id="L106">                                .append(DRIVES_BASE_URL_PATH)</span>
+<span class="fc" id="L107">                                .append(encodedDriveId)</span>
+<span class="fc" id="L108">                                .toString())</span>
+<span class="fc" id="L109">                        .build(),</span>
                 DRIVE_PARSER));
     }
 
@@ -117,11 +116,11 @@ public class OneDrive {
      * @return the user's display name
      */
     public String getUserDisplayName() {
-<span class="fc" id="L120">        return Optional.ofNullable(getUserDrive())</span>
-<span class="fc" id="L121">                .map(Drive::getOwner)</span>
-<span class="fc" id="L122">                .map(IdentitySet::getUser)</span>
-<span class="fc" id="L123">                .map(Identity::getDisplayName)</span>
-<span class="fc" id="L124">                .orElse(&quot;Unknown&quot;);</span>
+<span class="fc" id="L119">        return Optional.ofNullable(getUserDrive())</span>
+<span class="fc" id="L120">                .map(Drive::getOwner)</span>
+<span class="fc" id="L121">                .map(IdentitySet::getUser)</span>
+<span class="fc" id="L122">                .map(Identity::getDisplayName)</span>
+<span class="fc" id="L123">                .orElse(&quot;Unknown&quot;);</span>
     }
 
     /**
@@ -132,13 +131,13 @@ public class OneDrive {
      * @return the authentication information
      */
     public OneDriveAuthInfo getAuthInfo() {
-<span class="fc" id="L135">        return (OneDriveAuthInfo) connection.getAuthManager().getAuthInfo();</span>
+<span class="fc" id="L134">        return (OneDriveAuthInfo) connection.getAuthManager().getAuthInfo();</span>
     }
 
     protected String validateIdAndUrlEncode(final String id, final String name) {
-<span class="fc" id="L139">        Validate.notBlank(id, name + &quot; must not be blank&quot;);</span>
-<span class="fc bfc" id="L140" title="All 2 branches covered.">        Validate.isTrue(id.length() &lt; MAX_ID_LENGTH, name + &quot; must be less than &quot; + MAX_ID_LENGTH);</span>
-<span class="fc" id="L141">        return URLEncoder.encode(id, StandardCharsets.UTF_8);</span>
+<span class="fc" id="L138">        Validate.notBlank(id, name + &quot; must not be blank&quot;);</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        Validate.isTrue(id.length() &lt; MAX_ID_LENGTH, name + &quot; must be less than &quot; + MAX_ID_LENGTH);</span>
+<span class="fc" id="L140">        return escapeValueForUrlPath(id);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

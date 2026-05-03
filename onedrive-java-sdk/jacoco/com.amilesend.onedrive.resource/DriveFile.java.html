@@ -24,6 +24,7 @@ import com.amilesend.onedrive.resource.item.DriveItem;
 import com.amilesend.onedrive.resource.item.type.Audio;
 import com.amilesend.onedrive.resource.item.type.GeoCoordinates;
 import com.amilesend.onedrive.resource.item.type.Image;
+import com.amilesend.onedrive.resource.item.type.ItemReference;
 import com.amilesend.onedrive.resource.item.type.Photo;
 import com.amilesend.onedrive.resource.item.type.Preview;
 import com.amilesend.onedrive.resource.item.type.Video;
@@ -34,6 +35,7 @@ import lombok.NonNull;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import static com.amilesend.client.connection.file.LogProgressCallback.formatPrefix;
 
@@ -46,8 +48,8 @@ public class DriveFile extends DriveItemType {
      * @param delegate the drive item to wrap
      */
     public DriveFile(final DriveItem delegate) {
-<span class="fc" id="L49">        super(delegate);</span>
-<span class="fc" id="L50">    }</span>
+<span class="fc" id="L51">        super(delegate);</span>
+<span class="fc" id="L52">    }</span>
 
     //////////////////////
     // Accessors
@@ -59,7 +61,7 @@ public class DriveFile extends DriveItemType {
      * @return {@code true} if this file is an audio file; else, {@code false}
      */
     public boolean isAudio() {
-<span class="fc bfc" id="L62" title="All 2 branches covered.">        return getAudioAttributes() != null;</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        return getAudioAttributes() != null;</span>
     }
 
     /**
@@ -69,7 +71,7 @@ public class DriveFile extends DriveItemType {
      * @see Audio
      */
     public Audio getAudioAttributes() {
-<span class="fc" id="L72">        return getDelegate().getAudio();</span>
+<span class="fc" id="L74">        return getDelegate().getAudio();</span>
     }
 
     /**
@@ -78,7 +80,7 @@ public class DriveFile extends DriveItemType {
      * @return {@code true} if this file is an image file; else, {@code false}
      */
     public boolean isImage() {
-<span class="fc bfc" id="L81" title="All 2 branches covered.">        return getImageAttributes() != null;</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        return getImageAttributes() != null;</span>
     }
 
     /**
@@ -88,7 +90,7 @@ public class DriveFile extends DriveItemType {
      * @see Image
      */
     public Image getImageAttributes() {
-<span class="fc" id="L91">        return getDelegate().getImage();</span>
+<span class="fc" id="L93">        return getDelegate().getImage();</span>
     }
 
     /**
@@ -97,7 +99,7 @@ public class DriveFile extends DriveItemType {
      * @return {@code true} if this file has location attributes; else, {@code false}
      */
     public boolean isLocationAvailable() {
-<span class="fc bfc" id="L100" title="All 2 branches covered.">        return getLocationAttributes() != null;</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        return getLocationAttributes() != null;</span>
     }
 
     /**
@@ -107,7 +109,7 @@ public class DriveFile extends DriveItemType {
      * @see GeoCoordinates
      */
     public GeoCoordinates getLocationAttributes() {
-<span class="fc" id="L110">        return getDelegate().getLocation();</span>
+<span class="fc" id="L112">        return getDelegate().getLocation();</span>
     }
 
     /**
@@ -116,7 +118,7 @@ public class DriveFile extends DriveItemType {
      * @return {@code true} if this file contains photo attributes; else, {@code false}
      */
     public boolean isPhoto() {
-<span class="fc bfc" id="L119" title="All 2 branches covered.">        return getPhotoAttributes() != null;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        return getPhotoAttributes() != null;</span>
     }
 
     /**
@@ -126,7 +128,7 @@ public class DriveFile extends DriveItemType {
      * @see Photo
      */
     public Photo getPhotoAttributes() {
-<span class="fc" id="L129">        return getDelegate().getPhoto();</span>
+<span class="fc" id="L131">        return getDelegate().getPhoto();</span>
     }
 
     /**
@@ -135,7 +137,7 @@ public class DriveFile extends DriveItemType {
      * @return {@code true} if this file is a video file; else, {@code false}
      */
     public boolean isVideo() {
-<span class="fc bfc" id="L138" title="All 2 branches covered.">        return getVideoAttributes() != null;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">        return getVideoAttributes() != null;</span>
     }
 
     /**
@@ -145,27 +147,29 @@ public class DriveFile extends DriveItemType {
      * @see Video
      */
     public Video getVideoAttributes() {
-<span class="fc" id="L148">        return getDelegate().getVideo();</span>
+<span class="fc" id="L150">        return getDelegate().getVideo();</span>
     }
 
     @Override
     public String toString() {
-<span class="fc" id="L153">        return new StringBuilder(&quot;DriveFile(name=&quot;)</span>
-<span class="fc" id="L154">                .append(getName())</span>
-<span class="fc" id="L155">                .append(&quot;, id=&quot;)</span>
-<span class="fc" id="L156">                .append(getId())</span>
-<span class="fc" id="L157">                .append(&quot;, isDeleted=&quot;)</span>
-<span class="fc" id="L158">                .append(isDeleted())</span>
-<span class="fc" id="L159">                .append(&quot;, isRemote=&quot;)</span>
-<span class="fc" id="L160">                .append(isRemote())</span>
-<span class="fc" id="L161">                .append(&quot;, isAudio=&quot;)</span>
-<span class="fc" id="L162">                .append(isAudio())</span>
-<span class="fc" id="L163">                .append(&quot;, isImage=&quot;)</span>
-<span class="fc" id="L164">                .append(isImage())</span>
-<span class="fc" id="L165">                .append(&quot;, isVideo=&quot;)</span>
-<span class="fc" id="L166">                .append(isVideo())</span>
-<span class="fc" id="L167">                .append(&quot;)&quot;)</span>
-<span class="fc" id="L168">                .toString();</span>
+<span class="fc" id="L155">        return new StringBuilder(&quot;DriveFile(name=&quot;)</span>
+<span class="fc" id="L156">                .append(getName())</span>
+<span class="fc" id="L157">                .append(&quot;, id=&quot;)</span>
+<span class="fc" id="L158">                .append(getId())</span>
+<span class="fc" id="L159">                .append(&quot;, isDeleted=&quot;)</span>
+<span class="fc" id="L160">                .append(isDeleted())</span>
+<span class="fc" id="L161">                .append(&quot;, isRemote=&quot;)</span>
+<span class="fc" id="L162">                .append(isRemote())</span>
+<span class="fc" id="L163">                .append(&quot;, isAudio=&quot;)</span>
+<span class="fc" id="L164">                .append(isAudio())</span>
+<span class="fc" id="L165">                .append(&quot;, isImage=&quot;)</span>
+<span class="fc" id="L166">                .append(isImage())</span>
+<span class="fc" id="L167">                .append(&quot;, isVideo=&quot;)</span>
+<span class="fc" id="L168">                .append(isVideo())</span>
+<span class="fc" id="L169">                .append(&quot;, parentId=&quot;)</span>
+<span class="fc" id="L170">                .append(Optional.ofNullable(getParentReference()).map(ItemReference::getDriveId).orElse(null))</span>
+<span class="fc" id="L171">                .append(&quot;)&quot;)</span>
+<span class="fc" id="L172">                .toString();</span>
     }
 
     //////////////////////
@@ -178,13 +182,13 @@ public class DriveFile extends DriveItemType {
      * @param folderPath the folder to download the file to
      */
     public void download(final Path folderPath) {
-<span class="fc" id="L181">        getDelegate().download(</span>
+<span class="fc" id="L185">        getDelegate().download(</span>
                 folderPath,
-<span class="fc" id="L183">                LogProgressCallback.builder()</span>
-<span class="fc" id="L184">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
-<span class="fc" id="L185">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
-<span class="fc" id="L186">                        .build());</span>
-<span class="fc" id="L187">    }</span>
+<span class="fc" id="L187">                LogProgressCallback.builder()</span>
+<span class="fc" id="L188">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
+<span class="fc" id="L189">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="fc" id="L190">                        .build());</span>
+<span class="fc" id="L191">    }</span>
 
     /**
      * Downloads this file to the given {@code folderPath} and reports transfer progress to the
@@ -195,8 +199,8 @@ public class DriveFile extends DriveItemType {
      * @see TransferProgressCallback
      */
     public void download(final Path folderPath, final TransferProgressCallback callback) {
-<span class="fc" id="L198">        getDelegate().download(folderPath, callback);</span>
-<span class="fc" id="L199">    }</span>
+<span class="fc" id="L202">        getDelegate().download(folderPath, callback);</span>
+<span class="fc" id="L203">    }</span>
 
     /**
      * Downloads this file asynchronously to the given {@code folderPath}. Consumers can block on transfer completion
@@ -207,12 +211,12 @@ public class DriveFile extends DriveItemType {
      * @see DriveFileDownloadExecution
      */
     public DriveFileDownloadExecution downloadAsync(final Path folderPath) {
-<span class="fc" id="L210">        return downloadAsync(</span>
+<span class="fc" id="L214">        return downloadAsync(</span>
                 folderPath,
-<span class="fc" id="L212">                LogProgressCallback.builder()</span>
-<span class="fc" id="L213">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
-<span class="fc" id="L214">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
-<span class="fc" id="L215">                        .build());</span>
+<span class="fc" id="L216">                LogProgressCallback.builder()</span>
+<span class="fc" id="L217">                        .prefix(formatPrefix(&quot;OneDrive&quot;, folderPath.toFile().getName()))</span>
+<span class="fc" id="L218">                        .transferType(LogProgressCallback.TransferType.DOWNLOAD)</span>
+<span class="fc" id="L219">                        .build());</span>
     }
 
     /**
@@ -229,7 +233,7 @@ public class DriveFile extends DriveItemType {
     public DriveFileDownloadExecution downloadAsync(
             final Path folderPath,
             final TransferProgressCallback callback) {
-<span class="fc" id="L232">        return new DriveFileDownloadExecution(getDelegate().downloadAsync(folderPath, callback));</span>
+<span class="fc" id="L236">        return new DriveFileDownloadExecution(getDelegate().downloadAsync(folderPath, callback));</span>
     }
 
     //////////////////////
@@ -247,7 +251,7 @@ public class DriveFile extends DriveItemType {
      */
     @Deprecated
     public DriveFile upload(final File file) throws IOException {
-<span class="nc" id="L250">        return upload(file.toPath());</span>
+<span class="nc" id="L254">        return upload(file.toPath());</span>
     }
 
     /**
@@ -259,12 +263,12 @@ public class DriveFile extends DriveItemType {
      * @see DriveFile
      */
     public DriveFile upload(final Path filePath) throws IOException {
-<span class="fc" id="L262">        return upload(</span>
+<span class="fc" id="L266">        return upload(</span>
                 filePath,
-<span class="fc" id="L264">                LogProgressCallback.builder()</span>
-<span class="fc" id="L265">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
-<span class="fc" id="L266">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
-<span class="fc" id="L267">                        .build());</span>
+<span class="fc" id="L268">                LogProgressCallback.builder()</span>
+<span class="fc" id="L269">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
+<span class="fc" id="L270">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L271">                        .build());</span>
     }
 
     /**
@@ -280,7 +284,7 @@ public class DriveFile extends DriveItemType {
      */
     @Deprecated
     public DriveFile upload(final File file, final TransferProgressCallback callback) throws IOException {
-<span class="fc" id="L283">        return upload(file.toPath(), callback);</span>
+<span class="fc" id="L287">        return upload(file.toPath(), callback);</span>
     }
 
     /**
@@ -294,7 +298,7 @@ public class DriveFile extends DriveItemType {
      * @see DriveFile
      */
     public DriveFile upload(final Path filePath, final TransferProgressCallback callback) throws IOException {
-<span class="fc" id="L297">        return new DriveFile(getDelegate().upload(filePath, callback));</span>
+<span class="fc" id="L301">        return new DriveFile(getDelegate().upload(filePath, callback));</span>
     }
 
     /**
@@ -309,12 +313,12 @@ public class DriveFile extends DriveItemType {
      */
     @Deprecated
     public DriveFileUploadExecution uploadAsync(final File file) throws IOException {
-<span class="nc" id="L312">        return uploadAsync(</span>
+<span class="nc" id="L316">        return uploadAsync(</span>
                 file,
-<span class="nc" id="L314">                LogProgressCallback.builder()</span>
-<span class="nc" id="L315">                        .prefix(formatPrefix(file.getName(), &quot;OneDrive&quot;))</span>
-<span class="nc" id="L316">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
-<span class="nc" id="L317">                        .build());</span>
+<span class="nc" id="L318">                LogProgressCallback.builder()</span>
+<span class="nc" id="L319">                        .prefix(formatPrefix(file.getName(), &quot;OneDrive&quot;))</span>
+<span class="nc" id="L320">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="nc" id="L321">                        .build());</span>
     }
 
     /**
@@ -327,12 +331,12 @@ public class DriveFile extends DriveItemType {
      * @see DriveFileUploadExecution
      */
     public DriveFileUploadExecution uploadAsync(final Path filePath) throws IOException {
-<span class="fc" id="L330">        return uploadAsync(</span>
+<span class="fc" id="L334">        return uploadAsync(</span>
                 filePath,
-<span class="fc" id="L332">                LogProgressCallback.builder()</span>
-<span class="fc" id="L333">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
-<span class="fc" id="L334">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
-<span class="fc" id="L335">                        .build());</span>
+<span class="fc" id="L336">                LogProgressCallback.builder()</span>
+<span class="fc" id="L337">                        .prefix(formatPrefix(filePath.getFileName().toString(), &quot;OneDrive&quot;))</span>
+<span class="fc" id="L338">                        .transferType(LogProgressCallback.TransferType.UPLOAD)</span>
+<span class="fc" id="L339">                        .build());</span>
     }
 
     /**
@@ -350,7 +354,7 @@ public class DriveFile extends DriveItemType {
     public DriveFileUploadExecution uploadAsync(
             final File file,
             final TransferProgressCallback callback) throws IOException {
-<span class="fc" id="L353">        return uploadAsync(file.toPath(), callback);</span>
+<span class="fc" id="L357">        return uploadAsync(file.toPath(), callback);</span>
     }
 
     /**
@@ -366,7 +370,7 @@ public class DriveFile extends DriveItemType {
     public DriveFileUploadExecution uploadAsync(
             final Path filePath,
             final TransferProgressCallback callback) throws IOException {
-<span class="fc" id="L369">        return new DriveFileUploadExecution(getDelegate().uploadAsync(filePath, callback));</span>
+<span class="fc" id="L373">        return new DriveFileUploadExecution(getDelegate().uploadAsync(filePath, callback));</span>
     }
 
     //////////////////////
@@ -379,7 +383,7 @@ public class DriveFile extends DriveItemType {
      * @return the updated drive file
      */
     public DriveFile update() {
-<span class="fc" id="L382">        return new DriveFile(getDelegate().update());</span>
+<span class="fc" id="L386">        return new DriveFile(getDelegate().update());</span>
     }
 
     /**
@@ -390,7 +394,7 @@ public class DriveFile extends DriveItemType {
      * @return the preview URLs
      */
     public Preview preview(final PreviewRequest request) {
-<span class="fc" id="L393">        return getDelegate().previewItem(request);</span>
+<span class="fc" id="L397">        return getDelegate().previewItem(request);</span>
     }
 
     /**
@@ -400,7 +404,7 @@ public class DriveFile extends DriveItemType {
      * @return the updated drive file that represents this moved file
      */
     public DriveFile move(final DriveFolder destinationFolder) {
-<span class="fc" id="L403">        return move(destinationFolder, StringUtils.EMPTY);</span>
+<span class="fc" id="L407">        return move(destinationFolder, StringUtils.EMPTY);</span>
     }
 
     /**
@@ -410,8 +414,8 @@ public class DriveFile extends DriveItemType {
      * @param newName the new name of the file
      * @return the updated drive file that represents this moved file
      */
-<span class="fc bfc" id="L413" title="All 2 branches covered.">    public DriveFile move(@NonNull final DriveFolder destinationFolder, final String newName) {</span>
-<span class="fc" id="L414">        return move(destinationFolder.getId(), newName);</span>
+<span class="fc bfc" id="L417" title="All 2 branches covered.">    public DriveFile move(@NonNull final DriveFolder destinationFolder, final String newName) {</span>
+<span class="fc" id="L418">        return move(destinationFolder.getId(), newName);</span>
     }
 
     /**
@@ -423,7 +427,7 @@ public class DriveFile extends DriveItemType {
      * @return the updated drive file that represents this moved file.
      */
     public DriveFile move(final String destinationParentId, final String newName) {
-<span class="fc" id="L426">        return new DriveFile(getDelegate().move(destinationParentId, newName));</span>
+<span class="fc" id="L430">        return new DriveFile(getDelegate().move(destinationParentId, newName));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>

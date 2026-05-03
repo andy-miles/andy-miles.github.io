@@ -17,11 +17,19 @@
  */
 package com.amilesend.onedrive.resource.item;
 
+import com.amilesend.client.parse.strategy.GsonExclude;
 import com.amilesend.client.util.StringUtils;
 import com.amilesend.onedrive.resource.identity.IdentitySet;
 import com.amilesend.onedrive.resource.item.type.ItemReference;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+
+import static com.amilesend.onedrive.resource.ResourceHelper.validateFilename;
 
 /**
  * Defines common attributes for drive items.
@@ -53,6 +61,72 @@ public class BaseItem {
     /** Describes the parent information. */
     private ItemReference parentReference;
 
+    @GsonExclude
+    @EqualsAndHashCode.Exclude
+    private final Map&lt;String, Boolean&gt; updatedAttributesMap = new HashMap&lt;&gt;();
+
+    /**
+     * Sets the description for updating the drive item.
+     *
+     * @param description the description
+     */
+    public void setDescription(final String description) {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (Objects.equals(this.description, description)) {</span>
+<span class="nc" id="L75">            updatedAttributesMap.put(&quot;description&quot;, Boolean.FALSE);</span>
+<span class="nc" id="L76">            return;</span>
+        }
+
+<span class="nc" id="L79">        this.description = description;</span>
+<span class="nc" id="L80">        updatedAttributesMap.put(&quot;description&quot;, Boolean.TRUE);</span>
+<span class="nc" id="L81">    }</span>
+
+    protected boolean isDescriptionUpdated() {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        return updatedAttributesMap.containsKey(&quot;description&quot;)</span>
+<span class="pc bnc" id="L85" title="All 2 branches missed.">                &amp;&amp; Boolean.TRUE.equals(updatedAttributesMap.get(&quot;description&quot;));</span>
+    }
+
+    /**
+     * Sets the updated drive item name.
+     *
+     * @param name the name
+     */
+    public void setName(final String name) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (Objects.equals(this.name, name)) {</span>
+<span class="nc" id="L95">            updatedAttributesMap.put(&quot;name&quot;, Boolean.FALSE);</span>
+<span class="nc" id="L96">            return;</span>
+        }
+
+<span class="fc" id="L99">        validateFilename(name);</span>
+
+<span class="fc" id="L101">        this.name = name;</span>
+<span class="fc" id="L102">        updatedAttributesMap.put(&quot;name&quot;, Boolean.TRUE);</span>
+<span class="fc" id="L103">    }</span>
+
+    protected boolean isNameUpdated() {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        return updatedAttributesMap.containsKey(&quot;name&quot;)</span>
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">                &amp;&amp; Boolean.TRUE.equals(updatedAttributesMap.get(&quot;name&quot;));</span>
+    }
+
+    /**
+     * Sets the updated parent {@link ItemReference} used for moving a file to another folder.
+     *
+     * @param parentReference the parent item reference
+     */
+    public void setParentReference(final ItemReference parentReference) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (Objects.equals(this.parentReference, parentReference)) {</span>
+<span class="fc" id="L117">            updatedAttributesMap.put(&quot;parentReference&quot;, Boolean.FALSE);</span>
+<span class="fc" id="L118">            return;</span>
+        }
+
+<span class="fc" id="L121">        this.parentReference = parentReference;</span>
+<span class="fc" id="L122">        updatedAttributesMap.put(&quot;parentReference&quot;, Boolean.TRUE);</span>
+<span class="fc" id="L123">    }</span>
+
+    protected boolean isParentReferenceUpdated() {
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        return updatedAttributesMap.containsKey(&quot;parentReference&quot;)</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">                &amp;&amp; Boolean.TRUE.equals(updatedAttributesMap.get(&quot;parentReference&quot;));</span>
+    }
+
     /**
      * Utility method for child method operations that determines if a given {@link DriveItemPage} contains a
      * next page.
@@ -61,7 +135,7 @@ public class BaseItem {
      * @return {@code true} if the page has a next page; else, {@code false}
      */
     protected static boolean hasNextPage(final DriveItemPage page) {
-<span class="pc bpc" id="L64" title="1 of 4 branches missed.">        return page != null &amp;&amp; StringUtils.isNotBlank(page.getNextLink());</span>
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        return page != null &amp;&amp; StringUtils.isNotBlank(page.getNextLink());</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.14.202510111229</span></div></body></html>
