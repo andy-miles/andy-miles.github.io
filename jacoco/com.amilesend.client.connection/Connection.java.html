@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Connection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">okhttp-client-extensions</a> &gt; <a href="index.source.html" class="el_package">com.amilesend.client.connection</a> &gt; <span class="el_source">Connection.java</span></div><h1>Connection.java</h1><pre class="source lang-java linenums">/*
+ * okhttp-client-extensions - A set of helpful extensions to support okhttp clients
+ * Copyright © 2025-2026 Andy Miles (andy.miles@amilesend.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see &lt;http://www.gnu.org/licenses/&gt;.
+ */
+package com.amilesend.client.connection;
+
+import com.amilesend.client.connection.auth.AuthManager;
+import com.amilesend.client.connection.retry.RetriableCallResponse;
+import com.amilesend.client.connection.retry.RetryStrategy;
+import com.amilesend.client.parse.GsonFactoryBase;
+import com.amilesend.client.parse.parser.GsonParser;
+import com.amilesend.client.util.VisibleForTesting;
+import com.google.gson.JsonParseException;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.experimental.SuperBuilder;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+
+import static com.amilesend.client.connection.Connection.Headers.ACCEPT;
+import static com.amilesend.client.connection.Connection.Headers.ACCEPT_ENCODING;
+import static com.amilesend.client.connection.Connection.Headers.CONTENT_ENCODING;
+import static com.amilesend.client.connection.Connection.Headers.USER_AGENT;
+
+/** Wraps an {@link OkHttpClient} that manages parsing responses to corresponding POJO types. */
+@SuperBuilder
+@Getter
+<span class="fc" id="L50">@Slf4j</span>
+public class Connection&lt;G extends GsonFactoryBase&gt; {
+    public static final String FORM_DATA_CONTENT_TYPE = &quot;application/x-www-form-urlencoded&quot;;
+<span class="fc" id="L53">    public static final MediaType FORM_DATA_MEDIA_TYPE = MediaType.parse(FORM_DATA_CONTENT_TYPE);</span>
+    public static final String JSON_CONTENT_TYPE = &quot;application/json; charset=utf-8&quot;;
+<span class="fc" id="L55">    public static final MediaType JSON_MEDIA_TYPE = MediaType.parse(JSON_CONTENT_TYPE);</span>
+
+    protected static final String THROTTLED_RETRY_AFTER_HEADER = &quot;Retry-After&quot;;
+    protected static final String GZIP_ENCODING = &quot;gzip&quot;;
+<span class="fc" id="L59">    protected static final Long DEFAULT_RETRY_AFTER_SECONDS = Long.valueOf(10L);</span>
+    protected static final int THROTTLED_RESPONSE_CODE = 429;
+
+    /** The underlying http client. */
+    @NonNull
+    private final OkHttpClient httpClient;
+    /** The Gson factory used to create GSON instance that marshals request and responses to/from JSON. */
+    @NonNull
+    private final G gsonFactory;
+    /** The authorization manager used to authenticate and sign requests. */
+    @NonNull
+    private final AuthManager&lt;?&gt; authManager;
+    /** The base URL for the Graph API. */
+    @NonNull
+    private final String baseUrl;
+    /** The user agent to include in request headers. */
+    @NonNull
+    private final String userAgent;
+    /** Flag indicator that the response is GZIP encoded. */
+    private final boolean isGzipContentEncodingEnabled;
+    /** The retry strategy to use. */
+    @NonNull
+    private final RetryStrategy retryStrategy;
+
+    /**
+     * Creates a new {@link Request.Builder} with pre-configured headers for request that expect a JSON-formatted
+     * response body.
+     *
+     * @return the request builder
+     */
+    public Request.Builder newRequestBuilder() {
+<span class="fc" id="L90">        final Request.Builder requestBuilder = new Request.Builder()</span>
+<span class="fc" id="L91">                .addHeader(USER_AGENT, userAgent)</span>
+<span class="fc" id="L92">                .addHeader(ACCEPT, JSON_CONTENT_TYPE);</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (isGzipContentEncodingEnabled) {</span>
+<span class="fc" id="L94">            requestBuilder.addHeader(ACCEPT_ENCODING, GZIP_ENCODING);</span>
+        }
+
+<span class="fc" id="L97">        return authManager.addAuthentication(requestBuilder);</span>
+    }
+
+    /**
+     * Executes the given {@link Request} and parses the JSON-formatted response with given {@link GsonParser}.
+     *
+     * @param request the request
+     * @param parser the parser to decode the response body
+     * @return the response as a POJO resource type
+     * @param &lt;T&gt; the POJO resource type
+     * @throws ConnectionException if an error occurred during the transaction
+     */
+<span class="fc bfc" id="L109" title="All 4 branches covered.">    public &lt;T&gt; T execute(@NonNull final Request request, @NonNull final GsonParser&lt;T&gt; parser)</span>
+            throws ConnectionException {
+        try {
+<span class="fc" id="L112">            try (final Response response = execute(request)) {</span>
+                final InputStream responseBodyInputStream =
+<span class="fc bfc" id="L114" title="All 2 branches covered.">                        &quot;gzip&quot;.equals(response.header(CONTENT_ENCODING))</span>
+<span class="fc" id="L115">                                ? new GZIPInputStream(response.body().byteStream())</span>
+<span class="fc" id="L116">                                : response.body().byteStream();</span>
+<span class="fc" id="L117">                return parser.parse(gsonFactory.getInstance(this), responseBodyInputStream);</span>
+            }
+<span class="nc" id="L119">        } catch (final IOException ex) {</span>
+<span class="nc" id="L120">            throw new RequestException(&quot;Unable to execute request: &quot; + ex.getMessage(), ex);</span>
+<span class="fc" id="L121">        } catch (final JsonParseException ex) {</span>
+<span class="fc" id="L122">            throw new ResponseParseException(&quot;Error parsing response: &quot; + ex.getMessage(), ex);</span>
+        }
+    }
+
+    /**
+     * Executes the given {@link Request} and returns the associated HTTP response code. This is typically used for
+     * transactions that do not expect a response in the body.
+     *
+     * @param request the request
+     * @return the HTTP response
+     * @throws ConnectionException if an error occurred during the transaction
+     */
+<span class="fc bfc" id="L134" title="All 2 branches covered.">    public Response execute(@NonNull final Request request) throws ConnectionException {</span>
+<span class="pc" id="L135">        final RetriableCallResponse response = retryStrategy.invoke(() -&gt; httpClient.newCall(request).execute());</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">        if (response.isSuccess()) {</span>
+<span class="fc" id="L137">            return response.getResponse();</span>
+        }
+
+<span class="fc" id="L140">        final List&lt;Exception&gt; thrownExceptions = response.getExceptions();</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (thrownExceptions.isEmpty()) {</span>
+<span class="nc" id="L142">            throw new ConnectionException(&quot;Error executing request (no exception provided)&quot;);</span>
+        }
+
+<span class="fc" id="L145">        final Exception lastThrownException = response.getExceptions().get(response.getExceptions().size() - 1);</span>
+<span class="pc bpc" id="L146" title="1 of 2 branches missed.">        if (IOException.class.isInstance(lastThrownException)) {</span>
+<span class="fc" id="L147">            throw new RequestException(</span>
+<span class="fc" id="L148">                    &quot;Unable to execute request: &quot; + lastThrownException.getMessage(),</span>
+                    lastThrownException);
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        } else if (ConnectionException.class.isInstance(lastThrownException)) {</span>
+<span class="nc" id="L151">            throw (ConnectionException) lastThrownException;</span>
+        }
+
+<span class="nc" id="L154">        throw new ConnectionException(&quot;Error executing request: &quot; + lastThrownException.getCause(), lastThrownException);</span>
+    }
+
+    /**
+     * Validates the response code.
+     *
+     * @param response the response to validate
+     * @deprecated use {@link RetryStrategy#validateResponseCode(Response)} instead
+     */
+    @Deprecated
+    protected void validateResponseCode(final Response response) {
+<span class="nc" id="L165">        retryStrategy.validateResponseCode(response);</span>
+<span class="nc" id="L166">    }</span>
+
+    /**
+     * Extracts the retry after value from a throttled response header (if it exists).
+     *
+     * @param response the response
+     * @return the retry after value in seconds
+     * @deprecated use {@link RetryStrategy#extractRetryAfterHeaderValue(Response)} instead
+     */
+    @Deprecated
+    @VisibleForTesting
+    protected Long extractRetryAfterHeaderValue(final Response response) {
+<span class="nc" id="L178">        return retryStrategy.extractRetryAfterHeaderValue(response);</span>
+    }
+
+    @UtilityClass
+    public static class Headers {
+        public static final String ACCEPT = &quot;Accept&quot;;
+        public static final String ACCEPT_ENCODING = &quot;Accept-Encoding&quot;;
+        public static final String AUTHORIZATION = &quot;Authorization&quot;;
+        public static final String CONTENT_ENCODING = &quot;Content-Encoding&quot;;
+        public static final String CONTENT_TYPE = &quot;Content-Type&quot;;
+        public static final String USER_AGENT = &quot;User-Agent&quot;;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.15.202606040825</span></div></body></html>
